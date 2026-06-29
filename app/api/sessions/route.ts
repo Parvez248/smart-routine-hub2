@@ -12,7 +12,10 @@ const include = {
 export async function GET() {
   try {
     const db = getDb();
-    const sessions = await db.session.findMany({ include, orderBy: { createdAt: "desc" } });
+    const sessions = await db.session.findMany({
+      include,
+      orderBy: [{ day: "asc" }, { timeSlotId: "asc" }],
+    });
     return NextResponse.json({ ok: true, data: sessions });
   } catch (error) {
     console.error(error);
@@ -26,16 +29,52 @@ export async function POST(req: NextRequest) {
     const { day, timeSlotId, batchId, section, courseId, teacherId, roomId } = body;
 
     if (!day || !timeSlotId || !batchId || !courseId || !teacherId || !roomId) {
-      return NextResponse.json({ ok: false, error: "Missing required fields" }, { status: 400 });
+      return NextResponse.json({ ok: false, error: "All fields except Section are required." }, { status: 400 });
     }
 
     const db = getDb();
+    const tsId = Number(timeSlotId);
+    const existing = await db.session.findMany({
+      where: { day, timeSlotId: tsId },
+      include: { room: true, teacher: true, batch: true },
+    });
+
+    const conflicts: string[] = [];
+
+    if (existing.some((s) => s.roomId === Number(roomId))) {
+      const s = existing.find((s) => s.roomId === Number(roomId))!;
+      conflicts.push(`Room ${s.room.name} is already booked at this day & time.`);
+    }
+
+    if (existing.some((s) => s.teacherId === Number(teacherId))) {
+      const s = existing.find((s) => s.teacherId === Number(teacherId))!;
+      conflicts.push(`${s.teacher.initials} already has a class at this day & time.`);
+    }
+
+    // Batch conflict: same batch AND same section (or both null/empty)
+    const normSection = section?.trim() || null;
+    if (
+      existing.some((s) => {
+        if (s.batchId !== Number(batchId)) return false;
+        const existSection = s.section?.trim() || null;
+        // conflict if sections are the same (both null, or same string)
+        return existSection === normSection;
+      })
+    ) {
+      const s = existing.find((s) => s.batchId === Number(batchId))!;
+      conflicts.push(`Batch ${s.batch.name}${normSection ? ` (${normSection})` : ""} already has a class at this day & time.`);
+    }
+
+    if (conflicts.length > 0) {
+      return NextResponse.json({ ok: false, error: conflicts.join(" ") }, { status: 409 });
+    }
+
     const session = await db.session.create({
       data: {
         day,
-        timeSlotId: Number(timeSlotId),
+        timeSlotId: tsId,
         batchId: Number(batchId),
-        section: section || null,
+        section: normSection,
         courseId: Number(courseId),
         teacherId: Number(teacherId),
         roomId: Number(roomId),
@@ -46,7 +85,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, data: session }, { status: 201 });
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ ok: false, error: "Failed to create session" }, { status: 500 });
+    return NextResponse.json({ ok: false, error: "Failed to create session." }, { status: 500 });
   }
 }
 
