@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum ClassType {
+  THEORY
+  LAB
+}
+
+model Course {
+  id       Int       @id @default(autoincrement())
+  code     String    @unique
+  title    String
+  type     ClassType @default(THEORY)
+  sessions Session[]
+}
+
+model Teacher {
+  id       Int       @id @default(autoincrement())
+  initials String    @unique
+  name     String
+  sessions Session[]
+}
+
+model Room {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  capacity Int       @default(40)
+  sessions Session[]
+}
+
+model Batch {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  semester String
+  sessions Session[]
+}
+
+model TimeSlot {
+  id        Int       @id @default(autoincrement())
+  label     String
+  sortOrder Int
+  sessions  Session[]
+}
+
+model Session {
+  id         Int      @id @default(autoincrement())
+  day        String
+  timeSlot   TimeSlot @relation(fields: [timeSlotId], references: [id])
+  timeSlotId Int
+  batch      Batch    @relation(fields: [batchId], references: [id])
+  batchId    Int
+  section    String?
+  course     Course   @relation(fields: [courseId], references: [id])
+  courseId   Int
+  teacher    Teacher  @relation(fields: [teacherId], references: [id])
+  teacherId  Int
+  room       Room     @relation(fields: [roomId], references: [id])
+  roomId     Int
+  createdAt  DateTime @default(now())
+}
