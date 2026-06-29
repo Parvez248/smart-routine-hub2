@@ -5,14 +5,21 @@ const g = globalThis as unknown as { prisma?: PrismaClient };
 
 function buildAdapterConfig(url: string) {
   const parsed = new URL(url.replace(/^mysql:/, "mariadb:"));
-  const isCloud = parsed.hostname !== "localhost" && parsed.hostname !== "127.0.0.1";
+  const host = parsed.hostname;
+  const port = parseInt(parsed.port || "3306");
+  const user = decodeURIComponent(parsed.username);
+  const password = decodeURIComponent(parsed.password);
+  // pathname is "/dbname" — strip leading slash and any query params
+  const database = parsed.pathname.slice(1).split("?")[0];
+  const isLocal = host === "localhost" || host === "127.0.0.1";
+
   return {
-    host: parsed.hostname,
-    port: parseInt(parsed.port || "3306"),
-    user: decodeURIComponent(parsed.username),
-    password: decodeURIComponent(parsed.password),
-    database: parsed.pathname.slice(1),
-    ...(isCloud ? { ssl: { rejectUnauthorized: true } } : {}),
+    host,
+    port,
+    user,
+    password,
+    database,
+    ssl: isLocal ? undefined : { rejectUnauthorized: true },
   };
 }
 
