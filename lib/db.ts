@@ -20,6 +20,9 @@ function buildAdapterConfig(url: string) {
     password,
     database,
     ssl: isLocal ? undefined : { rejectUnauthorized: true },
+    connectTimeout: 20000,
+    acquireTimeout: 20000,
+    connectionLimit: 3,
   };
 }
 
