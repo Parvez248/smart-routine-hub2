@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { readFileSync } from "fs";
 import { join } from "path";
+import bcrypt from "bcryptjs";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { PrismaClient } from "../app/generated/prisma/client";
 
@@ -79,6 +80,19 @@ async function main() {
       update: { type: course.type },
       create: { code: course.code, title: course.code, type: course.type },
     });
+  }
+
+  // Seed admin user
+  const adminEmail = process.env.ADMIN_EMAIL;
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  if (adminEmail && adminPassword) {
+    const passwordHash = await bcrypt.hash(adminPassword, 12);
+    await prisma.user.upsert({
+      where: { email: adminEmail },
+      update: {},
+      create: { email: adminEmail, passwordHash, role: "ADMIN" },
+    });
+    console.log(`Admin user seeded: ${adminEmail}`);
   }
 
   console.log("Seed complete.");

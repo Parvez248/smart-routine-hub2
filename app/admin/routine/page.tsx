@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { signOut } from "next-auth/react";
 
 type Course   = { id: number; code: string; title: string; type: string };
 type Teacher  = { id: number; initials: string; name: string };
@@ -151,9 +152,17 @@ export default function RoutinePage() {
             <h1 className="text-xl font-bold text-gray-900">SmartRoutineHub</h1>
             <p className="text-xs text-gray-400 mt-0.5">Admin · Routine Builder</p>
           </div>
-          <span className="text-xs bg-indigo-50 text-indigo-600 font-semibold px-3 py-1 rounded-full">
-            {sessions.length} sessions
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="text-xs bg-indigo-50 text-indigo-600 font-semibold px-3 py-1 rounded-full">
+              {sessions.length} sessions
+            </span>
+            <button
+              onClick={() => signOut({ callbackUrl: "/login" })}
+              className="text-xs text-gray-400 hover:text-gray-600 font-medium transition-colors"
+            >
+              Sign out
+            </button>
+          </div>
         </div>
       </header>
 

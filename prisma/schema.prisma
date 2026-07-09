@@ -7,6 +7,21 @@ datasource db {
   provider = "mysql"
 }
 
+enum Role {
+  ADMIN
+  TEACHER
+  STUDENT
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  role         Role     @default(ADMIN)
+  createdAt    DateTime @default(now())
+}
+
 enum ClassType {
   THEORY
   LAB
