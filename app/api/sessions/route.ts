@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
+import { z } from "zod";
+import { createSessionSchema } from "@/lib/validation/session";
 
 const include = {
   course: true,
@@ -26,28 +28,31 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { day, timeSlotId, batchId, section, courseId, teacherId, roomId } = body;
-
-    if (!day || !timeSlotId || !batchId || !courseId || !teacherId || !roomId) {
-      return NextResponse.json({ ok: false, error: "All fields except Section are required." }, { status: 400 });
+    const parsed = createSessionSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { ok: false, error: "Invalid input", details: z.flattenError(parsed.error) },
+        { status: 400 }
+      );
     }
 
+    const { day, timeSlotId, batchId, section, courseId, teacherId, roomId } = parsed.data;
+
     const db = getDb();
-    const tsId = Number(timeSlotId);
     const existing = await db.session.findMany({
-      where: { day, timeSlotId: tsId },
+      where: { day, timeSlotId },
       include: { room: true, teacher: true, batch: true },
     });
 
     const conflicts: string[] = [];
 
-    if (existing.some((s) => s.roomId === Number(roomId))) {
-      const s = existing.find((s) => s.roomId === Number(roomId))!;
+    if (existing.some((s) => s.roomId === roomId)) {
+      const s = existing.find((s) => s.roomId === roomId)!;
       conflicts.push(`Room ${s.room.name} is already booked at this day & time.`);
     }
 
-    if (existing.some((s) => s.teacherId === Number(teacherId))) {
-      const s = existing.find((s) => s.teacherId === Number(teacherId))!;
+    if (existing.some((s) => s.teacherId === teacherId)) {
+      const s = existing.find((s) => s.teacherId === teacherId)!;
       conflicts.push(`${s.teacher.initials} already has a class at this day & time.`);
     }
 
@@ -55,13 +60,13 @@ export async function POST(req: NextRequest) {
     const normSection = section?.trim() || null;
     if (
       existing.some((s) => {
-        if (s.batchId !== Number(batchId)) return false;
+        if (s.batchId !== batchId) return false;
         const existSection = s.section?.trim() || null;
         // conflict if sections are the same (both null, or same string)
         return existSection === normSection;
       })
     ) {
-      const s = existing.find((s) => s.batchId === Number(batchId))!;
+      const s = existing.find((s) => s.batchId === batchId)!;
       conflicts.push(`Batch ${s.batch.name}${normSection ? ` (${normSection})` : ""} already has a class at this day & time.`);
     }
 
@@ -70,15 +75,7 @@ export async function POST(req: NextRequest) {
     }
 
     const session = await db.session.create({
-      data: {
-        day,
-        timeSlotId: tsId,
-        batchId: Number(batchId),
-        section: normSection,
-        courseId: Number(courseId),
-        teacherId: Number(teacherId),
-        roomId: Number(roomId),
-      },
+      data: { day, timeSlotId, batchId, section: normSection, courseId, teacherId, roomId },
       include,
     });
 
@@ -92,11 +89,14 @@ export async function POST(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const id = searchParams.get("id");
-    if (!id) return NextResponse.json({ ok: false, error: "Missing id" }, { status: 400 });
+    const raw = searchParams.get("id");
+    const id = Number(raw);
+    if (!raw || !Number.isInteger(id) || id <= 0) {
+      return NextResponse.json({ ok: false, error: "Invalid id" }, { status: 400 });
+    }
 
     const db = getDb();
-    await db.session.delete({ where: { id: Number(id) } });
+    await db.session.delete({ where: { id } });
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error(error);
