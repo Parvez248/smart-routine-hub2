@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { signOut } from "next-auth/react";
+import AdminNav from "../AdminNav";
 
 type Course   = { id: number; code: string; title: string; type: string };
 type Teacher  = { id: number; initials: string; name: string };
@@ -156,12 +156,7 @@ export default function RoutinePage() {
             <span className="text-xs bg-indigo-50 text-indigo-600 font-semibold px-3 py-1 rounded-full">
               {sessions.length} sessions
             </span>
-            <button
-              onClick={() => signOut({ callbackUrl: "/login" })}
-              className="text-xs text-gray-400 hover:text-gray-600 font-medium transition-colors"
-            >
-              Sign out
-            </button>
+            <AdminNav />
           </div>
         </div>
       </header>
