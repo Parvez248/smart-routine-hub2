@@ -73,6 +73,12 @@ export default function RoutinePage() {
   const [loading, setLoading] = useState(false);
   const [filterDay, setFilterDay] = useState("all");
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
+
+  const [freeDay, setFreeDay] = useState("");
+  const [freeSlotId, setFreeSlotId] = useState("");
+  const [freeRooms, setFreeRooms] = useState<Room[] | null>(null);
+  const [freeLoading, setFreeLoading] = useState(false);
 
   async function loadRef() {
     const res = await fetch("/api/reference");
@@ -96,8 +102,10 @@ export default function RoutinePage() {
     setLoading(true);
     setStatus(null);
     try {
-      const res = await fetch("/api/sessions", {
-        method: "POST",
+      const url = editingId ? `/api/sessions/${editingId}` : "/api/sessions";
+      const method = editingId ? "PATCH" : "POST";
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           day: form.day,
@@ -111,8 +119,9 @@ export default function RoutinePage() {
       });
       const json = await res.json();
       if (json.ok) {
-        setStatus({ type: "success", msg: "Session added successfully." });
+        setStatus({ type: "success", msg: editingId ? "Session updated." : "Session added successfully." });
         setForm(empty);
+        setEditingId(null);
         await loadSessions();
         setTimeout(() => setStatus(null), 3000);
       } else {
@@ -125,11 +134,46 @@ export default function RoutinePage() {
     }
   }
 
+  function startEdit(s: SessionRow) {
+    setEditingId(s.id);
+    setForm({
+      day: s.day,
+      timeSlotId: String(s.timeSlot.id),
+      batchId: String(s.batch.id),
+      section: s.section ?? "",
+      courseId: String(s.course.id),
+      teacherId: String(s.teacher.id),
+      roomId: String(s.room.id),
+    });
+    setStatus(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setForm(empty);
+    setStatus(null);
+  }
+
   async function handleDelete(id: number) {
     setDeleteId(id);
     await fetch(`/api/sessions?id=${id}`, { method: "DELETE" });
+    if (editingId === id) cancelEdit();
     await loadSessions();
     setDeleteId(null);
+  }
+
+  async function handleFindFreeRooms() {
+    if (!freeDay || !freeSlotId) return;
+    setFreeLoading(true);
+    setFreeRooms(null);
+    try {
+      const res = await fetch(`/api/admin/free-rooms?day=${encodeURIComponent(freeDay)}&timeSlotId=${freeSlotId}`);
+      const json = await res.json();
+      if (json.ok) setFreeRooms(json.data);
+    } finally {
+      setFreeLoading(false);
+    }
   }
 
   const filtered = filterDay === "all"
@@ -178,11 +222,72 @@ export default function RoutinePage() {
           ))}
         </div>
 
+        {/* Free room finder */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100">
+            <h2 className="text-base font-semibold text-gray-800">Find Free Rooms</h2>
+            <p className="text-xs text-gray-400 mt-0.5">Pick a day and time slot to see which rooms are available.</p>
+          </div>
+          <div className="p-6 flex flex-wrap items-end gap-4">
+            <div className="w-40">
+              <Select label="Day" value={freeDay} onChange={setFreeDay}>
+                <option value="">Select day</option>
+                {ref?.days.map((d) => <option key={d} value={d}>{d}</option>)}
+              </Select>
+            </div>
+            <div className="w-56">
+              <Select label="Time Slot" value={freeSlotId} onChange={setFreeSlotId}>
+                <option value="">Select slot</option>
+                {ref?.timeSlots.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
+              </Select>
+            </div>
+            <button
+              type="button"
+              onClick={handleFindFreeRooms}
+              disabled={!freeDay || !freeSlotId || freeLoading}
+              className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold px-5 py-2.5 rounded-lg text-sm transition-colors shadow-sm"
+            >
+              {freeLoading ? "Searching…" : "Find Free Rooms"}
+            </button>
+          </div>
+
+          {freeRooms && (
+            <div className="px-6 pb-6">
+              {freeRooms.length === 0 ? (
+                <p className="text-sm text-gray-400">No rooms are free at this day &amp; time.</p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {freeRooms.map((r) => (
+                    <span key={r.id} className="text-xs font-semibold bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-full">
+                      Room {r.name} (cap {r.capacity})
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
         {/* Form card */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-indigo-50 to-white">
-            <h2 className="text-base font-semibold text-gray-800">Add New Session</h2>
-            <p className="text-xs text-gray-400 mt-0.5">Conflicts in room, teacher, and batch are checked automatically.</p>
+          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-indigo-50 to-white flex items-center justify-between">
+            <div>
+              <h2 className="text-base font-semibold text-gray-800">
+                {editingId ? "Edit Session" : "Add New Session"}
+              </h2>
+              <p className="text-xs text-gray-400 mt-0.5">
+                Conflicts in room, teacher, and batch, and room capacity are checked automatically.
+              </p>
+            </div>
+            {editingId && (
+              <button
+                type="button"
+                onClick={cancelEdit}
+                className="text-xs font-semibold text-gray-400 hover:text-gray-600"
+              >
+                Cancel edit
+              </button>
+            )}
           </div>
 
           <form onSubmit={handleSubmit} className="p-6 space-y-5">
@@ -276,7 +381,7 @@ export default function RoutinePage() {
                     </svg>
                     Saving…
                   </>
-                ) : "Save Session"}
+                ) : editingId ? "Update Session" : "Save Session"}
               </button>
             </div>
           </form>
@@ -360,11 +465,17 @@ export default function RoutinePage() {
                           <span className="font-medium">{s.room.name}</span>
                         </span>
                       </td>
-                      <td className="px-5 py-3.5 text-right">
+                      <td className="px-5 py-3.5 text-right whitespace-nowrap">
+                        <button
+                          onClick={() => startEdit(s)}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity text-xs font-semibold text-gray-400 hover:text-indigo-600 mr-3"
+                        >
+                          Edit
+                        </button>
                         <button
                           onClick={() => handleDelete(s.id)}
                           disabled={deleteId === s.id}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-300 hover:text-red-500 disabled:opacity-50 p-1 rounded"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-300 hover:text-red-500 disabled:opacity-50 p-1 rounded align-middle"
                           title="Delete session"
                         >
                           {deleteId === s.id ? (

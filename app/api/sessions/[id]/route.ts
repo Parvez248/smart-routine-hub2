@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDb } from "@/lib/db";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
+import { getDb } from "@/lib/db";
 import { createSessionSchema } from "@/lib/validation/session";
 import { checkConflict, checkCapacity } from "@/lib/services/scheduling";
 
@@ -13,24 +13,16 @@ const include = {
   timeSlot: true,
 } as const;
 
-export async function GET() {
-  try {
-    const db = getDb();
-    const sessions = await db.session.findMany({
-      include,
-      orderBy: [{ day: "asc" }, { timeSlotId: "asc" }],
-    });
-    return NextResponse.json({ ok: true, data: sessions });
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ ok: false, error: "Failed to load sessions" }, { status: 500 });
-  }
-}
-
-export async function POST(req: NextRequest) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
   if (session?.user?.role !== "ADMIN") {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { id: rawId } = await params;
+  const id = Number(rawId);
+  if (!Number.isInteger(id) || id <= 0) {
+    return NextResponse.json({ ok: false, error: "Invalid id" }, { status: 400 });
   }
 
   try {
@@ -46,7 +38,15 @@ export async function POST(req: NextRequest) {
     const { day, timeSlotId, batchId, section, courseId, teacherId, roomId } = parsed.data;
     const normSection = section?.trim() || null;
 
-    const conflict = await checkConflict({ day, timeSlotId, batchId, section: normSection, teacherId, roomId });
+    const conflict = await checkConflict({
+      day,
+      timeSlotId,
+      batchId,
+      section: normSection,
+      teacherId,
+      roomId,
+      excludeSessionId: id,
+    });
     if (!conflict.ok) {
       return NextResponse.json({ ok: false, error: conflict.reason }, { status: 409 });
     }
@@ -57,32 +57,15 @@ export async function POST(req: NextRequest) {
     }
 
     const db = getDb();
-    const created = await db.session.create({
+    const updated = await db.session.update({
+      where: { id },
       data: { day, timeSlotId, batchId, section: normSection, courseId, teacherId, roomId },
       include,
     });
 
-    return NextResponse.json({ ok: true, data: created }, { status: 201 });
+    return NextResponse.json({ ok: true, data: updated });
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ ok: false, error: "Failed to create session." }, { status: 500 });
-  }
-}
-
-export async function DELETE(req: NextRequest) {
-  try {
-    const { searchParams } = new URL(req.url);
-    const raw = searchParams.get("id");
-    const id = Number(raw);
-    if (!raw || !Number.isInteger(id) || id <= 0) {
-      return NextResponse.json({ ok: false, error: "Invalid id" }, { status: 400 });
-    }
-
-    const db = getDb();
-    await db.session.delete({ where: { id } });
-    return NextResponse.json({ ok: true });
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ ok: false, error: "Failed to delete session" }, { status: 500 });
+    return NextResponse.json({ ok: false, error: "Failed to update session." }, { status: 500 });
   }
 }
