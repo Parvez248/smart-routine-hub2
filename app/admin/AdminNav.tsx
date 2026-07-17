@@ -8,6 +8,9 @@ const LINKS = [
   { href: "/admin/routine", label: "Routine" },
   { href: "/admin/courses", label: "Courses" },
   { href: "/admin/rooms", label: "Rooms" },
+  { href: "/admin/teachers", label: "Teachers" },
+  { href: "/admin/batches", label: "Batches" },
+  { href: "/admin/timeslots", label: "Time Slots" },
 ];
 
 export default function AdminNav() {

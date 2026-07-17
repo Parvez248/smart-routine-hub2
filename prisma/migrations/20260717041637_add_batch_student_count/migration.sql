@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `Batch` ADD COLUMN `studentCount` INTEGER NOT NULL DEFAULT 0;

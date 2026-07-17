@@ -50,10 +50,11 @@ model Room {
 }
 
 model Batch {
-  id       Int       @id @default(autoincrement())
-  name     String    @unique
-  semester String
-  sessions Session[]
+  id           Int       @id @default(autoincrement())
+  name         String    @unique
+  semester     String
+  studentCount Int       @default(0)
+  sessions     Session[]
 }
 
 model TimeSlot {
