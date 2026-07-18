@@ -15,12 +15,23 @@ export default auth((req) => {
     return NextResponse.redirect(new URL("/login", req.nextUrl));
   }
 
+  if (
+    pathname.startsWith("/student") &&
+    (!req.auth || req.auth.user?.role !== "STUDENT" || req.auth.user?.status !== "ACTIVE")
+  ) {
+    return NextResponse.redirect(new URL("/login", req.nextUrl));
+  }
+
   if (pathname === "/login" && req.auth?.user?.role === "ADMIN") {
     return NextResponse.redirect(new URL("/admin/routine", req.nextUrl));
   }
 
   if (pathname === "/login" && req.auth?.user?.role === "TEACHER") {
     return NextResponse.redirect(new URL("/teacher/classes", req.nextUrl));
+  }
+
+  if (pathname === "/login" && req.auth?.user?.role === "STUDENT") {
+    return NextResponse.redirect(new URL("/student/routine", req.nextUrl));
   }
 });
 

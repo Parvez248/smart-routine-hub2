@@ -1,15 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Card, CardHeader } from "@/app/components/ui/Card";
 import { Button } from "@/app/components/ui/Button";
 import { Message } from "@/app/components/ui/Message";
 
-type RegisterForm = { name: string; email: string; password: string; initials: string };
-const emptyForm: RegisterForm = { name: "", email: "", password: "", initials: "" };
+type Batch = { id: number; name: string; semester: string };
 
-export default function RegisterPage() {
+type RegisterForm = { name: string; email: string; password: string; batchId: string; studentId: string };
+const emptyForm: RegisterForm = { name: "", email: "", password: "", batchId: "", studentId: "" };
+
+export default function RegisterStudentPage() {
+  const [batches, setBatches] = useState<Batch[]>([]);
   const [form, setForm] = useState<RegisterForm>(emptyForm);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -21,15 +24,27 @@ export default function RegisterPage() {
   const [verifyError, setVerifyError] = useState<string | null>(null);
   const [verifyLoading, setVerifyLoading] = useState(false);
 
+  useEffect(() => {
+    fetch("/api/public/batches")
+      .then((res) => res.json())
+      .then((json) => { if (json.ok) setBatches(json.data); });
+  }, []);
+
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/auth/register", {
+      const res = await fetch("/api/auth/register-student", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          name: form.name,
+          email: form.email,
+          password: form.password,
+          batchId: Number(form.batchId),
+          studentId: form.studentId.trim() || null,
+        }),
       });
       const json = await res.json();
       if (json.ok) {
@@ -73,7 +88,7 @@ export default function RegisterPage() {
     <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <Card>
-          <CardHeader title="SmartRoutineHub" description="Teacher registration" accent />
+          <CardHeader title="SmartRoutineHub" description="Student registration" accent />
 
           {step === "form" && (
             <form onSubmit={handleRegister} className="px-8 py-6 space-y-4">
@@ -84,7 +99,7 @@ export default function RegisterPage() {
                   required
                   value={form.name}
                   onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                  placeholder="e.g. Md. Khaled Parvez"
+                  placeholder="e.g. Jamal Uddin"
                   className="border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
                 />
               </div>
@@ -115,13 +130,29 @@ export default function RegisterPage() {
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Initials</label>
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Batch</label>
+                <select
+                  required
+                  value={form.batchId}
+                  onChange={(e) => setForm((f) => ({ ...f, batchId: e.target.value }))}
+                  className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                >
+                  <option value="">Select batch</option>
+                  {batches.map((b) => (
+                    <option key={b.id} value={b.id}>{b.name} — {b.semester} sem</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Student ID <span className="text-gray-300 normal-case font-normal">(optional)</span>
+                </label>
                 <input
                   type="text"
-                  required
-                  value={form.initials}
-                  onChange={(e) => setForm((f) => ({ ...f, initials: e.target.value }))}
-                  placeholder="e.g. MKP"
+                  value={form.studentId}
+                  onChange={(e) => setForm((f) => ({ ...f, studentId: e.target.value }))}
+                  placeholder="e.g. 2021-1-60-001"
                   className="border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
                 />
               </div>
@@ -136,12 +167,6 @@ export default function RegisterPage() {
                 Already have an account?{" "}
                 <Link href="/login" className="text-indigo-600 font-semibold hover:text-indigo-700">
                   Sign in
-                </Link>
-              </p>
-              <p className="text-center text-xs text-gray-400">
-                Registering as a student instead?{" "}
-                <Link href="/register-student" className="text-indigo-600 font-semibold hover:text-indigo-700">
-                  Register as a student
                 </Link>
               </p>
             </form>
@@ -181,7 +206,7 @@ export default function RegisterPage() {
 
           {step === "done" && (
             <div className="px-8 py-6 space-y-4">
-              <Message type="success">E-mail verified. Your account is now awaiting admin approval.</Message>
+              <Message type="success">E-mail verified. You can sign in now — no approval needed.</Message>
               <Link
                 href="/login"
                 className="block text-center w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-2.5 rounded-lg text-sm transition-colors shadow-sm"

@@ -26,6 +26,12 @@ export default function Home() {
           >
             Register as teacher
           </Link>
+          <Link
+            href="/register-student"
+            className="w-full sm:w-auto inline-flex items-center justify-center bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 font-semibold px-6 py-2.5 rounded-lg text-sm transition-colors"
+          >
+            Register as student
+          </Link>
         </div>
       </div>
     </div>

@@ -38,7 +38,8 @@ export default function LoginPage() {
       setError(ERROR_MESSAGES[result.code ?? ""] ?? "Invalid email or password.");
     } else {
       const session = await getSession();
-      router.push(session?.user?.role === "TEACHER" ? "/teacher/classes" : "/admin/routine");
+      const role = session?.user?.role;
+      router.push(role === "TEACHER" ? "/teacher/classes" : role === "STUDENT" ? "/student/routine" : "/admin/routine");
     }
   }
 
@@ -87,6 +88,10 @@ export default function LoginPage() {
               Not registered yet?{" "}
               <Link href="/register" className="text-indigo-600 font-semibold hover:text-indigo-700">
                 Register as a teacher
+              </Link>
+              {" "}or{" "}
+              <Link href="/register-student" className="text-indigo-600 font-semibold hover:text-indigo-700">
+                Register as a student
               </Link>
             </p>
           </form>
