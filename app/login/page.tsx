@@ -1,8 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+
+const ERROR_MESSAGES: Record<string, string> = {
+  "email-unverified": "Please verify your e-mail before signing in.",
+  "account-pending": "Your account is awaiting admin approval.",
+  "account-rejected": "Your account request was rejected.",
+};
 
 export default function LoginPage() {
   const router = useRouter();
@@ -25,7 +32,7 @@ export default function LoginPage() {
     setLoading(false);
 
     if (result?.error) {
-      setError("Invalid email or password.");
+      setError(ERROR_MESSAGES[result.code ?? ""] ?? "Invalid email or password.");
     } else {
       router.push("/admin/routine");
     }
@@ -93,6 +100,13 @@ export default function LoginPage() {
                 "Sign in"
               )}
             </button>
+
+            <p className="text-center text-xs text-gray-400">
+              Not registered yet?{" "}
+              <Link href="/register" className="text-indigo-600 font-semibold hover:text-indigo-700">
+                Register as a teacher
+              </Link>
+            </p>
           </form>
         </div>
       </div>

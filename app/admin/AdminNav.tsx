@@ -11,6 +11,7 @@ const LINKS = [
   { href: "/admin/teachers", label: "Teachers" },
   { href: "/admin/batches", label: "Batches" },
   { href: "/admin/timeslots", label: "Time Slots" },
+  { href: "/admin/teacher-requests", label: "Teacher Requests" },
 ];
 
 export default function AdminNav() {

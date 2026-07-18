@@ -1,7 +1,17 @@
-import NextAuth from "next-auth";
+import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { getDb } from "@/lib/db";
+
+class UnverifiedEmailError extends CredentialsSignin {
+  code = "email-unverified";
+}
+class PendingApprovalError extends CredentialsSignin {
+  code = "account-pending";
+}
+class RejectedAccountError extends CredentialsSignin {
+  code = "account-rejected";
+}
 
 declare module "next-auth" {
   interface Session {
@@ -36,6 +46,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const valid = await bcrypt.compare(password, user.passwordHash);
         if (!valid) return null;
+
+        if (!user.emailVerified) throw new UnverifiedEmailError();
+        if (user.status === "PENDING") throw new PendingApprovalError();
+        if (user.status === "REJECTED") throw new RejectedAccountError();
+        if (user.status !== "ACTIVE") return null;
 
         return { id: String(user.id), email: user.email, role: user.role };
       },
