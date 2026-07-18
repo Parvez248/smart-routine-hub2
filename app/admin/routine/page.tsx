@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import AdminNav from "../AdminNav";
 
 type Course   = { id: number; code: string; title: string; type: string };
@@ -27,6 +28,14 @@ type RefData = {
   batches: Batch[];
   timeSlots: TimeSlot[];
   days: string[];
+};
+
+type Version = {
+  id: number;
+  name: string;
+  isPublished: boolean;
+  effectiveDate: string | null;
+  sessionCount: number;
 };
 
 const DAY_ORDER = ["Sat", "Sun", "Mon", "Tues", "Wed"];
@@ -80,19 +89,40 @@ export default function RoutinePage() {
   const [freeRooms, setFreeRooms] = useState<Room[] | null>(null);
   const [freeLoading, setFreeLoading] = useState(false);
 
+  const [versions, setVersions] = useState<Version[]>([]);
+  const [selectedVersionId, setSelectedVersionId] = useState<string>("");
+
   async function loadRef() {
     const res = await fetch("/api/reference");
     const json = await res.json();
     if (json.ok) setRef(json.data);
   }
 
-  async function loadSessions() {
-    const res = await fetch("/api/sessions");
+  async function loadVersions() {
+    const res = await fetch("/api/admin/versions");
+    const json = await res.json();
+    if (json.ok) {
+      setVersions(json.data);
+      setSelectedVersionId((current) => {
+        if (current && json.data.some((v: Version) => String(v.id) === current)) return current;
+        const published = json.data.find((v: Version) => v.isPublished);
+        return String((published ?? json.data[0])?.id ?? "");
+      });
+    }
+  }
+
+  async function loadSessions(versionId: string) {
+    if (!versionId) {
+      setSessions([]);
+      return;
+    }
+    const res = await fetch(`/api/sessions?versionId=${versionId}`);
     const json = await res.json();
     if (json.ok) setSessions(json.data);
   }
 
-  useEffect(() => { loadRef(); loadSessions(); }, []);
+  useEffect(() => { loadRef(); loadVersions(); }, []);
+  useEffect(() => { loadSessions(selectedVersionId); }, [selectedVersionId]);
 
   const field = (name: keyof typeof form, value: string) =>
     setForm((f) => ({ ...f, [name]: value }));
@@ -115,6 +145,7 @@ export default function RoutinePage() {
           courseId: Number(form.courseId),
           teacherId: Number(form.teacherId),
           roomId: Number(form.roomId),
+          versionId: Number(selectedVersionId),
         }),
       });
       const json = await res.json();
@@ -122,7 +153,7 @@ export default function RoutinePage() {
         setStatus({ type: "success", msg: editingId ? "Session updated." : "Session added successfully." });
         setForm(empty);
         setEditingId(null);
-        await loadSessions();
+        await loadSessions(selectedVersionId);
         setTimeout(() => setStatus(null), 3000);
       } else {
         setStatus({ type: "error", msg: json.error ?? "Save failed." });
@@ -159,16 +190,18 @@ export default function RoutinePage() {
     setDeleteId(id);
     await fetch(`/api/sessions?id=${id}`, { method: "DELETE" });
     if (editingId === id) cancelEdit();
-    await loadSessions();
+    await loadSessions(selectedVersionId);
     setDeleteId(null);
   }
 
   async function handleFindFreeRooms() {
-    if (!freeDay || !freeSlotId) return;
+    if (!freeDay || !freeSlotId || !selectedVersionId) return;
     setFreeLoading(true);
     setFreeRooms(null);
     try {
-      const res = await fetch(`/api/admin/free-rooms?day=${encodeURIComponent(freeDay)}&timeSlotId=${freeSlotId}`);
+      const res = await fetch(
+        `/api/admin/free-rooms?day=${encodeURIComponent(freeDay)}&timeSlotId=${freeSlotId}&versionId=${selectedVersionId}`
+      );
       const json = await res.json();
       if (json.ok) setFreeRooms(json.data);
     } finally {
@@ -206,6 +239,28 @@ export default function RoutinePage() {
       </header>
 
       <main className="max-w-6xl mx-auto px-6 py-8 space-y-8">
+
+        {/* Version selector */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-6 py-4 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Version</label>
+            <select
+              value={selectedVersionId}
+              onChange={(e) => setSelectedVersionId(e.target.value)}
+              className="border border-gray-200 bg-gray-50 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+            >
+              {versions.length === 0 && <option value="">No versions yet</option>}
+              {versions.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.name}{v.isPublished ? " (Published)" : ""} — {v.sessionCount} sessions
+                </option>
+              ))}
+            </select>
+          </div>
+          <Link href="/admin/versions" className="text-xs font-semibold text-indigo-600 hover:text-indigo-700">
+            Manage versions →
+          </Link>
+        </div>
 
         {/* Stats row */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">

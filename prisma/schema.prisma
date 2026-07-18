@@ -69,18 +69,29 @@ model TimeSlot {
 }
 
 model Session {
-  id         Int      @id @default(autoincrement())
+  id         Int             @id @default(autoincrement())
   day        String
-  timeSlot   TimeSlot @relation(fields: [timeSlotId], references: [id])
+  timeSlot   TimeSlot        @relation(fields: [timeSlotId], references: [id])
   timeSlotId Int
-  batch      Batch    @relation(fields: [batchId], references: [id])
+  batch      Batch           @relation(fields: [batchId], references: [id])
   batchId    Int
   section    String?
-  course     Course   @relation(fields: [courseId], references: [id])
+  course     Course          @relation(fields: [courseId], references: [id])
   courseId   Int
-  teacher    Teacher  @relation(fields: [teacherId], references: [id])
+  teacher    Teacher         @relation(fields: [teacherId], references: [id])
   teacherId  Int
-  room       Room     @relation(fields: [roomId], references: [id])
+  room       Room            @relation(fields: [roomId], references: [id])
   roomId     Int
-  createdAt  DateTime @default(now())
+  version    RoutineVersion? @relation(fields: [versionId], references: [id])
+  versionId  Int?
+  createdAt  DateTime        @default(now())
+}
+
+model RoutineVersion {
+  id            Int       @id @default(autoincrement())
+  name          String    @unique
+  isPublished   Boolean   @default(false)
+  effectiveDate DateTime?
+  createdAt     DateTime  @default(now())
+  sessions      Session[]
 }

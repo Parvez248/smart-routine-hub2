@@ -82,6 +82,20 @@ async function main() {
     });
   }
 
+  // Default routine version: preserves any pre-existing sessions (versionId null)
+  const defaultVersion = await prisma.routineVersion.upsert({
+    where: { name: "Spring 2026" },
+    update: {},
+    create: { name: "Spring 2026", isPublished: true },
+  });
+  const backfilled = await prisma.session.updateMany({
+    where: { versionId: null },
+    data: { versionId: defaultVersion.id },
+  });
+  if (backfilled.count > 0) {
+    console.log(`Backfilled ${backfilled.count} session(s) into "${defaultVersion.name}"`);
+  }
+
   // Seed admin user
   const adminEmail = process.env.ADMIN_EMAIL;
   const adminPassword = process.env.ADMIN_PASSWORD;

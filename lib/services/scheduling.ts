@@ -7,19 +7,21 @@ type ConflictInput = {
   section?: string | null;
   teacherId: number;
   roomId: number;
+  versionId: number;
   excludeSessionId?: number;
 };
 
 export async function checkConflict(
   input: ConflictInput
 ): Promise<{ ok: boolean; reason?: string }> {
-  const { day, timeSlotId, batchId, section, teacherId, roomId, excludeSessionId } = input;
+  const { day, timeSlotId, batchId, section, teacherId, roomId, versionId, excludeSessionId } = input;
   const db = getDb();
 
   const existing = await db.session.findMany({
     where: {
       day,
       timeSlotId,
+      versionId,
       ...(excludeSessionId ? { id: { not: excludeSessionId } } : {}),
     },
     include: { room: true, teacher: true, batch: true },
@@ -81,11 +83,11 @@ export async function checkCapacity(
   return { ok: true, roomCapacity: room.capacity, studentCount: batch.studentCount };
 }
 
-export async function getFreeRooms(day: string, timeSlotId: number) {
+export async function getFreeRooms(day: string, timeSlotId: number, versionId: number) {
   const db = getDb();
   const [rooms, existing] = await Promise.all([
     db.room.findMany({ orderBy: { name: "asc" } }),
-    db.session.findMany({ where: { day, timeSlotId }, select: { roomId: true } }),
+    db.session.findMany({ where: { day, timeSlotId, versionId }, select: { roomId: true } }),
   ]);
 
   const bookedRoomIds = new Set(existing.map((s) => s.roomId));

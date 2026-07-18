@@ -14,13 +14,19 @@ export async function GET(req: NextRequest) {
   const day = searchParams.get("day");
   const rawTimeSlotId = searchParams.get("timeSlotId");
   const timeSlotId = Number(rawTimeSlotId);
+  const rawVersionId = searchParams.get("versionId");
+  const versionId = Number(rawVersionId);
 
-  if (!day || !DAYS.includes(day) || !rawTimeSlotId || !Number.isInteger(timeSlotId) || timeSlotId <= 0) {
-    return NextResponse.json({ ok: false, error: "Invalid day or timeSlotId" }, { status: 400 });
+  if (
+    !day || !DAYS.includes(day) ||
+    !rawTimeSlotId || !Number.isInteger(timeSlotId) || timeSlotId <= 0 ||
+    !rawVersionId || !Number.isInteger(versionId) || versionId <= 0
+  ) {
+    return NextResponse.json({ ok: false, error: "Invalid day, timeSlotId, or versionId" }, { status: 400 });
   }
 
   try {
-    const rooms = await getFreeRooms(day, timeSlotId);
+    const rooms = await getFreeRooms(day, timeSlotId, versionId);
     return NextResponse.json({ ok: true, data: rooms });
   } catch (error) {
     console.error(error);

@@ -7,6 +7,7 @@ export const createSessionSchema = z.object({
   courseId:   z.coerce.number().int().positive(),
   teacherId:  z.coerce.number().int().positive(),
   roomId:     z.coerce.number().int().positive(),
+  versionId:  z.coerce.number().int().positive(),
   section:    z.string().trim().min(1).max(20).optional().nullable(),
 });
 

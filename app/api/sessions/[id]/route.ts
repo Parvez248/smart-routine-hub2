@@ -35,8 +35,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       );
     }
 
-    const { day, timeSlotId, batchId, section, courseId, teacherId, roomId } = parsed.data;
+    const { day, timeSlotId, batchId, section, courseId, teacherId, roomId, versionId } = parsed.data;
     const normSection = section?.trim() || null;
+
+    const db = getDb();
+    const version = await db.routineVersion.findUnique({ where: { id: versionId } });
+    if (!version) {
+      return NextResponse.json({ ok: false, error: "Invalid version" }, { status: 400 });
+    }
 
     const conflict = await checkConflict({
       day,
@@ -45,6 +51,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       section: normSection,
       teacherId,
       roomId,
+      versionId,
       excludeSessionId: id,
     });
     if (!conflict.ok) {
@@ -56,10 +63,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       return NextResponse.json({ ok: false, error: capacity.reason }, { status: 409 });
     }
 
-    const db = getDb();
     const updated = await db.session.update({
       where: { id },
-      data: { day, timeSlotId, batchId, section: normSection, courseId, teacherId, roomId },
+      data: { day, timeSlotId, batchId, section: normSection, courseId, teacherId, roomId, versionId },
       include,
     });
 

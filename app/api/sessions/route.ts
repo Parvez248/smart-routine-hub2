@@ -13,10 +13,28 @@ const include = {
   timeSlot: true,
 } as const;
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     const db = getDb();
+    const { searchParams } = new URL(req.url);
+    const rawVersionId = searchParams.get("versionId");
+
+    let versionId: number | null = rawVersionId ? Number(rawVersionId) : null;
+    if (versionId !== null && (!Number.isInteger(versionId) || versionId <= 0)) {
+      return NextResponse.json({ ok: false, error: "Invalid versionId" }, { status: 400 });
+    }
+
+    if (versionId === null) {
+      const published = await db.routineVersion.findFirst({ where: { isPublished: true } });
+      versionId = published?.id ?? null;
+    }
+
+    if (versionId === null) {
+      return NextResponse.json({ ok: true, data: [] });
+    }
+
     const sessions = await db.session.findMany({
+      where: { versionId },
       include,
       orderBy: [{ day: "asc" }, { timeSlotId: "asc" }],
     });
@@ -43,10 +61,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { day, timeSlotId, batchId, section, courseId, teacherId, roomId } = parsed.data;
+    const { day, timeSlotId, batchId, section, courseId, teacherId, roomId, versionId } = parsed.data;
     const normSection = section?.trim() || null;
 
-    const conflict = await checkConflict({ day, timeSlotId, batchId, section: normSection, teacherId, roomId });
+    const db = getDb();
+    const version = await db.routineVersion.findUnique({ where: { id: versionId } });
+    if (!version) {
+      return NextResponse.json({ ok: false, error: "Invalid version" }, { status: 400 });
+    }
+
+    const conflict = await checkConflict({ day, timeSlotId, batchId, section: normSection, teacherId, roomId, versionId });
     if (!conflict.ok) {
       return NextResponse.json({ ok: false, error: conflict.reason }, { status: 409 });
     }
@@ -56,9 +80,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: capacity.reason }, { status: 409 });
     }
 
-    const db = getDb();
     const created = await db.session.create({
-      data: { day, timeSlotId, batchId, section: normSection, courseId, teacherId, roomId },
+      data: { day, timeSlotId, batchId, section: normSection, courseId, teacherId, roomId, versionId },
       include,
     });
 
