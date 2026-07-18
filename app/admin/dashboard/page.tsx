@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import AdminNav from "../AdminNav";
+import { PageHeader } from "@/app/components/ui/PageHeader";
+import { Loading } from "@/app/components/ui/Loading";
 
 type Stats = {
   courseCount: number;
@@ -28,68 +29,66 @@ function Tile({ label, value, color, href }: { label: string; value: string | nu
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<Stats | null>(null);
+  const [loading, setLoadingState] = useState(true);
 
   useEffect(() => {
     fetch("/api/admin/stats")
       .then((res) => res.json())
-      .then((json) => { if (json.ok) setStats(json.data); });
+      .then((json) => { if (json.ok) setStats(json.data); })
+      .finally(() => setLoadingState(false));
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
+    <>
+      <PageHeader title="Dashboard" description="A quick overview of the routine system." />
+
+      {loading ? (
+        <Loading />
+      ) : (
+        <>
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-6 py-4">
+            <p className="text-xs text-gray-400 font-medium">Published Routine Version</p>
+            <p className="text-xl font-bold text-gray-800 mt-1">
+              {stats?.publishedVersionName ?? "None published"}
+            </p>
+          </div>
+
           <div>
-            <h1 className="text-xl font-bold text-gray-900">SmartRoutineHub</h1>
-            <p className="text-xs text-gray-400 mt-0.5">Admin · Dashboard</p>
+            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Academic Data</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+              <Tile label="Courses" value={stats?.courseCount ?? 0} color="text-gray-800" href="/admin/courses" />
+              <Tile label="Teachers" value={stats?.teacherCount ?? 0} color="text-gray-800" href="/admin/teachers" />
+              <Tile label="Rooms" value={stats?.roomCount ?? 0} color="text-gray-800" href="/admin/rooms" />
+              <Tile label="Batches" value={stats?.batchCount ?? 0} color="text-gray-800" href="/admin/batches" />
+              <Tile label="Time Slots" value={stats?.timeSlotCount ?? 0} color="text-gray-800" href="/admin/timeslots" />
+            </div>
           </div>
-          <AdminNav />
-        </div>
-      </header>
 
-      <main className="max-w-5xl mx-auto px-6 py-8 space-y-8">
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-6 py-4">
-          <p className="text-xs text-gray-400 font-medium">Published Routine Version</p>
-          <p className="text-xl font-bold text-gray-800 mt-1">
-            {stats ? stats.publishedVersionName ?? "None published" : "…"}
-          </p>
-        </div>
-
-        <div>
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Academic Data</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-            <Tile label="Courses" value={stats?.courseCount ?? "…"} color="text-gray-800" href="/admin/courses" />
-            <Tile label="Teachers" value={stats?.teacherCount ?? "…"} color="text-gray-800" href="/admin/teachers" />
-            <Tile label="Rooms" value={stats?.roomCount ?? "…"} color="text-gray-800" href="/admin/rooms" />
-            <Tile label="Batches" value={stats?.batchCount ?? "…"} color="text-gray-800" href="/admin/batches" />
-            <Tile label="Time Slots" value={stats?.timeSlotCount ?? "…"} color="text-gray-800" href="/admin/timeslots" />
+          <div>
+            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Routine</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              <Tile
+                label="Sessions (Published)"
+                value={stats?.publishedSessionCount ?? 0}
+                color="text-sky-600"
+                href="/admin/routine"
+              />
+              <Tile
+                label="Cancelled Sessions"
+                value={stats?.cancelledSessionCount ?? 0}
+                color="text-red-500"
+                href="/admin/routine"
+              />
+              <Tile
+                label="Pending Teacher Requests"
+                value={stats?.pendingTeacherRequestCount ?? 0}
+                color="text-amber-600"
+                href="/admin/teacher-requests"
+              />
+            </div>
           </div>
-        </div>
-
-        <div>
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Routine</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            <Tile
-              label="Sessions (Published)"
-              value={stats?.publishedSessionCount ?? "…"}
-              color="text-sky-600"
-              href="/admin/routine"
-            />
-            <Tile
-              label="Cancelled Sessions"
-              value={stats?.cancelledSessionCount ?? "…"}
-              color="text-red-500"
-              href="/admin/routine"
-            />
-            <Tile
-              label="Pending Teacher Requests"
-              value={stats?.pendingTeacherRequestCount ?? "…"}
-              color="text-amber-600"
-              href="/admin/teacher-requests"
-            />
-          </div>
-        </div>
-      </main>
-    </div>
+        </>
+      )}
+    </>
   );
 }

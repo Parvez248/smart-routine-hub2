@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import AdminNav from "../AdminNav";
+import { PageHeader } from "@/app/components/ui/PageHeader";
+import { Card, CardHeader } from "@/app/components/ui/Card";
+import { LinkButton } from "@/app/components/ui/Button";
+import { Table } from "@/app/components/ui/Table";
+import { Message } from "@/app/components/ui/Message";
+import { EmptyState } from "@/app/components/ui/EmptyState";
+import { Loading } from "@/app/components/ui/Loading";
 
 type TeacherRequest = {
   id: number;
@@ -13,6 +19,7 @@ type TeacherRequest = {
 
 export default function TeacherRequestsPage() {
   const [requests, setRequests] = useState<TeacherRequest[]>([]);
+  const [loading, setLoadingState] = useState(true);
   const [status, setStatus] = useState<{ type: "success" | "error"; msg: string } | null>(null);
   const [actingId, setActingId] = useState<number | null>(null);
 
@@ -20,6 +27,7 @@ export default function TeacherRequestsPage() {
     const res = await fetch("/api/admin/teacher-requests");
     const json = await res.json();
     if (json.ok) setRequests(json.data);
+    setLoadingState(false);
   }
 
   useEffect(() => { loadRequests(); }, []);
@@ -52,90 +60,46 @@ export default function TeacherRequestsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">SmartRoutineHub</h1>
-            <p className="text-xs text-gray-400 mt-0.5">Admin · Teacher Requests</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-xs bg-indigo-50 text-indigo-600 font-semibold px-3 py-1 rounded-full">
-              {requests.length} pending
-            </span>
-            <AdminNav />
-          </div>
-        </div>
-      </header>
+    <>
+      <PageHeader
+        title="Teacher Requests"
+        description="Review and approve teachers who have registered and verified their e-mail."
+        action={
+          <span className="text-xs bg-indigo-50 text-indigo-600 font-semibold px-3 py-1 rounded-full">
+            {requests.length} pending
+          </span>
+        }
+      />
 
-      <main className="max-w-4xl mx-auto px-6 py-8 space-y-8">
-        {status && (
-          <div className={`flex items-start gap-3 rounded-lg px-4 py-3 text-sm ${
-            status.type === "success"
-              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-              : "bg-red-50 text-red-700 border border-red-200"
-          }`}>
-            <span className="text-base leading-none mt-0.5">
-              {status.type === "success" ? "✓" : "⚠"}
-            </span>
-            <span>{status.msg}</span>
-          </div>
+      {status && <Message type={status.type}>{status.msg}</Message>}
+
+      <Card>
+        <CardHeader title={<>Pending Teacher Requests <span className="ml-2 text-sm font-normal text-gray-400">{requests.length}</span></>} />
+
+        {loading ? (
+          <Loading />
+        ) : requests.length === 0 ? (
+          <EmptyState icon="📥" message="No pending teacher requests." />
+        ) : (
+          <Table headers={["Name", "Email", "Initials", ""]}>
+            {requests.map((r) => (
+              <tr key={r.id} className="hover:bg-slate-50 transition-colors">
+                <td className="px-5 py-3.5 font-semibold text-gray-800">{r.name ?? "—"}</td>
+                <td className="px-5 py-3.5 text-gray-600">{r.email}</td>
+                <td className="px-5 py-3.5 text-gray-600">{r.initials ?? "—"}</td>
+                <td className="px-5 py-3.5 text-right whitespace-nowrap">
+                  <LinkButton tone="success" loading={actingId === r.id} onClick={() => handleAction(r.id, "approve")} className="mr-3">
+                    Approve
+                  </LinkButton>
+                  <LinkButton tone="danger" loading={actingId === r.id} onClick={() => handleAction(r.id, "reject")}>
+                    Reject
+                  </LinkButton>
+                </td>
+              </tr>
+            ))}
+          </Table>
         )}
-
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100">
-            <h2 className="text-base font-semibold text-gray-800">
-              Pending Teacher Requests
-              <span className="ml-2 text-sm font-normal text-gray-400">{requests.length}</span>
-            </h2>
-          </div>
-
-          {requests.length === 0 ? (
-            <div className="px-6 py-16 text-center">
-              <p className="text-gray-300 text-4xl mb-3">📥</p>
-              <p className="text-gray-400 text-sm">No pending teacher requests.</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-gray-50 text-gray-400 text-xs uppercase tracking-wide">
-                    <th className="px-5 py-3 text-left font-semibold">Name</th>
-                    <th className="px-5 py-3 text-left font-semibold">Email</th>
-                    <th className="px-5 py-3 text-left font-semibold">Initials</th>
-                    <th className="px-5 py-3"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {requests.map((r) => (
-                    <tr key={r.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-5 py-3.5 font-semibold text-gray-800">{r.name ?? "—"}</td>
-                      <td className="px-5 py-3.5 text-gray-600">{r.email}</td>
-                      <td className="px-5 py-3.5 text-gray-600">{r.initials ?? "—"}</td>
-                      <td className="px-5 py-3.5 text-right whitespace-nowrap">
-                        <button
-                          onClick={() => handleAction(r.id, "approve")}
-                          disabled={actingId === r.id}
-                          className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 disabled:opacity-50 mr-3"
-                        >
-                          Approve
-                        </button>
-                        <button
-                          onClick={() => handleAction(r.id, "reject")}
-                          disabled={actingId === r.id}
-                          className="text-xs font-semibold text-red-500 hover:text-red-600 disabled:opacity-50"
-                        >
-                          Reject
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      </main>
-    </div>
+      </Card>
+    </>
   );
 }

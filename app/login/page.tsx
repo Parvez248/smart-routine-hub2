@@ -4,6 +4,9 @@ import { useState } from "react";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { Card, CardHeader } from "@/app/components/ui/Card";
+import { Button } from "@/app/components/ui/Button";
+import { Message } from "@/app/components/ui/Message";
 
 const ERROR_MESSAGES: Record<string, string> = {
   "email-unverified": "Please verify your e-mail before signing in.",
@@ -41,11 +44,8 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="px-8 py-6 border-b border-gray-100 bg-gradient-to-r from-indigo-50 to-white">
-            <h1 className="text-lg font-bold text-gray-900">SmartRoutineHub</h1>
-            <p className="text-xs text-gray-400 mt-0.5">Admin sign in</p>
-          </div>
+        <Card>
+          <CardHeader title="SmartRoutineHub" description="Admin sign in" accent />
 
           <form onSubmit={handleSubmit} className="px-8 py-6 space-y-4">
             <div className="flex flex-col gap-1">
@@ -76,30 +76,11 @@ export default function LoginPage() {
               />
             </div>
 
-            {error && (
-              <div className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm bg-red-50 text-red-700 border border-red-200">
-                <span>⚠</span>
-                <span>{error}</span>
-              </div>
-            )}
+            {error && <Message type="error">{error}</Message>}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold px-6 py-2.5 rounded-lg text-sm transition-colors shadow-sm"
-            >
-              {loading ? (
-                <>
-                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                  </svg>
-                  Signing in…
-                </>
-              ) : (
-                "Sign in"
-              )}
-            </button>
+            <Button type="submit" loading={loading} className="w-full">
+              {loading ? "Signing in…" : "Sign in"}
+            </Button>
 
             <p className="text-center text-xs text-gray-400">
               Not registered yet?{" "}
@@ -108,7 +89,7 @@ export default function LoginPage() {
               </Link>
             </p>
           </form>
-        </div>
+        </Card>
       </div>
     </div>
   );

@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Card, CardHeader } from "@/app/components/ui/Card";
+import { Button } from "@/app/components/ui/Button";
+import { Message } from "@/app/components/ui/Message";
 
 export default function VerifyPage() {
   const [email, setEmail] = useState("");
@@ -36,18 +39,12 @@ export default function VerifyPage() {
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="px-8 py-6 border-b border-gray-100 bg-gradient-to-r from-indigo-50 to-white">
-            <h1 className="text-lg font-bold text-gray-900">SmartRoutineHub</h1>
-            <p className="text-xs text-gray-400 mt-0.5">Verify your e-mail</p>
-          </div>
+        <Card>
+          <CardHeader title="SmartRoutineHub" description="Verify your e-mail" accent />
 
           {done ? (
             <div className="px-8 py-6 space-y-4">
-              <div className="flex items-start gap-3 rounded-lg px-4 py-3 text-sm bg-emerald-50 text-emerald-700 border border-emerald-200">
-                <span className="text-base leading-none mt-0.5">✓</span>
-                <span>E-mail verified. Your account is now awaiting admin approval.</span>
-              </div>
+              <Message type="success">E-mail verified. Your account is now awaiting admin approval.</Message>
               <Link
                 href="/login"
                 className="block text-center w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-2.5 rounded-lg text-sm transition-colors shadow-sm"
@@ -84,23 +81,14 @@ export default function VerifyPage() {
                 />
               </div>
 
-              {error && (
-                <div className="flex items-center gap-2 rounded-lg px-4 py-3 text-sm bg-red-50 text-red-700 border border-red-200">
-                  <span>⚠</span>
-                  <span>{error}</span>
-                </div>
-              )}
+              {error && <Message type="error">{error}</Message>}
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold px-6 py-2.5 rounded-lg text-sm transition-colors shadow-sm"
-              >
+              <Button type="submit" loading={loading} className="w-full">
                 {loading ? "Verifying…" : "Verify e-mail"}
-              </button>
+              </Button>
             </form>
           )}
-        </div>
+        </Card>
       </div>
     </div>
   );

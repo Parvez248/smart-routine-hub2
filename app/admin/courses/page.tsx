@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import AdminNav from "../AdminNav";
+import { PageHeader } from "@/app/components/ui/PageHeader";
+import { Card, CardHeader } from "@/app/components/ui/Card";
+import { Button, LinkButton } from "@/app/components/ui/Button";
+import { Table } from "@/app/components/ui/Table";
+import { Message } from "@/app/components/ui/Message";
+import { EmptyState } from "@/app/components/ui/EmptyState";
+import { Loading } from "@/app/components/ui/Loading";
 
 type Course = { id: number; code: string; title: string; type: string };
 type CourseForm = { code: string; title: string; type: "THEORY" | "LAB" };
@@ -20,6 +26,7 @@ function TypeBadge({ type }: { type: string }) {
 
 export default function CoursesPage() {
   const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoadingState] = useState(true);
   const [form, setForm] = useState<CourseForm>(emptyForm);
   const [status, setStatus] = useState<{ type: "success" | "error"; msg: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -33,6 +40,7 @@ export default function CoursesPage() {
     const res = await fetch("/api/admin/courses");
     const json = await res.json();
     if (json.ok) setCourses(json.data);
+    setLoadingState(false);
   }
 
   useEffect(() => { loadCourses(); }, []);
@@ -114,197 +122,139 @@ export default function CoursesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">SmartRoutineHub</h1>
-            <p className="text-xs text-gray-400 mt-0.5">Admin · Manage Courses</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-xs bg-indigo-50 text-indigo-600 font-semibold px-3 py-1 rounded-full">
-              {courses.length} courses
-            </span>
-            <AdminNav />
-          </div>
-        </div>
-      </header>
+    <>
+      <PageHeader
+        title="Courses"
+        description="Manage the course catalog used when building the routine."
+        action={
+          <span className="text-xs bg-indigo-50 text-indigo-600 font-semibold px-3 py-1 rounded-full">
+            {courses.length} courses
+          </span>
+        }
+      />
 
-      <main className="max-w-4xl mx-auto px-6 py-8 space-y-8">
-        {/* Add form card */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-indigo-50 to-white">
-            <h2 className="text-base font-semibold text-gray-800">Add Course</h2>
-          </div>
-
-          <form onSubmit={handleSubmit} className="p-6 space-y-5">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                  Code <span className="text-red-400">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={form.code}
-                  onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))}
-                  placeholder="e.g. CSE101"
-                  className="border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                />
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                  Title <span className="text-red-400">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={form.title}
-                  onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-                  placeholder="e.g. Structured Programming"
-                  className="border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                />
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                  Type <span className="text-red-400">*</span>
-                </label>
-                <select
-                  required
-                  value={form.type}
-                  onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as "THEORY" | "LAB" }))}
-                  className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                >
-                  <option value="THEORY">Theory</option>
-                  <option value="LAB">Lab</option>
-                </select>
-              </div>
+      <Card>
+        <CardHeader title="Add Course" accent />
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                Code <span className="text-red-400">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                value={form.code}
+                onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))}
+                placeholder="e.g. CSE101"
+                className="border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+              />
             </div>
 
-            {status && (
-              <div className={`flex items-start gap-3 rounded-lg px-4 py-3 text-sm ${
-                status.type === "success"
-                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                  : "bg-red-50 text-red-700 border border-red-200"
-              }`}>
-                <span className="text-base leading-none mt-0.5">
-                  {status.type === "success" ? "✓" : "⚠"}
-                </span>
-                <span>{status.msg}</span>
-              </div>
-            )}
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                Title <span className="text-red-400">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                value={form.title}
+                onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+                placeholder="e.g. Structured Programming"
+                className="border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+              />
+            </div>
 
-            <div className="flex justify-end">
-              <button
-                type="submit"
-                disabled={submitting}
-                className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold px-6 py-2.5 rounded-lg text-sm transition-colors shadow-sm"
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                Type <span className="text-red-400">*</span>
+              </label>
+              <select
+                required
+                value={form.type}
+                onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as "THEORY" | "LAB" }))}
+                className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
               >
-                {submitting ? "Adding…" : "Add Course"}
-              </button>
+                <option value="THEORY">Theory</option>
+                <option value="LAB">Lab</option>
+              </select>
             </div>
-          </form>
-        </div>
-
-        {/* Table */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100">
-            <h2 className="text-base font-semibold text-gray-800">
-              Courses <span className="ml-2 text-sm font-normal text-gray-400">{courses.length}</span>
-            </h2>
           </div>
 
-          {courses.length === 0 ? (
-            <div className="px-6 py-16 text-center">
-              <p className="text-gray-300 text-4xl mb-3">📚</p>
-              <p className="text-gray-400 text-sm">No courses yet. Add one above.</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-gray-50 text-gray-400 text-xs uppercase tracking-wide">
-                    <th className="px-5 py-3 text-left font-semibold">Code</th>
-                    <th className="px-5 py-3 text-left font-semibold">Title</th>
-                    <th className="px-5 py-3 text-left font-semibold">Type</th>
-                    <th className="px-5 py-3"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {courses.map((c) =>
-                    editingId === c.id ? (
-                      <tr key={c.id} className="bg-indigo-50/40">
-                        <td className="px-5 py-3">
-                          <input
-                            value={editForm.code}
-                            onChange={(e) => setEditForm((f) => ({ ...f, code: e.target.value }))}
-                            className="w-full border border-gray-200 bg-white rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                          />
-                        </td>
-                        <td className="px-5 py-3">
-                          <input
-                            value={editForm.title}
-                            onChange={(e) => setEditForm((f) => ({ ...f, title: e.target.value }))}
-                            className="w-full border border-gray-200 bg-white rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                          />
-                        </td>
-                        <td className="px-5 py-3">
-                          <select
-                            value={editForm.type}
-                            onChange={(e) => setEditForm((f) => ({ ...f, type: e.target.value as "THEORY" | "LAB" }))}
-                            className="w-full border border-gray-200 bg-white rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                          >
-                            <option value="THEORY">Theory</option>
-                            <option value="LAB">Lab</option>
-                          </select>
-                        </td>
-                        <td className="px-5 py-3 text-right whitespace-nowrap">
-                          <button
-                            onClick={() => handleEditSubmit(c.id)}
-                            disabled={editSubmitting}
-                            className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 disabled:opacity-50 mr-3"
-                          >
-                            {editSubmitting ? "Saving…" : "Save"}
-                          </button>
-                          <button
-                            onClick={() => setEditingId(null)}
-                            className="text-xs font-semibold text-gray-400 hover:text-gray-600"
-                          >
-                            Cancel
-                          </button>
-                        </td>
-                      </tr>
-                    ) : (
-                      <tr key={c.id} className="hover:bg-slate-50 transition-colors group">
-                        <td className="px-5 py-3.5 font-semibold text-gray-800">{c.code}</td>
-                        <td className="px-5 py-3.5 text-gray-600">{c.title}</td>
-                        <td className="px-5 py-3.5"><TypeBadge type={c.type} /></td>
-                        <td className="px-5 py-3.5 text-right whitespace-nowrap">
-                          <button
-                            onClick={() => startEdit(c)}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity text-xs font-semibold text-gray-400 hover:text-indigo-600 mr-3"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleDelete(c.id)}
-                            disabled={deleteId === c.id}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity text-xs font-semibold text-gray-400 hover:text-red-500 disabled:opacity-50"
-                          >
-                            {deleteId === c.id ? "Deleting…" : "Delete"}
-                          </button>
-                        </td>
-                      </tr>
-                    )
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      </main>
-    </div>
+          {status && <Message type={status.type}>{status.msg}</Message>}
+
+          <div className="flex justify-end">
+            <Button type="submit" loading={submitting}>
+              {submitting ? "Adding…" : "Add Course"}
+            </Button>
+          </div>
+        </form>
+      </Card>
+
+      <Card>
+        <CardHeader title={<>Courses <span className="ml-2 text-sm font-normal text-gray-400">{courses.length}</span></>} />
+
+        {loading ? (
+          <Loading />
+        ) : courses.length === 0 ? (
+          <EmptyState icon="📚" message="No courses yet. Add one above." />
+        ) : (
+          <Table headers={["Code", "Title", "Type", ""]}>
+            {courses.map((c) =>
+              editingId === c.id ? (
+                <tr key={c.id} className="bg-indigo-50/40">
+                  <td className="px-5 py-3">
+                    <input
+                      value={editForm.code}
+                      onChange={(e) => setEditForm((f) => ({ ...f, code: e.target.value }))}
+                      className="w-full border border-gray-200 bg-white rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </td>
+                  <td className="px-5 py-3">
+                    <input
+                      value={editForm.title}
+                      onChange={(e) => setEditForm((f) => ({ ...f, title: e.target.value }))}
+                      className="w-full border border-gray-200 bg-white rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </td>
+                  <td className="px-5 py-3">
+                    <select
+                      value={editForm.type}
+                      onChange={(e) => setEditForm((f) => ({ ...f, type: e.target.value as "THEORY" | "LAB" }))}
+                      className="w-full border border-gray-200 bg-white rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    >
+                      <option value="THEORY">Theory</option>
+                      <option value="LAB">Lab</option>
+                    </select>
+                  </td>
+                  <td className="px-5 py-3 text-right whitespace-nowrap">
+                    <LinkButton tone="primary" loading={editSubmitting} onClick={() => handleEditSubmit(c.id)} className="mr-3">
+                      Save
+                    </LinkButton>
+                    <LinkButton tone="neutral" onClick={() => setEditingId(null)}>
+                      Cancel
+                    </LinkButton>
+                  </td>
+                </tr>
+              ) : (
+                <tr key={c.id} className="hover:bg-slate-50 transition-colors group">
+                  <td className="px-5 py-3.5 font-semibold text-gray-800">{c.code}</td>
+                  <td className="px-5 py-3.5 text-gray-600">{c.title}</td>
+                  <td className="px-5 py-3.5"><TypeBadge type={c.type} /></td>
+                  <td className="px-5 py-3.5 text-right whitespace-nowrap">
+                    <LinkButton tone="primary" muted revealOnHover onClick={() => startEdit(c)} className="mr-3">
+                      Edit
+                    </LinkButton>
+                    <LinkButton tone="danger" muted revealOnHover loading={deleteId === c.id} onClick={() => handleDelete(c.id)}>
+                      {deleteId === c.id ? "Deleting…" : "Delete"}
+                    </LinkButton>
+                  </td>
+                </tr>
+              )
+            )}
+          </Table>
+        )}
+      </Card>
+    </>
   );
 }
