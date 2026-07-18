@@ -22,6 +22,7 @@ export async function checkConflict(
       day,
       timeSlotId,
       versionId,
+      status: "ACTIVE",
       ...(excludeSessionId ? { id: { not: excludeSessionId } } : {}),
     },
     include: { room: true, teacher: true, batch: true },
@@ -87,7 +88,7 @@ export async function getFreeRooms(day: string, timeSlotId: number, versionId: n
   const db = getDb();
   const [rooms, existing] = await Promise.all([
     db.room.findMany({ orderBy: { name: "asc" } }),
-    db.session.findMany({ where: { day, timeSlotId, versionId }, select: { roomId: true } }),
+    db.session.findMany({ where: { day, timeSlotId, versionId, status: "ACTIVE" }, select: { roomId: true } }),
   ]);
 
   const bookedRoomIds = new Set(existing.map((s) => s.roomId));

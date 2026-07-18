@@ -5,8 +5,10 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 
 const LINKS = [
+  { href: "/admin/dashboard", label: "Dashboard" },
   { href: "/admin/routine", label: "Routine" },
   { href: "/admin/versions", label: "Versions" },
+  { href: "/admin/notices", label: "Notices" },
   { href: "/admin/courses", label: "Courses" },
   { href: "/admin/rooms", label: "Rooms" },
   { href: "/admin/teachers", label: "Teachers" },

@@ -14,6 +14,7 @@ type SessionRow = {
   id: number;
   day: string;
   section: string | null;
+  status: string;
   course: Course;
   teacher: Teacher;
   room: Room;
@@ -83,6 +84,7 @@ export default function RoutinePage() {
   const [filterDay, setFilterDay] = useState("all");
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [statusActingId, setStatusActingId] = useState<number | null>(null);
 
   const [freeDay, setFreeDay] = useState("");
   const [freeSlotId, setFreeSlotId] = useState("");
@@ -192,6 +194,28 @@ export default function RoutinePage() {
     if (editingId === id) cancelEdit();
     await loadSessions(selectedVersionId);
     setDeleteId(null);
+  }
+
+  async function handleToggleStatus(s: SessionRow) {
+    const nextStatus = s.status === "CANCELLED" ? "ACTIVE" : "CANCELLED";
+    setStatusActingId(s.id);
+    try {
+      const res = await fetch(`/api/sessions/${s.id}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: nextStatus }),
+      });
+      const json = await res.json();
+      if (json.ok) {
+        await loadSessions(selectedVersionId);
+      } else {
+        setStatus({ type: "error", msg: json.error ?? "Failed to update status." });
+      }
+    } catch {
+      setStatus({ type: "error", msg: "Network error. Please try again." });
+    } finally {
+      setStatusActingId(null);
+    }
   }
 
   async function handleFindFreeRooms() {
@@ -493,8 +517,13 @@ export default function RoutinePage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
-                  {filtered.map((s) => (
-                    <tr key={s.id} className="hover:bg-slate-50 transition-colors group">
+                  {filtered.map((s) => {
+                    const cancelled = s.status === "CANCELLED";
+                    return (
+                    <tr
+                      key={s.id}
+                      className={`hover:bg-slate-50 transition-colors group ${cancelled ? "bg-gray-50/60 opacity-60" : ""}`}
+                    >
                       <td className="px-5 py-3.5">
                         <span className="font-semibold text-gray-700">{s.day}</span>
                       </td>
@@ -507,7 +536,14 @@ export default function RoutinePage() {
                           </span>
                         )}
                       </td>
-                      <td className="px-5 py-3.5 font-semibold text-gray-800">{s.course.code}</td>
+                      <td className="px-5 py-3.5 font-semibold text-gray-800">
+                        {s.course.code}
+                        {cancelled && (
+                          <span className="ml-1.5 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">
+                            Cancelled
+                          </span>
+                        )}
+                      </td>
                       <td className="px-5 py-3.5">
                         <TypeBadge type={s.course.type} />
                       </td>
@@ -521,6 +557,15 @@ export default function RoutinePage() {
                         </span>
                       </td>
                       <td className="px-5 py-3.5 text-right whitespace-nowrap">
+                        <button
+                          onClick={() => handleToggleStatus(s)}
+                          disabled={statusActingId === s.id}
+                          className={`opacity-0 group-hover:opacity-100 transition-opacity text-xs font-semibold disabled:opacity-50 mr-3 ${
+                            cancelled ? "text-emerald-600 hover:text-emerald-700" : "text-amber-600 hover:text-amber-700"
+                          }`}
+                        >
+                          {statusActingId === s.id ? "…" : cancelled ? "Restore" : "Cancel"}
+                        </button>
                         <button
                           onClick={() => startEdit(s)}
                           className="opacity-0 group-hover:opacity-100 transition-opacity text-xs font-semibold text-gray-400 hover:text-indigo-600 mr-3"
@@ -546,7 +591,8 @@ export default function RoutinePage() {
                         </button>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
