@@ -43,6 +43,7 @@ model Teacher {
   id       Int       @id @default(autoincrement())
   initials String    @unique
   name     String
+  userId   Int?      @unique
   sessions Session[]
 }
 
@@ -104,4 +105,18 @@ model RoutineVersion {
   effectiveDate DateTime?
   createdAt     DateTime  @default(now())
   sessions      Session[]
+}
+
+model Reschedule {
+  id            Int      @id @default(autoincrement())
+  sessionId     Int
+  changedById   Int?
+  oldDay        String
+  oldTimeSlotId Int
+  oldRoomId     Int
+  newDay        String
+  newTimeSlotId Int
+  newRoomId     Int
+  reason        String?  @db.Text
+  createdAt     DateTime @default(now())
 }

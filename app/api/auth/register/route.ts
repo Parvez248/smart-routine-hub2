@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     if (existingUser) {
       return NextResponse.json({ ok: false, error: "Email is already registered" }, { status: 409 });
     }
-    if (existingTeacher) {
+    if (existingTeacher && existingTeacher.userId) {
       return NextResponse.json({ ok: false, error: "Teacher initials already exist" }, { status: 409 });
     }
 
@@ -40,8 +40,8 @@ export async function POST(req: NextRequest) {
     const verifyCode = generateVerifyCode();
     const verifyCodeExpires = new Date(Date.now() + VERIFY_CODE_TTL_MS);
 
-    await db.$transaction([
-      db.user.create({
+    await db.$transaction(async (tx) => {
+      const user = await tx.user.create({
         data: {
           email,
           passwordHash,
@@ -52,9 +52,14 @@ export async function POST(req: NextRequest) {
           verifyCode,
           verifyCodeExpires,
         },
-      }),
-      db.teacher.create({ data: { initials, name } }),
-    ]);
+      });
+
+      if (existingTeacher) {
+        await tx.teacher.update({ where: { id: existingTeacher.id }, data: { userId: user.id } });
+      } else {
+        await tx.teacher.create({ data: { initials, name, userId: user.id } });
+      }
+    });
 
     console.log(`[dev] Verification code for ${email}: ${verifyCode}`);
 

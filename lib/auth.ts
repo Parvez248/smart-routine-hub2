@@ -21,10 +21,12 @@ declare module "next-auth" {
       name?: string | null;
       image?: string | null;
       role: string;
+      status: string;
     };
   }
   interface User {
     role?: string;
+    status?: string;
   }
 }
 
@@ -52,7 +54,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (user.status === "REJECTED") throw new RejectedAccountError();
         if (user.status !== "ACTIVE") return null;
 
-        return { id: String(user.id), email: user.email, role: user.role };
+        return { id: String(user.id), email: user.email, name: user.name, role: user.role, status: user.status };
       },
     }),
   ],
@@ -61,6 +63,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.id = user.id;
         (token as Record<string, unknown>).role = user.role;
+        (token as Record<string, unknown>).status = user.status;
       }
       return token;
     },
@@ -68,6 +71,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (session.user) {
         session.user.id = token.id as string;
         (session.user as unknown as Record<string, unknown>).role = (token as Record<string, unknown>).role;
+        (session.user as unknown as Record<string, unknown>).status = (token as Record<string, unknown>).status;
       }
       return session;
     },

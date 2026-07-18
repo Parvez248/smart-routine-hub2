@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { signIn } from "next-auth/react";
+import { signIn, getSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Card, CardHeader } from "@/app/components/ui/Card";
 import { Button } from "@/app/components/ui/Button";
@@ -37,7 +37,8 @@ export default function LoginPage() {
     if (result?.error) {
       setError(ERROR_MESSAGES[result.code ?? ""] ?? "Invalid email or password.");
     } else {
-      router.push("/admin/routine");
+      const session = await getSession();
+      router.push(session?.user?.role === "TEACHER" ? "/teacher/classes" : "/admin/routine");
     }
   }
 
