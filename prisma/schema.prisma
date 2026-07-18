@@ -115,6 +115,17 @@ model Student {
   createdAt DateTime @default(now())
 }
 
+model Alarm {
+  id          Int      @id @default(autoincrement())
+  studentId   Int
+  sessionId   Int
+  leadMinutes Int      @default(15)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  @@unique([studentId, sessionId])
+}
+
 model Reschedule {
   id            Int      @id @default(autoincrement())
   sessionId     Int

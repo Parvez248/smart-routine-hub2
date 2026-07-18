@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
+import ReminderEngine from "./ReminderEngine";
 
 const LINKS = [
   { href: "/student/routine", label: "My Routine" },
   { href: "/student/notices", label: "Notices" },
+  { href: "/student/alarms", label: "Reminders" },
 ];
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
@@ -54,6 +56,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
       </header>
 
       <main className="max-w-5xl mx-auto px-6 py-8 space-y-8">{children}</main>
+      <ReminderEngine />
     </div>
   );
 }

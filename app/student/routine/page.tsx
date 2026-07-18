@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/app/components/ui/PageHeader";
 import { Card, CardHeader } from "@/app/components/ui/Card";
+import { LinkButton } from "@/app/components/ui/Button";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { Loading } from "@/app/components/ui/Loading";
+import { nextOccurrenceOf } from "@/lib/services/timeslot";
 
 type SessionCell = {
   id: number;
@@ -20,8 +22,10 @@ type SessionCell = {
 
 type Batch = { id: number; name: string; semester: string };
 type TimeSlot = { id: number; label: string; sortOrder: number };
+type AlarmRow = { id: number; sessionId: number; leadMinutes: number; isActive: boolean };
 
 const DAY_ORDER = ["Sat", "Sun", "Mon", "Tues", "Wed"];
+const LEAD_OPTIONS = [5, 10, 15, 30];
 
 function TypeBadge({ type }: { type: string }) {
   return (
@@ -33,6 +37,17 @@ function TypeBadge({ type }: { type: string }) {
   );
 }
 
+function formatCountdown(ms: number): string {
+  const totalMinutes = Math.max(0, Math.floor(ms / 60000));
+  const days = Math.floor(totalMinutes / (60 * 24));
+  const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+  const minutes = totalMinutes % 60;
+  if (days > 0) return `${days}d ${hours}h`;
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+  return `${minutes}m ${totalSeconds % 60}s`;
+}
+
 export default function StudentRoutinePage() {
   const [sessions, setSessions] = useState<SessionCell[]>([]);
   const [versionName, setVersionName] = useState<string | null>(null);
@@ -42,6 +57,14 @@ export default function StudentRoutinePage() {
   const [batches, setBatches] = useState<Batch[]>([]);
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
   const [selectedBatchId, setSelectedBatchId] = useState<string>("");
+  const [myBatchId, setMyBatchId] = useState<string>("");
+
+  const [alarms, setAlarms] = useState<AlarmRow[]>([]);
+  const [openBellFor, setOpenBellFor] = useState<number | null>(null);
+  const [bellLeadMinutes, setBellLeadMinutes] = useState<number>(15);
+  const [bellSubmitting, setBellSubmitting] = useState(false);
+
+  const [now, setNow] = useState(new Date());
 
   async function loadRoutine(batchId?: string) {
     setLoadingState(true);
@@ -53,23 +76,103 @@ export default function StudentRoutinePage() {
       setVersionName(json.data.versionName);
       setMessage(json.data.message);
       setSelectedBatchId(String(json.data.batchId));
+      if (!batchId) setMyBatchId(String(json.data.batchId));
     }
     setLoadingState(false);
+  }
+
+  async function loadAlarms() {
+    const res = await fetch("/api/student/alarms");
+    const json = await res.json();
+    if (json.ok) setAlarms(json.data);
   }
 
   useEffect(() => {
     fetch("/api/public/batches").then((res) => res.json()).then((json) => { if (json.ok) setBatches(json.data); });
     fetch("/api/reference").then((res) => res.json()).then((json) => { if (json.ok) setTimeSlots(json.data.timeSlots); });
     loadRoutine();
+    loadAlarms();
+  }, []);
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
   }, []);
 
   function handleBatchChange(batchId: string) {
     setSelectedBatchId(batchId);
+    setOpenBellFor(null);
     loadRoutine(batchId);
   }
 
   const cellFor = (day: string, timeSlotId: number) =>
     sessions.filter((s) => s.day === day && s.timeSlot.id === timeSlotId);
+
+  const alarmBySessionId = useMemo(
+    () => new Map(alarms.map((a) => [a.sessionId, a])),
+    [alarms]
+  );
+
+  const viewingOwnBatch = myBatchId !== "" && selectedBatchId === myBatchId;
+
+  const nextClass = useMemo(() => {
+    if (!viewingOwnBatch) return null;
+    const upcoming = sessions
+      .filter((s) => s.status !== "CANCELLED")
+      .map((s) => ({ session: s, at: nextOccurrenceOf(s.day, s.timeSlot.label, now) }))
+      .filter((x): x is { session: SessionCell; at: Date } => x.at !== null)
+      .sort((a, b) => a.at.getTime() - b.at.getTime());
+    return upcoming[0] ?? null;
+  }, [sessions, now, viewingOwnBatch]);
+
+  function openBell(session: SessionCell) {
+    const existing = alarmBySessionId.get(session.id);
+    setBellLeadMinutes(existing?.leadMinutes ?? 15);
+    setOpenBellFor(session.id);
+  }
+
+  function requestNotificationPermissionIfNeeded() {
+    if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }
+
+  async function handleSaveReminder(session: SessionCell) {
+    setBellSubmitting(true);
+    try {
+      const existing = alarmBySessionId.get(session.id);
+      const res = existing
+        ? await fetch(`/api/student/alarms/${existing.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ leadMinutes: bellLeadMinutes }),
+          })
+        : await fetch("/api/student/alarms", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sessionId: session.id, leadMinutes: bellLeadMinutes }),
+          });
+      const json = await res.json();
+      if (json.ok) {
+        requestNotificationPermissionIfNeeded();
+        setOpenBellFor(null);
+        await loadAlarms();
+      }
+    } finally {
+      setBellSubmitting(false);
+    }
+  }
+
+  async function handleRemoveReminder(alarmId: number) {
+    setBellSubmitting(true);
+    try {
+      await fetch(`/api/student/alarms/${alarmId}`, { method: "DELETE" });
+      setOpenBellFor(null);
+      await loadAlarms();
+    } finally {
+      setBellSubmitting(false);
+    }
+  }
 
   return (
     <>
@@ -91,6 +194,24 @@ export default function StudentRoutinePage() {
           </div>
         }
       />
+
+      {nextClass && (
+        <div className="bg-indigo-600 rounded-2xl px-6 py-4 text-white flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <p className="text-xs text-indigo-200 font-semibold uppercase tracking-wide">Next Class</p>
+            <p className="text-lg font-bold mt-0.5">
+              {nextClass.session.course.code} · {nextClass.session.day} · {nextClass.session.timeSlot.label}
+            </p>
+            <p className="text-sm text-indigo-100 mt-0.5">
+              {nextClass.session.teacher.initials} · Room {nextClass.session.room.name}
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-xs text-indigo-200 font-semibold uppercase tracking-wide">Starts in</p>
+            <p className="text-2xl font-bold tabular-nums">{formatCountdown(nextClass.at.getTime() - now.getTime())}</p>
+          </div>
+        </div>
+      )}
 
       <Card>
         <CardHeader title="Weekly Routine" />
@@ -126,6 +247,8 @@ export default function StudentRoutinePage() {
                             <div className="space-y-2">
                               {cellSessions.map((s) => {
                                 const cancelled = s.status === "CANCELLED";
+                                const alarm = alarmBySessionId.get(s.id);
+                                const bellOpen = openBellFor === s.id;
                                 return (
                                   <div
                                     key={s.id}
@@ -133,21 +256,70 @@ export default function StudentRoutinePage() {
                                       cancelled ? "border-red-100 bg-red-50/50" : "border-gray-100 bg-gray-50"
                                     }`}
                                   >
-                                    <div className="flex items-center gap-1.5 flex-wrap">
-                                      <span className={`font-semibold text-gray-800 ${cancelled ? "line-through text-gray-400" : ""}`}>
-                                        {s.course.code}
-                                      </span>
-                                      <TypeBadge type={s.course.type} />
-                                      {cancelled && (
-                                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-red-100 text-red-700">
-                                          Cancelled
+                                    <div className="flex items-start justify-between gap-1">
+                                      <div className="flex items-center gap-1.5 flex-wrap">
+                                        <span className={`font-semibold text-gray-800 ${cancelled ? "line-through text-gray-400" : ""}`}>
+                                          {s.course.code}
                                         </span>
+                                        <TypeBadge type={s.course.type} />
+                                        {cancelled && (
+                                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-red-100 text-red-700">
+                                            Cancelled
+                                          </span>
+                                        )}
+                                      </div>
+                                      {viewingOwnBatch && !cancelled && (
+                                        <button
+                                          onClick={() => (bellOpen ? setOpenBellFor(null) : openBell(s))}
+                                          className={`text-sm leading-none shrink-0 ${alarm ? "opacity-100" : "opacity-40 hover:opacity-100"}`}
+                                          title={alarm ? "Reminder set" : "Set reminder"}
+                                        >
+                                          {alarm ? "🔔" : "🔕"}
+                                        </button>
                                       )}
                                     </div>
                                     <p className={`text-xs text-gray-500 mt-1 ${cancelled ? "line-through text-gray-300" : ""}`}>
                                       {s.teacher.initials} · Room {s.room.name}
                                       {s.section ? ` · ${s.section}` : ""}
                                     </p>
+
+                                    {bellOpen && (
+                                      <div className="mt-2 pt-2 border-t border-gray-200 space-y-2">
+                                        <div className="flex items-center gap-1 flex-wrap">
+                                          {LEAD_OPTIONS.map((m) => (
+                                            <button
+                                              key={m}
+                                              onClick={() => setBellLeadMinutes(m)}
+                                              className={`px-2 py-0.5 rounded-full text-[11px] font-semibold transition-colors ${
+                                                bellLeadMinutes === m
+                                                  ? "bg-indigo-600 text-white"
+                                                  : "bg-white text-gray-500 border border-gray-200 hover:bg-gray-100"
+                                              }`}
+                                            >
+                                              {m}m
+                                            </button>
+                                          ))}
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                          <LinkButton
+                                            tone="primary"
+                                            loading={bellSubmitting}
+                                            onClick={() => handleSaveReminder(s)}
+                                          >
+                                            {alarm ? "Update" : "Set reminder"}
+                                          </LinkButton>
+                                          {alarm && (
+                                            <LinkButton
+                                              tone="danger"
+                                              loading={bellSubmitting}
+                                              onClick={() => handleRemoveReminder(alarm.id)}
+                                            >
+                                              Remove
+                                            </LinkButton>
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
                                   </div>
                                 );
                               })}
