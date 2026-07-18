@@ -44,12 +44,12 @@ export default function VerifyPage() {
 
           {done ? (
             <div className="px-8 py-6 space-y-4">
-              <Message type="success">E-mail verified. Your account is now awaiting admin approval.</Message>
+              <Message type="success">E-mail verified.</Message>
               <Link
-                href="/login"
+                href="/"
                 className="block text-center w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-2.5 rounded-lg text-sm transition-colors shadow-sm"
               >
-                Go to sign in
+                Go to homepage
               </Link>
             </div>
           ) : (
