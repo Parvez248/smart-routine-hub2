@@ -56,11 +56,11 @@ export default function DashboardPage() {
           <div>
             <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Academic Data</h2>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-              <Tile label="Courses" value={stats?.courseCount ?? 0} color="text-gray-800" href="/admin/courses" />
-              <Tile label="Teachers" value={stats?.teacherCount ?? 0} color="text-gray-800" href="/admin/teachers" />
-              <Tile label="Rooms" value={stats?.roomCount ?? 0} color="text-gray-800" href="/admin/rooms" />
-              <Tile label="Batches" value={stats?.batchCount ?? 0} color="text-gray-800" href="/admin/batches" />
-              <Tile label="Time Slots" value={stats?.timeSlotCount ?? 0} color="text-gray-800" href="/admin/timeslots" />
+              <Tile label="Courses" value={stats?.courseCount ?? 0} color="text-gray-800" href="/admin/data?tab=courses" />
+              <Tile label="Teachers" value={stats?.teacherCount ?? 0} color="text-gray-800" href="/admin/data?tab=teachers" />
+              <Tile label="Rooms" value={stats?.roomCount ?? 0} color="text-gray-800" href="/admin/data?tab=rooms" />
+              <Tile label="Batches" value={stats?.batchCount ?? 0} color="text-gray-800" href="/admin/data?tab=batches" />
+              <Tile label="Time Slots" value={stats?.timeSlotCount ?? 0} color="text-gray-800" href="/admin/data?tab=timeslots" />
             </div>
           </div>
 
@@ -83,7 +83,7 @@ export default function DashboardPage() {
                 label="Pending Teacher Requests"
                 value={stats?.pendingTeacherRequestCount ?? 0}
                 color="text-amber-600"
-                href="/admin/teacher-requests"
+                href="/admin/people?tab=requests"
               />
             </div>
           </div>
