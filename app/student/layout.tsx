@@ -7,6 +7,7 @@ import ReminderEngine from "./ReminderEngine";
 
 const LINKS = [
   { href: "/student/routine", label: "My Routine" },
+  { href: "/student/rescheduled", label: "Rescheduled Classes" },
   { href: "/student/notices", label: "Notices" },
   { href: "/student/alarms", label: "Reminders" },
 ];

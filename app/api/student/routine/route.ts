@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { getAuthenticatedStudent } from "@/lib/services/student-auth";
+import { getActiveOverrides } from "@/lib/services/scheduling";
 
 const DAY_ORDER = ["Sat", "Sun", "Mon", "Tues", "Wed"];
 
@@ -51,9 +52,28 @@ export async function GET(req: NextRequest) {
       return a.timeSlot.sortOrder - b.timeSlot.sortOrder;
     });
 
+    const overrideMap = await getActiveOverrides(sessions.map((s) => s.id));
+    const [rooms, timeSlots] = await Promise.all([db.room.findMany(), db.timeSlot.findMany()]);
+    const roomById = new Map(rooms.map((r) => [r.id, r]));
+    const slotById = new Map(timeSlots.map((t) => [t.id, t]));
+
+    const sessionsWithMoved = sessions.map((s) => {
+      const override = overrideMap.get(s.id);
+      return {
+        ...s,
+        movedTo: override
+          ? {
+              day: override.newDay,
+              timeSlot: slotById.get(override.newTimeSlotId) ?? null,
+              room: roomById.get(override.newRoomId) ?? null,
+            }
+          : null,
+      };
+    });
+
     return NextResponse.json({
       ok: true,
-      data: { sessions, versionName: published.name, message: null, batchId },
+      data: { sessions: sessionsWithMoved, versionName: published.name, message: null, batchId },
     });
   } catch (error) {
     console.error(error);

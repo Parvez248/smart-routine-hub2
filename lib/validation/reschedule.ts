@@ -11,7 +11,7 @@ export const rescheduleRequestSchema = z.object({
 export type RescheduleRequestInput = z.infer<typeof rescheduleRequestSchema>;
 
 export const reviewRescheduleSchema = z.object({
-  action: z.enum(["approve", "reject"]),
+  action: z.enum(["approve", "reject", "revert"]),
   adminNote: z.string().trim().max(500).optional().nullable(),
 });
 

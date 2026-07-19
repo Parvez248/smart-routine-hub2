@@ -18,6 +18,7 @@ type SessionCell = {
   room: { name: string };
   batch: { id: number; name: string; semester: string };
   timeSlot: { id: number; label: string; sortOrder: number };
+  movedTo: { day: string; timeSlot: { label: string } | null; room: { name: string } | null } | null;
 };
 
 type Batch = { id: number; name: string; semester: string };
@@ -282,6 +283,14 @@ export default function StudentRoutinePage() {
                                       {s.teacher.initials} · Room {s.room.name}
                                       {s.section ? ` · ${s.section}` : ""}
                                     </p>
+                                    {!cancelled && s.movedTo && (
+                                      <p className="text-[11px] text-amber-700 mt-1">
+                                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-700 mr-1">
+                                          Moved
+                                        </span>
+                                        to {s.movedTo.day}, {s.movedTo.timeSlot?.label}, Room {s.movedTo.room?.name}
+                                      </p>
+                                    )}
 
                                     {bellOpen && (
                                       <div className="mt-2 pt-2 border-t border-gray-200 space-y-2">

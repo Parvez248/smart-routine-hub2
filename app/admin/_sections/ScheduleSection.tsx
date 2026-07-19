@@ -25,6 +25,7 @@ type SessionRow = {
   room: Room;
   batch: Batch;
   timeSlot: TimeSlot;
+  movedTo: { day: string; timeSlot: TimeSlot | null; room: Room | null } | null;
 };
 
 type RefData = {
@@ -489,6 +490,14 @@ export default function ScheduleSection() {
                       <span className="ml-1.5 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">
                         Cancelled
                       </span>
+                    )}
+                    {!cancelled && s.movedTo && (
+                      <div className="mt-1 text-xs font-normal text-amber-700">
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-700 mr-1">
+                          Moved
+                        </span>
+                        to {s.movedTo.day}, {s.movedTo.timeSlot?.label}, Room {s.movedTo.room?.name}
+                      </div>
                     )}
                   </td>
                   <td className="px-5 py-3.5">

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { getDb } from "@/lib/db";
+import { checkConflict, checkCapacity } from "@/lib/services/scheduling";
 
 const statusSchema = z.object({
   status: z.enum(["ACTIVE", "CANCELLED"]),
@@ -38,6 +39,39 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
 
     const db = getDb();
+
+    if (parsed.data.status === "ACTIVE") {
+      const target = await db.session.findUnique({ where: { id } });
+      if (!target) {
+        return NextResponse.json({ ok: false, error: "Session not found" }, { status: 404 });
+      }
+      if (!target.versionId) {
+        return NextResponse.json({ ok: false, error: "This class has no routine version" }, { status: 400 });
+      }
+
+      const conflict = await checkConflict({
+        day: target.day,
+        timeSlotId: target.timeSlotId,
+        batchId: target.batchId,
+        section: target.section,
+        teacherId: target.teacherId,
+        roomId: target.roomId,
+        versionId: target.versionId,
+        excludeSessionId: target.id,
+      });
+      if (!conflict.ok) {
+        return NextResponse.json(
+          { ok: false, error: `Cannot restore: the room is now used by another class in this time slot. ${conflict.reason ?? ""}`.trim() },
+          { status: 409 }
+        );
+      }
+
+      const capacity = await checkCapacity(target.roomId, target.batchId);
+      if (!capacity.ok) {
+        return NextResponse.json({ ok: false, error: capacity.reason }, { status: 409 });
+      }
+    }
+
     const updated = await db.session.update({
       where: { id },
       data: { status: parsed.data.status },

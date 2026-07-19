@@ -9,6 +9,7 @@ const LINKS = [
   { href: "/teacher/routine", label: "Full Routine" },
   { href: "/teacher/free-rooms", label: "Free Rooms" },
   { href: "/teacher/requests", label: "My Requests" },
+  { href: "/teacher/rescheduled", label: "Rescheduled Classes" },
   { href: "/teacher/change-password", label: "Change Password" },
 ];
 

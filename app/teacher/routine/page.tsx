@@ -17,6 +17,7 @@ type RoutineSession = {
   room: { name: string };
   batch: { id: number; name: string; semester: string };
   timeSlot: { id: number; label: string; sortOrder: number };
+  movedTo: { day: string; timeSlot: { label: string } | null; room: { name: string } | null } | null;
 };
 
 type Batch = { id: number; name: string; semester: string };
@@ -107,7 +108,17 @@ export default function TeacherRoutinePage() {
                     <span className="ml-1.5 text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{s.section}</span>
                   )}
                 </td>
-                <td className="px-5 py-3.5 font-semibold text-gray-800">{s.course.code}</td>
+                <td className="px-5 py-3.5 font-semibold text-gray-800">
+                  {s.course.code}
+                  {s.status !== "CANCELLED" && s.movedTo && (
+                    <div className="mt-1 text-xs font-normal text-amber-700">
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-700 mr-1">
+                        Moved
+                      </span>
+                      to {s.movedTo.day}, {s.movedTo.timeSlot?.label}, Room {s.movedTo.room?.name}
+                    </div>
+                  )}
+                </td>
                 <td className="px-5 py-3.5">
                   <span className="font-medium text-gray-700">{s.teacher.initials}</span>
                   <span className="ml-1.5 text-xs text-gray-400 hidden sm:inline">{s.teacher.name}</span>

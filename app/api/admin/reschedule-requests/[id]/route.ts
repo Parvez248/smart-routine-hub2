@@ -33,13 +33,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (!request) {
       return NextResponse.json({ ok: false, error: "Request not found" }, { status: 404 });
     }
-    if (request.status !== "PENDING") {
-      return NextResponse.json({ ok: false, error: "This request has already been decided" }, { status: 409 });
-    }
 
     const adminUserId = Number(session.user.id);
 
     if (action === "reject") {
+      if (request.status !== "PENDING") {
+        return NextResponse.json({ ok: false, error: "This request has already been decided" }, { status: 409 });
+      }
       const updated = await db.reschedule.update({
         where: { id },
         data: {
@@ -58,6 +58,47 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
     if (!targetSession.versionId) {
       return NextResponse.json({ ok: false, error: "This class has no routine version" }, { status: 400 });
+    }
+
+    if (action === "revert") {
+      if (request.status !== "APPROVED" || request.appliedToMaster) {
+        return NextResponse.json({ ok: false, error: "This request is not an active override" }, { status: 409 });
+      }
+
+      const conflict = await checkConflict({
+        day: targetSession.day,
+        timeSlotId: targetSession.timeSlotId,
+        batchId: targetSession.batchId,
+        section: targetSession.section,
+        teacherId: targetSession.teacherId,
+        roomId: targetSession.roomId,
+        versionId: targetSession.versionId,
+        excludeSessionId: targetSession.id,
+      });
+      if (!conflict.ok) {
+        return NextResponse.json(
+          { ok: false, error: `Cannot revert: the original slot is now occupied. ${conflict.reason ?? ""}`.trim() },
+          { status: 409 }
+        );
+      }
+
+      const updated = await db.reschedule.update({ where: { id }, data: { status: "CANCELLED" } });
+      return NextResponse.json({ ok: true, data: updated });
+    }
+
+    // action === "approve"
+    if (request.status !== "PENDING") {
+      return NextResponse.json({ ok: false, error: "This request has already been decided" }, { status: 409 });
+    }
+
+    const activeOverride = await db.reschedule.findFirst({
+      where: { sessionId: request.sessionId, status: "APPROVED", appliedToMaster: false },
+    });
+    if (activeOverride) {
+      return NextResponse.json(
+        { ok: false, error: "This class already has an active reschedule override. Revert it before approving a new one." },
+        { status: 409 }
+      );
     }
 
     const conflict = await checkConflict({
@@ -79,21 +120,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       return NextResponse.json({ ok: false, error: capacity.reason }, { status: 409 });
     }
 
-    const [, updated] = await db.$transaction([
-      db.session.update({
-        where: { id: targetSession.id },
-        data: { day: request.newDay, timeSlotId: request.newTimeSlotId, roomId: request.newRoomId },
-      }),
-      db.reschedule.update({
-        where: { id },
-        data: {
-          status: "APPROVED",
-          reviewedById: adminUserId,
-          reviewedAt: new Date(),
-          adminNote: adminNote ?? null,
-        },
-      }),
-    ]);
+    const updated = await db.reschedule.update({
+      where: { id },
+      data: {
+        status: "APPROVED",
+        reviewedById: adminUserId,
+        reviewedAt: new Date(),
+        adminNote: adminNote ?? null,
+        appliedToMaster: false,
+      },
+    });
 
     return NextResponse.json({ ok: true, data: updated });
   } catch (error) {

@@ -7,9 +7,11 @@ import { Tabs } from "@/app/components/ui/Tabs";
 import { Loading } from "@/app/components/ui/Loading";
 import ScheduleSection from "../_sections/ScheduleSection";
 import VersionsSection from "../_sections/VersionsSection";
+import RescheduledClassesSection from "../_sections/RescheduledClassesSection";
 
 const TABS = [
   { key: "schedule", label: "Schedule" },
+  { key: "rescheduled", label: "Rescheduled Classes" },
   { key: "versions", label: "Versions" },
 ];
 
@@ -26,6 +28,7 @@ function RoutineInner() {
       <Tabs tabs={TABS} activeKey={tab} />
 
       {tab === "schedule" && <ScheduleSection />}
+      {tab === "rescheduled" && <RescheduledClassesSection />}
       {tab === "versions" && <VersionsSection />}
     </>
   );
