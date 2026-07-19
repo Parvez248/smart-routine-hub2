@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE `Reschedule` ADD COLUMN `adminNote` TEXT NULL,
+    ADD COLUMN `reviewedAt` DATETIME(3) NULL,
+    ADD COLUMN `reviewedById` INTEGER NULL,
+    ADD COLUMN `status` VARCHAR(191) NOT NULL DEFAULT 'PENDING';

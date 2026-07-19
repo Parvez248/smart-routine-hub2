@@ -128,7 +128,7 @@ model Alarm {
 }
 
 model Reschedule {
-  id            Int      @id @default(autoincrement())
+  id            Int       @id @default(autoincrement())
   sessionId     Int
   changedById   Int?
   oldDay        String
@@ -137,6 +137,10 @@ model Reschedule {
   newDay        String
   newTimeSlotId Int
   newRoomId     Int
-  reason        String?  @db.Text
-  createdAt     DateTime @default(now())
+  reason        String?   @db.Text
+  status        String    @default("PENDING")
+  reviewedById  Int?
+  reviewedAt    DateTime?
+  adminNote     String?   @db.Text
+  createdAt     DateTime  @default(now())
 }

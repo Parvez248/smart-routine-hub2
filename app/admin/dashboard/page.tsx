@@ -14,6 +14,7 @@ type Stats = {
   publishedSessionCount: number;
   cancelledSessionCount: number;
   pendingTeacherRequestCount: number;
+  pendingRescheduleRequestCount: number;
   publishedVersionName: string | null;
 };
 
@@ -66,7 +67,7 @@ export default function DashboardPage() {
 
           <div>
             <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Routine</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <Tile
                 label="Sessions (Published)"
                 value={stats?.publishedSessionCount ?? 0}
@@ -84,6 +85,12 @@ export default function DashboardPage() {
                 value={stats?.pendingTeacherRequestCount ?? 0}
                 color="text-amber-600"
                 href="/admin/people?tab=requests"
+              />
+              <Tile
+                label="Pending Reschedule Requests"
+                value={stats?.pendingRescheduleRequestCount ?? 0}
+                color="text-amber-600"
+                href="/admin/people?tab=reschedules"
               />
             </div>
           </div>

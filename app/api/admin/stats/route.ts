@@ -21,6 +21,7 @@ export async function GET() {
       publishedSessionCount,
       cancelledSessionCount,
       pendingTeacherRequestCount,
+      pendingRescheduleRequestCount,
     ] = await Promise.all([
       db.course.count(),
       db.teacher.count(),
@@ -32,6 +33,7 @@ export async function GET() {
         ? db.session.count({ where: { versionId: publishedVersion.id, status: "CANCELLED" } })
         : Promise.resolve(0),
       db.user.count({ where: { role: "TEACHER", status: "PENDING", emailVerified: true } }),
+      db.reschedule.count({ where: { status: "PENDING" } }),
     ]);
 
     return NextResponse.json({
@@ -45,6 +47,7 @@ export async function GET() {
         publishedSessionCount,
         cancelledSessionCount,
         pendingTeacherRequestCount,
+        pendingRescheduleRequestCount,
         publishedVersionName: publishedVersion?.name ?? null,
       },
     });

@@ -33,6 +33,7 @@ export default function TeacherClassesPage() {
   const [classes, setClasses] = useState<ClassSession[]>([]);
   const [loading, setLoadingState] = useState(true);
   const [ref, setRef] = useState<RefData | null>(null);
+  const [pendingSessionIds, setPendingSessionIds] = useState<Set<number>>(new Set());
 
   const [reschedulingId, setReschedulingId] = useState<number | null>(null);
   const [form, setForm] = useState<RescheduleForm>(emptyForm);
@@ -52,7 +53,16 @@ export default function TeacherClassesPage() {
     if (json.ok) setRef(json.data);
   }
 
-  useEffect(() => { loadClasses(); loadRef(); }, []);
+  async function loadPendingRequests() {
+    const res = await fetch("/api/teacher/reschedule-requests");
+    const json = await res.json();
+    if (json.ok) {
+      const pending = json.data.filter((r: { status: string }) => r.status === "PENDING");
+      setPendingSessionIds(new Set(pending.map((r: { sessionId: number }) => r.sessionId)));
+    }
+  }
+
+  useEffect(() => { loadClasses(); loadRef(); loadPendingRequests(); }, []);
 
   function startReschedule(c: ClassSession) {
     setReschedulingId(c.id);
@@ -76,10 +86,11 @@ export default function TeacherClassesPage() {
     setSubmitting(true);
     setStatus(null);
     try {
-      const res = await fetch(`/api/teacher/sessions/${reschedulingId}/reschedule`, {
-        method: "PATCH",
+      const res = await fetch("/api/teacher/reschedule-requests", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          sessionId: reschedulingId,
           newDay: form.newDay,
           newTimeSlotId: Number(form.newTimeSlotId),
           newRoomId: Number(form.newRoomId),
@@ -88,11 +99,11 @@ export default function TeacherClassesPage() {
       });
       const json = await res.json();
       if (json.ok) {
-        setStatus({ type: "success", msg: "Class rescheduled." });
+        setStatus({ type: "success", msg: "Reschedule request submitted — awaiting admin approval. The class stays where it is until then." });
         cancelReschedule();
-        await loadClasses();
+        await loadPendingRequests();
       } else {
-        setStatus({ type: "error", msg: json.error ?? "Failed to reschedule." });
+        setStatus({ type: "error", msg: json.error ?? "Failed to submit request." });
       }
     } catch {
       setStatus({ type: "error", msg: "Network error. Please try again." });
@@ -105,7 +116,7 @@ export default function TeacherClassesPage() {
     <>
       <PageHeader
         title="My Classes"
-        description="Classes from the published routine. You can reschedule your own classes below."
+        description="Classes from the published routine. Reschedule requests need admin approval before the class moves."
         action={
           <span className="text-xs bg-indigo-50 text-indigo-600 font-semibold px-3 py-1 rounded-full">
             {classes.length} classes
@@ -219,9 +230,15 @@ export default function TeacherClassesPage() {
                     )}
                   </td>
                   <td className="px-5 py-3.5 text-right whitespace-nowrap">
-                    <LinkButton tone="primary" onClick={() => startReschedule(c)}>
-                      Reschedule
-                    </LinkButton>
+                    {pendingSessionIds.has(c.id) ? (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">
+                        Pending approval
+                      </span>
+                    ) : (
+                      <LinkButton tone="primary" onClick={() => startReschedule(c)}>
+                        Reschedule
+                      </LinkButton>
+                    )}
                   </td>
                 </tr>
               )
