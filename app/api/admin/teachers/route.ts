@@ -13,7 +13,13 @@ export async function GET() {
   try {
     const db = getDb();
     const teachers = await db.teacher.findMany({ orderBy: { initials: "asc" } });
-    return NextResponse.json({ ok: true, data: teachers });
+    const userIds = teachers.map((t) => t.userId).filter((id): id is number => id !== null);
+    const users = userIds.length
+      ? await db.user.findMany({ where: { id: { in: userIds } }, select: { id: true, email: true } })
+      : [];
+    const emailById = new Map(users.map((u) => [u.id, u.email]));
+    const data = teachers.map((t) => ({ ...t, email: t.userId ? emailById.get(t.userId) ?? null : null }));
+    return NextResponse.json({ ok: true, data });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ ok: false, error: "Failed to load teachers" }, { status: 500 });

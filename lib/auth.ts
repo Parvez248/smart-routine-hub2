@@ -22,11 +22,13 @@ declare module "next-auth" {
       image?: string | null;
       role: string;
       status: string;
+      mustChangePassword: boolean;
     };
   }
   interface User {
     role?: string;
     status?: string;
+    mustChangePassword?: boolean;
   }
 }
 
@@ -54,16 +56,32 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (user.status === "REJECTED") throw new RejectedAccountError();
         if (user.status !== "ACTIVE") return null;
 
-        return { id: String(user.id), email: user.email, name: user.name, role: user.role, status: user.status };
+        return {
+          id: String(user.id),
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          status: user.status,
+          mustChangePassword: user.mustChangePassword,
+        };
       },
     }),
   ],
   callbacks: {
-    jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
         token.id = user.id;
         (token as Record<string, unknown>).role = user.role;
         (token as Record<string, unknown>).status = user.status;
+        (token as Record<string, unknown>).mustChangePassword = user.mustChangePassword;
+      }
+      if (trigger === "update" && token.id) {
+        const db = getDb();
+        const fresh = await db.user.findUnique({ where: { id: Number(token.id) } });
+        if (fresh) {
+          (token as Record<string, unknown>).status = fresh.status;
+          (token as Record<string, unknown>).mustChangePassword = fresh.mustChangePassword;
+        }
       }
       return token;
     },
@@ -72,6 +90,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.id = token.id as string;
         (session.user as unknown as Record<string, unknown>).role = (token as Record<string, unknown>).role;
         (session.user as unknown as Record<string, unknown>).status = (token as Record<string, unknown>).status;
+        session.user.mustChangePassword = Boolean((token as Record<string, unknown>).mustChangePassword);
       }
       return session;
     },

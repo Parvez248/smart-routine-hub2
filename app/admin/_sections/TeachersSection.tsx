@@ -8,8 +8,9 @@ import { Message } from "@/app/components/ui/Message";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { Loading } from "@/app/components/ui/Loading";
 
-type Teacher = { id: number; initials: string; name: string };
+type Teacher = { id: number; initials: string; name: string; userId: number | null; email: string | null };
 type TeacherForm = { initials: string; name: string };
+type Credential = { initials: string; name: string; email: string; password: string };
 
 const emptyForm: TeacherForm = { initials: "", name: "" };
 
@@ -24,6 +25,11 @@ export default function TeachersSection() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<TeacherForm>(emptyForm);
   const [editSubmitting, setEditSubmitting] = useState(false);
+
+  const [loginBusyId, setLoginBusyId] = useState<number | null>(null);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [reveal, setReveal] = useState<Credential[] | null>(null);
+  const [copied, setCopied] = useState(false);
 
   async function loadTeachers() {
     const res = await fetch("/api/admin/teachers");
@@ -110,8 +116,128 @@ export default function TeachersSection() {
     }
   }
 
+  async function handleCreateLogin(teacher: Teacher) {
+    setLoginBusyId(teacher.id);
+    try {
+      const res = await fetch(`/api/admin/teachers/${teacher.id}/create-login`, { method: "POST" });
+      const json = await res.json();
+      if (json.ok) {
+        setReveal([json.data]);
+        setCopied(false);
+        await loadTeachers();
+      } else {
+        flash("error", json.error ?? "Failed to create login.");
+      }
+    } catch {
+      flash("error", "Network error. Please try again.");
+    } finally {
+      setLoginBusyId(null);
+    }
+  }
+
+  async function handleResetPassword(teacher: Teacher) {
+    if (!confirm(`Reset the password for ${teacher.name}? Their current password will stop working.`)) return;
+    setLoginBusyId(teacher.id);
+    try {
+      const res = await fetch(`/api/admin/teachers/${teacher.id}/reset-password`, { method: "POST" });
+      const json = await res.json();
+      if (json.ok) {
+        setReveal([json.data]);
+        setCopied(false);
+      } else {
+        flash("error", json.error ?? "Failed to reset password.");
+      }
+    } catch {
+      flash("error", "Network error. Please try again.");
+    } finally {
+      setLoginBusyId(null);
+    }
+  }
+
+  async function handleCreateAllLogins() {
+    setBulkBusy(true);
+    try {
+      const res = await fetch("/api/admin/teachers/create-logins", { method: "POST" });
+      const json = await res.json();
+      if (json.ok) {
+        if (json.data.created.length > 0) {
+          setReveal(json.data.created);
+          setCopied(false);
+        } else {
+          flash("success", "All teachers already have logins.");
+        }
+        await loadTeachers();
+      } else {
+        flash("error", json.error ?? "Failed to create logins.");
+      }
+    } catch {
+      flash("error", "Network error. Please try again.");
+    } finally {
+      setBulkBusy(false);
+    }
+  }
+
+  function copyCredentials() {
+    if (!reveal) return;
+    const text = reveal.map((c) => `${c.name} (${c.initials})\t${c.email}\t${c.password}`).join("\n");
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  const teachersWithoutLogin = teachers.filter((t) => !t.userId).length;
+
   return (
     <>
+      {reveal && (
+        <Card>
+          <CardHeader
+            title={`${reveal.length > 1 ? "New Logins Created" : "Login Credentials"}`}
+            description="Copy or print this now — passwords cannot be shown again after you leave this page."
+            accent
+          />
+          <div className="p-6 space-y-4">
+            <div className="overflow-x-auto rounded-lg border border-amber-200">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-amber-50 text-amber-700 text-xs uppercase tracking-wide">
+                    <th className="px-4 py-2 text-left font-semibold">Teacher</th>
+                    <th className="px-4 py-2 text-left font-semibold">Email</th>
+                    <th className="px-4 py-2 text-left font-semibold">Password</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-amber-100">
+                  {reveal.map((c) => (
+                    <tr key={c.email}>
+                      <td className="px-4 py-2.5">{c.name} ({c.initials})</td>
+                      <td className="px-4 py-2.5 font-mono">{c.email}</td>
+                      <td className="px-4 py-2.5 font-mono font-semibold">{c.password}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <p className="text-xs font-semibold text-amber-700">
+              ⚠️ Save or hand out these credentials now. This list disappears once you refresh or leave this page and cannot be recovered — use &quot;Reset password&quot; if a teacher loses theirs.
+            </p>
+
+            <div className="flex items-center gap-3">
+              <Button type="button" variant="secondary" onClick={copyCredentials}>
+                {copied ? "Copied!" : "Copy"}
+              </Button>
+              <Button type="button" variant="secondary" onClick={() => window.print()}>
+                Print
+              </Button>
+              <LinkButton tone="neutral" onClick={() => setReveal(null)}>
+                Dismiss
+              </LinkButton>
+            </div>
+          </div>
+        </Card>
+      )}
+
       <Card>
         <CardHeader title="Add Teacher" accent />
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
@@ -156,14 +282,23 @@ export default function TeachersSection() {
       </Card>
 
       <Card>
-        <CardHeader title={<>Teachers <span className="ml-2 text-sm font-normal text-gray-400">{teachers.length}</span></>} />
+        <CardHeader
+          title={<>Teachers <span className="ml-2 text-sm font-normal text-gray-400">{teachers.length}</span></>}
+          action={
+            teachersWithoutLogin > 0 ? (
+              <Button type="button" variant="secondary" loading={bulkBusy} onClick={handleCreateAllLogins}>
+                {bulkBusy ? "Creating…" : `Create logins for all (${teachersWithoutLogin})`}
+              </Button>
+            ) : undefined
+          }
+        />
 
         {loading ? (
           <Loading />
         ) : teachers.length === 0 ? (
           <EmptyState icon="🧑‍🏫" message="No teachers yet. Add one above." />
         ) : (
-          <Table headers={["Initials", "Name", ""]}>
+          <Table headers={["Initials", "Name", "Login", ""]}>
             {teachers.map((t) =>
               editingId === t.id ? (
                 <tr key={t.id} className="bg-indigo-50/40">
@@ -181,6 +316,7 @@ export default function TeachersSection() {
                       className="w-full border border-gray-200 bg-white rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                   </td>
+                  <td className="px-5 py-3 text-gray-400 text-xs">{t.email ?? "—"}</td>
                   <td className="px-5 py-3 text-right whitespace-nowrap">
                     <LinkButton tone="primary" loading={editSubmitting} onClick={() => handleEditSubmit(t.id)} className="mr-3">
                       Save
@@ -194,7 +330,33 @@ export default function TeachersSection() {
                 <tr key={t.id} className="hover:bg-slate-50 transition-colors group">
                   <td className="px-5 py-3.5 font-semibold text-gray-800">{t.initials}</td>
                   <td className="px-5 py-3.5 text-gray-600">{t.name}</td>
+                  <td className="px-5 py-3.5 text-gray-600 font-mono text-xs">
+                    {t.email ?? <span className="text-gray-300 font-sans italic">No login</span>}
+                  </td>
                   <td className="px-5 py-3.5 text-right whitespace-nowrap">
+                    {t.userId ? (
+                      <LinkButton
+                        tone="warning"
+                        muted
+                        revealOnHover
+                        loading={loginBusyId === t.id}
+                        onClick={() => handleResetPassword(t)}
+                        className="mr-3"
+                      >
+                        Reset password
+                      </LinkButton>
+                    ) : (
+                      <LinkButton
+                        tone="success"
+                        muted
+                        revealOnHover
+                        loading={loginBusyId === t.id}
+                        onClick={() => handleCreateLogin(t)}
+                        className="mr-3"
+                      >
+                        Create login
+                      </LinkButton>
+                    )}
                     <LinkButton tone="primary" muted revealOnHover onClick={() => startEdit(t)} className="mr-3">
                       Edit
                     </LinkButton>

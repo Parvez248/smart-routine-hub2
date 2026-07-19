@@ -7,6 +7,7 @@ import { useSession, signOut } from "next-auth/react";
 const LINKS = [
   { href: "/teacher/classes", label: "My Classes" },
   { href: "/teacher/history", label: "History" },
+  { href: "/teacher/change-password", label: "Change Password" },
 ];
 
 export default function TeacherLayout({ children }: { children: React.ReactNode }) {
