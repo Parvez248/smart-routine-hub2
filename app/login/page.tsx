@@ -1,15 +1,18 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Card, CardHeader } from "@/app/components/ui/Card";
 
+export const metadata: Metadata = { title: "Sign In" };
+
 const ROLES = [
-  { href: "/login/admin", label: "Administration Login", accent: "bg-indigo-100 text-indigo-700" },
-  { href: "/login/teacher", label: "Teacher Login", accent: "bg-violet-100 text-violet-700" },
-  { href: "/login/student", label: "Student Login", accent: "bg-sky-100 text-sky-700" },
+  { href: "/login/admin", label: "Administration Login", accent: "bg-primary/10 text-primary" },
+  { href: "/login/teacher", label: "Teacher Login", accent: "bg-moved/10 text-moved" },
+  { href: "/login/student", label: "Student Login", accent: "bg-confirmed/10 text-confirmed" },
 ];
 
 export default function LoginChooserPage() {
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-canvas flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <Card>
           <CardHeader title="SmartRoutineHub" description="Choose how you'd like to sign in" accent />
@@ -19,7 +22,7 @@ export default function LoginChooserPage() {
               <Link
                 key={r.href}
                 href={r.href}
-                className="flex items-center justify-between gap-3 border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/40 rounded-lg px-4 py-3 text-sm font-semibold text-gray-700 transition-colors"
+                className="flex items-center justify-between gap-3 border border-border hover:border-primary/40 hover:bg-primary/5 rounded-lg px-4 py-3 text-sm font-semibold text-foreground transition-colors"
               >
                 {r.label}
                 <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${r.accent}`}>
@@ -29,8 +32,8 @@ export default function LoginChooserPage() {
             ))}
           </div>
 
-          <p className="text-center text-xs text-gray-400 pb-6">
-            <Link href="/" className="text-gray-400 hover:text-gray-600">
+          <p className="text-center text-xs text-slate pb-6">
+            <Link href="/" className="text-slate hover:text-foreground">
               ← Back to homepage
             </Link>
           </p>

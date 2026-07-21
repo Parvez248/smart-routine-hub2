@@ -210,14 +210,15 @@ export default function TeacherClassesPage() {
                     <form onSubmit={handleReschedule} className="space-y-4">
                       <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
                         <div className="flex flex-col gap-1">
-                          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                          <label htmlFor="reschedule-original-date" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                             Which class date?
                           </label>
                           <select
+                            id="reschedule-original-date"
                             required
                             value={form.originalDate}
                             onChange={(e) => setForm((f) => ({ ...f, originalDate: e.target.value }))}
-                            className="border border-border bg-white rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                            className="border border-border bg-surface rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                           >
                             {occurrences.map((d) => (
                               <option key={formatDateOnly(d)} value={formatDateOnly(d)}>
@@ -228,24 +229,26 @@ export default function TeacherClassesPage() {
                         </div>
 
                         <div className="flex flex-col gap-1">
-                          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">New Date</label>
+                          <label htmlFor="reschedule-new-date" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">New Date</label>
                           <input
+                            id="reschedule-new-date"
                             type="date"
                             required
                             min={minDate}
                             value={form.newDate}
                             onChange={(e) => handleNewDateChange(e.target.value)}
-                            className="border border-border bg-white rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                            className="border border-border bg-surface rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                           />
                         </div>
 
                         <div className="flex flex-col gap-1">
-                          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">New Time Slot</label>
+                          <label htmlFor="reschedule-new-slot" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">New Time Slot</label>
                           <select
+                            id="reschedule-new-slot"
                             required
                             value={form.newTimeSlotId}
                             onChange={(e) => handleNewTimeSlotChange(e.target.value)}
-                            className="border border-border bg-white rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                            className="border border-border bg-surface rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                           >
                             <option value="">Select slot</option>
                             {ref?.timeSlots.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
@@ -253,15 +256,16 @@ export default function TeacherClassesPage() {
                         </div>
 
                         <div className="flex flex-col gap-1">
-                          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                          <label htmlFor="reschedule-reason" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                             Reason <span className="text-muted-foreground/60 normal-case font-normal">(optional)</span>
                           </label>
                           <input
+                            id="reschedule-reason"
                             type="text"
                             value={form.reason}
                             onChange={(e) => setForm((f) => ({ ...f, reason: e.target.value }))}
                             placeholder="e.g. Conflict with seminar"
-                            className="border border-border bg-white rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                            className="border border-border bg-surface rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                           />
                         </div>
                       </div>

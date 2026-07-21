@@ -21,8 +21,8 @@ export default function AdminNav() {
           href={link.href}
           className={`px-2.5 py-1.5 rounded-full transition-colors ${
             pathname === link.href
-              ? "bg-indigo-50 text-indigo-600"
-              : "text-gray-400 hover:text-gray-600"
+              ? "bg-primary/10 text-primary"
+              : "text-slate hover:text-foreground"
           }`}
         >
           {link.label}

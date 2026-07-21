@@ -1,4 +1,7 @@
+import type { Metadata } from "next";
 import RoleLoginForm from "../RoleLoginForm";
+
+export const metadata: Metadata = { title: "Teacher Sign In" };
 
 export default function TeacherLoginPage() {
   return (

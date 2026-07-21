@@ -85,7 +85,7 @@ export default function ReminderEngine() {
       {banners.map((b) => (
         <div
           key={b.key}
-          className="bg-indigo-600 text-white rounded-lg shadow-lg px-4 py-3 text-sm flex items-start gap-3"
+          className="bg-primary text-primary-foreground rounded-lg shadow-lg px-4 py-3 text-sm flex items-start gap-3"
         >
           <span className="text-base leading-none">🔔</span>
           <span className="flex-1">{b.text}</span>

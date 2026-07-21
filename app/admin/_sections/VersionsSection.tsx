@@ -116,10 +116,11 @@ export default function VersionsSection() {
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                Name <span className="text-red-400">*</span>
+              <label htmlFor="version-name" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Name <span className="text-cancelled">*</span>
               </label>
               <input
+                id="version-name"
                 type="text"
                 required
                 value={form.name}
@@ -130,10 +131,11 @@ export default function VersionsSection() {
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              <label htmlFor="version-date" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                 Effective Date <span className="text-muted-foreground/60 normal-case font-normal">(optional)</span>
               </label>
               <input
+                id="version-date"
                 type="date"
                 value={form.effectiveDate}
                 onChange={(e) => setForm((f) => ({ ...f, effectiveDate: e.target.value }))}

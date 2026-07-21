@@ -48,21 +48,21 @@ export default function TeacherHistoryPage() {
         ) : (
           <Table headers={["Class", "From", "To", "Reason", "When"]}>
             {history.map((h) => (
-              <tr key={h.id} className="hover:bg-slate-50 transition-colors">
+              <tr key={h.id} className="hover:bg-muted/40 transition-colors">
                 <td className="px-5 py-3.5">
-                  <span className="font-semibold text-gray-800">{h.course?.code ?? "—"}</span>
-                  <span className="ml-1.5 text-xs text-gray-400">
+                  <span className="font-semibold text-foreground">{h.course?.code ?? "—"}</span>
+                  <span className="ml-1.5 text-xs text-slate">
                     {h.batch?.name}{h.section ? ` (${h.section})` : ""}
                   </span>
                 </td>
-                <td className="px-5 py-3.5 text-gray-600 whitespace-nowrap">
+                <td className="px-5 py-3.5 text-muted-foreground whitespace-nowrap">
                   {h.oldDay} · {h.oldTimeSlot?.label ?? "—"} · Room {h.oldRoom?.name ?? "—"}
                 </td>
-                <td className="px-5 py-3.5 text-gray-600 whitespace-nowrap">
+                <td className="px-5 py-3.5 text-muted-foreground whitespace-nowrap">
                   {h.newDay} · {h.newTimeSlot?.label ?? "—"} · Room {h.newRoom?.name ?? "—"}
                 </td>
-                <td className="px-5 py-3.5 text-gray-500">{h.reason ?? "—"}</td>
-                <td className="px-5 py-3.5 text-gray-400 text-xs whitespace-nowrap">
+                <td className="px-5 py-3.5 text-muted-foreground">{h.reason ?? "—"}</td>
+                <td className="px-5 py-3.5 text-slate text-xs whitespace-nowrap">
                   {new Date(h.createdAt).toLocaleString()}
                 </td>
               </tr>

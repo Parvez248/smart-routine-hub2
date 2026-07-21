@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
+import { ThemeToggle } from "@/app/components/ThemeToggle";
 
 const LINKS = [
   { href: "/teacher/classes", label: "My Classes" },
@@ -19,21 +20,22 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
   const pathname = usePathname();
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
+    <div className="min-h-screen bg-canvas">
+      <header className="bg-surface border-b border-border sticky top-0 z-10 print:hidden">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
-          <Link href="/teacher/classes" className="text-lg font-bold text-gray-900 shrink-0">
+          <Link href="/teacher/classes" className="text-lg font-bold text-foreground shrink-0">
             SmartRoutineHub
           </Link>
           <div className="flex items-center gap-4 shrink-0">
             {session?.user && (
-              <span className="text-xs text-gray-400 hidden sm:inline">
+              <span className="text-xs text-slate hidden sm:inline">
                 {session.user.name ?? session.user.email}
               </span>
             )}
+            <ThemeToggle />
             <button
               onClick={() => signOut({ callbackUrl: "/login" })}
-              className="text-xs font-semibold text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-xs font-semibold text-slate hover:text-foreground transition-colors"
             >
               Sign out
             </button>
@@ -47,8 +49,8 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
                 href={link.href}
                 className={`px-2.5 py-1.5 rounded-full transition-colors ${
                   pathname === link.href
-                    ? "bg-indigo-50 text-indigo-600"
-                    : "text-gray-400 hover:text-gray-600"
+                    ? "bg-primary/10 text-primary"
+                    : "text-slate hover:text-foreground"
                 }`}
               >
                 {link.label}

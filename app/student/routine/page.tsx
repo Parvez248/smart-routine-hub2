@@ -9,6 +9,7 @@ import { Loading } from "@/app/components/ui/Loading";
 import { nextOccurrenceOf } from "@/lib/services/timeslot";
 import { useRoutineFilters } from "@/app/components/routine/useRoutineFilters";
 import { RoutineFilterBar } from "@/app/components/routine/RoutineFilterBar";
+import { PrintButton, PrintHeader } from "@/app/components/routine/PrintPanel";
 import type { FilterableSession } from "@/app/components/routine/types";
 
 type SessionCell = {
@@ -192,9 +193,10 @@ function StudentRoutineInner() {
         title="My Routine"
         description={versionName ? `Published version: ${versionName}` : "No routine published yet."}
         action={
-          <div className="flex items-center gap-2">
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Batch</label>
+          <div className="flex items-center gap-2 print:hidden">
+            <label htmlFor="student-routine-batch" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Batch</label>
             <select
+              id="student-routine-batch"
               value={selectedBatchId}
               onChange={(e) => handleBatchChange(e.target.value)}
               className="border border-border bg-muted rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition"
@@ -208,7 +210,7 @@ function StudentRoutineInner() {
       />
 
       {nextClass && (
-        <div className="bg-primary rounded-2xl px-6 py-4 text-white flex items-center justify-between gap-4 flex-wrap">
+        <div className="print:hidden bg-primary rounded-2xl px-6 py-4 text-white flex items-center justify-between gap-4 flex-wrap">
           <div>
             <p className="text-xs text-primary-foreground/70 font-semibold uppercase tracking-wide">Next Class</p>
             <p className="text-lg font-bold mt-0.5">
@@ -226,13 +228,15 @@ function StudentRoutineInner() {
       )}
 
       <Card>
-        <CardHeader title="Weekly Routine" />
+        <CardHeader title="Weekly Routine" action={<PrintButton />} />
 
-        <div className="px-6 py-4 border-b border-border">
+        <PrintHeader subtitle="My Routine" filterSummary={filterState.chips.map((c) => c.label).join(", ")} />
+
+        <div className="px-6 py-4 border-b border-border print:hidden">
           <RoutineFilterBar state={filterState} />
         </div>
 
-        <div className="px-6 py-3 text-xs text-slate">
+        <div className="px-6 py-3 text-xs text-slate print:hidden">
           Showing {filtered.length} of {totalCount} classes
         </div>
 
@@ -251,9 +255,9 @@ function StudentRoutineInner() {
             <table className="w-full text-sm border-collapse">
               <thead>
                 <tr className="bg-muted text-slate text-xs uppercase tracking-wide">
-                  <th className="px-4 py-3 text-left font-semibold whitespace-nowrap">Time Slot</th>
+                  <th scope="col" className="px-4 py-3 text-left font-semibold whitespace-nowrap">Time Slot</th>
                   {DAY_ORDER.map((d) => (
-                    <th key={d} className="px-4 py-3 text-left font-semibold whitespace-nowrap">{d}</th>
+                    <th key={d} scope="col" className="px-4 py-3 text-left font-semibold whitespace-nowrap">{d}</th>
                   ))}
                 </tr>
               </thead>
@@ -295,9 +299,11 @@ function StudentRoutineInner() {
                                       </div>
                                       {viewingOwnBatch && !cancelled && (
                                         <button
+                                          type="button"
                                           onClick={() => (bellOpen ? setOpenBellFor(null) : openBell(s))}
-                                          className={`text-sm leading-none shrink-0 ${alarm ? "opacity-100" : "opacity-40 hover:opacity-100"}`}
+                                          className={`print:hidden text-sm leading-none shrink-0 ${alarm ? "opacity-100" : "opacity-40 hover:opacity-100"}`}
                                           title={alarm ? "Reminder set" : "Set reminder"}
+                                          aria-label={alarm ? "Reminder set. Click to edit." : "Set reminder"}
                                         >
                                           {alarm ? "🔔" : "🔕"}
                                         </button>
@@ -317,7 +323,7 @@ function StudentRoutineInner() {
                                     )}
 
                                     {bellOpen && (
-                                      <div className="mt-2 pt-2 border-t border-border space-y-2">
+                                      <div className="print:hidden mt-2 pt-2 border-t border-border space-y-2">
                                         <div className="flex items-center gap-1 flex-wrap">
                                           {LEAD_OPTIONS.map((m) => (
                                             <button
@@ -326,7 +332,7 @@ function StudentRoutineInner() {
                                               className={`px-2 py-0.5 rounded-full text-[11px] font-semibold transition-colors ${
                                                 bellLeadMinutes === m
                                                   ? "bg-primary text-white"
-                                                  : "bg-white text-muted-foreground border border-border hover:bg-muted"
+                                                  : "bg-surface text-muted-foreground border border-border hover:bg-muted"
                                               }`}
                                             >
                                               {m}m

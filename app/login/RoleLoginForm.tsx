@@ -115,8 +115,9 @@ export default function RoleLoginForm({
 
           <form onSubmit={handleSubmit} className="px-8 py-6 space-y-4">
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Email</label>
+              <label htmlFor="login-email" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Email</label>
               <Input
+                id="login-email"
                 type="email"
                 required
                 value={email}
@@ -127,8 +128,9 @@ export default function RoleLoginForm({
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Password</label>
+              <label htmlFor="login-password" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Password</label>
               <Input
+                id="login-password"
                 type="password"
                 required
                 value={password}

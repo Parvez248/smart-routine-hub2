@@ -10,11 +10,11 @@ type Notice = { id: number; title: string; body: string; audience: string; creat
 
 function AudienceBadge({ audience }: { audience: string }) {
   const styles: Record<string, string> = {
-    ALL: "bg-indigo-100 text-indigo-700",
-    TEACHERS: "bg-violet-100 text-violet-700",
+    ALL: "bg-primary/10 text-primary",
+    TEACHERS: "bg-moved/10 text-moved",
   };
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${styles[audience] ?? "bg-gray-100 text-gray-600"}`}>
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${styles[audience] ?? "bg-muted text-muted-foreground"}`}>
       {audience === "ALL" ? "Everyone" : "Teachers"}
     </span>
   );
@@ -43,15 +43,15 @@ export default function TeacherNoticesPage() {
         ) : notices.length === 0 ? (
           <EmptyState icon="📣" message="No notices yet." />
         ) : (
-          <div className="divide-y divide-gray-50">
+          <div className="divide-y divide-border">
             {notices.map((n) => (
               <div key={n.id} className="p-6">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="font-semibold text-gray-800">{n.title}</h3>
+                  <h3 className="font-semibold text-foreground">{n.title}</h3>
                   <AudienceBadge audience={n.audience} />
                 </div>
-                <p className="text-sm text-gray-600 mt-1.5 whitespace-pre-wrap">{n.body}</p>
-                <p className="text-xs text-gray-400 mt-2">{new Date(n.createdAt).toLocaleString()}</p>
+                <p className="text-sm text-muted-foreground mt-1.5 whitespace-pre-wrap">{n.body}</p>
+                <p className="text-xs text-slate mt-2">{new Date(n.createdAt).toLocaleString()}</p>
               </div>
             ))}
           </div>

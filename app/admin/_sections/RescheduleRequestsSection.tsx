@@ -122,6 +122,7 @@ export default function RescheduleRequestsSection() {
                 <td className="px-5 py-3.5">
                   <input
                     type="text"
+                    aria-label={`Note for ${r.teacher?.initials ?? "teacher"}'s reschedule request`}
                     value={noteById[r.id] ?? ""}
                     onChange={(e) => setNoteById((m) => ({ ...m, [r.id]: e.target.value }))}
                     placeholder="Optional note"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import Link from "next/link";
 import { Card, CardHeader } from "@/app/components/ui/Card";
 import { Button, LinkButton } from "@/app/components/ui/Button";
@@ -8,6 +8,7 @@ import { Message } from "@/app/components/ui/Message";
 import { useRoutineFilters } from "@/app/components/routine/useRoutineFilters";
 import { RoutineFilterBar } from "@/app/components/routine/RoutineFilterBar";
 import { RoutineList } from "@/app/components/routine/RoutineList";
+import { PrintButton, PrintHeader } from "@/app/components/routine/PrintPanel";
 
 type Course   = { id: number; code: string; title: string; type: string };
 type Teacher  = { id: number; initials: string; name: string };
@@ -53,12 +54,14 @@ function Select({
   label: string; required?: boolean; value: string;
   onChange: (v: string) => void; children: React.ReactNode;
 }) {
+  const id = useId();
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-        {label}{required && <span className="text-red-400 ml-0.5">*</span>}
+      <label htmlFor={id} className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+        {label}{required && <span className="text-cancelled ml-0.5">*</span>}
       </label>
       <select
+        id={id}
         required={required}
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -241,13 +244,16 @@ export default function ScheduleSection() {
     days: new Set(sessions.map((s) => s.day)).size,
   };
 
+  const selectedVersionName = versions.find((v) => String(v.id) === selectedVersionId)?.name ?? "—";
+
   return (
     <>
       {/* Version selector */}
-      <div className="bg-card rounded-2xl border border-border shadow-sm px-6 py-4 flex flex-wrap items-center justify-between gap-4">
+      <div className="print:hidden bg-card rounded-2xl border border-border shadow-sm px-6 py-4 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Version</label>
+          <label htmlFor="schedule-version" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Version</label>
           <select
+            id="schedule-version"
             value={selectedVersionId}
             onChange={(e) => setSelectedVersionId(e.target.value)}
             className="border border-border bg-muted rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition"
@@ -266,11 +272,11 @@ export default function ScheduleSection() {
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="print:hidden grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
           { label: "Total Sessions", value: stats.total, color: "text-foreground" },
-          { label: "Theory Classes", value: stats.theory, color: "text-sky-600" },
-          { label: "Lab Classes",    value: stats.lab,    color: "text-violet-600" },
+          { label: "Theory Classes", value: stats.theory, color: "text-muted-foreground" },
+          { label: "Lab Classes",    value: stats.lab,    color: "text-primary" },
           { label: "Days Covered",   value: `${stats.days} / 5`, color: "text-confirmed" },
         ].map((s) => (
           <div key={s.label} className="bg-card rounded-xl border border-border shadow-sm px-5 py-4">
@@ -281,7 +287,7 @@ export default function ScheduleSection() {
       </div>
 
       {/* Free room finder */}
-      <Card>
+      <Card className="print:hidden">
         <CardHeader title="Find Free Rooms" description="Pick a day and time slot to see which rooms are available." />
         <div className="p-6 flex flex-wrap items-end gap-4">
           <div className="w-40">
@@ -325,7 +331,7 @@ export default function ScheduleSection() {
       </Card>
 
       {/* Form card */}
-      <Card>
+      <Card className="print:hidden">
         <div className="px-6 py-4 border-b border-border bg-gradient-to-r from-primary/5 to-transparent flex items-center justify-between">
           <div>
             <h2 className="text-base font-semibold text-foreground">
@@ -419,13 +425,19 @@ export default function ScheduleSection() {
       <Card>
         <div className="px-6 py-4 border-b border-border flex items-center justify-between gap-3">
           <h2 className="text-base font-semibold text-foreground">Saved Sessions</h2>
+          <PrintButton />
         </div>
 
-        <div className="px-6 py-4 border-b border-border">
+        <PrintHeader
+          subtitle={`Version: ${selectedVersionName}`}
+          filterSummary={filterState.chips.map((c) => c.label).join(", ")}
+        />
+
+        <div className="px-6 py-4 border-b border-border print:hidden">
           <RoutineFilterBar state={filterState} />
         </div>
 
-        <div className="px-6 py-3 text-xs text-slate">
+        <div className="px-6 py-3 text-xs text-slate print:hidden">
           Showing <span className="font-data">{filtered.length}</span> of <span className="font-data">{totalCount}</span> classes
         </div>
 
@@ -457,6 +469,7 @@ export default function ScheduleSection() {
                     onClick={() => handleDelete(s.id)}
                     className="p-1 rounded align-middle"
                     title="Delete session"
+                    aria-label="Delete session"
                   >
                     {deleteId === s.id ? "…" : (
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

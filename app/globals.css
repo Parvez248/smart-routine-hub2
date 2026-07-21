@@ -107,37 +107,49 @@
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  /* Derived (not inverted) dark palette — same institutional/timetable identity,
+     re-tuned for dark surfaces rather than a flat colour invert. */
+  --ink: #e6ecf2;
+  --slate: #93a1b0;
+  --line: #26313d;
+  --surface: #161e27;
+  --canvas: #0f151c;
+  --confirmed: #3fae8a;
+  --moved: #e0a64b;
+  --cancelled: #e2637f;
+
+  --background: var(--canvas);
+  --foreground: var(--ink);
+  --card: var(--surface);
+  --card-foreground: var(--ink);
+  --popover: var(--surface);
+  --popover-foreground: var(--ink);
+  --primary: #6fa3e8;
+  --primary-foreground: #0f151c;
+  --secondary: var(--surface);
+  --secondary-foreground: var(--ink);
+  --muted: #1b232d;
+  --muted-foreground: var(--slate);
+  --accent: #1b232d;
+  --accent-foreground: var(--ink);
+  --destructive: var(--cancelled);
+  --destructive-foreground: #0f151c;
+  --border: var(--line);
+  --input: var(--line);
+  --ring: var(--primary);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar: var(--surface);
+  --sidebar-foreground: var(--ink);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: #0f151c;
+  --sidebar-accent: #1b232d;
+  --sidebar-accent-foreground: var(--ink);
+  --sidebar-border: var(--line);
+  --sidebar-ring: var(--primary);
 }
 
 @layer base {
@@ -178,4 +190,81 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Print — routine views only. Force light colours regardless of active theme,
+   drop chrome/interactive UI, and make status legible without relying on colour. */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 1.5cm;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+  }
+
+  :root,
+  .dark {
+    --background: #ffffff;
+    --foreground: #16202b;
+    --card: #ffffff;
+    --card-foreground: #16202b;
+    --popover: #ffffff;
+    --popover-foreground: #16202b;
+    --primary: #1e4e8c;
+    --primary-foreground: #ffffff;
+    --secondary: #ffffff;
+    --secondary-foreground: #16202b;
+    --muted: #ffffff;
+    --muted-foreground: #5a6675;
+    --accent: #ffffff;
+    --accent-foreground: #16202b;
+    --border: #e2e6eb;
+    --input: #e2e6eb;
+    --ink: #16202b;
+    --slate: #5a6675;
+    --line: #e2e6eb;
+    --surface: #ffffff;
+    --canvas: #ffffff;
+    --confirmed: #16202b;
+    --moved: #16202b;
+    --cancelled: #16202b;
+  }
+
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  a {
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .print-header {
+    display: block !important;
+  }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  thead {
+    display: table-header-group;
+    position: static !important;
+  }
+
+  tr {
+    break-inside: avoid;
+  }
+}
+
+.print-header {
+  display: none;
 }

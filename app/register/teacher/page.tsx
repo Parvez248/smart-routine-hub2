@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Card, CardHeader } from "@/app/components/ui/Card";
 import { Button } from "@/app/components/ui/Button";
@@ -18,6 +18,10 @@ export default function RegisterTeacherPage() {
   const [devCode, setDevCode] = useState("");
   const [registeredEmail, setRegisteredEmail] = useState("");
   const [code, setCode] = useState("");
+
+  useEffect(() => {
+    document.title = "Teacher Registration · Routine Management System";
+  }, []);
   const [verifyError, setVerifyError] = useState<string | null>(null);
   const [verifyLoading, setVerifyLoading] = useState(false);
 
@@ -70,7 +74,7 @@ export default function RegisterTeacherPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-canvas flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <Card>
           <CardHeader title="SmartRoutineHub" description="Teacher registration" accent />
@@ -78,51 +82,55 @@ export default function RegisterTeacherPage() {
           {step === "form" && (
             <form onSubmit={handleRegister} className="px-8 py-6 space-y-4">
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Name</label>
+                <label htmlFor="register-name" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Name</label>
                 <input
+                  id="register-name"
                   type="text"
                   required
                   value={form.name}
                   onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                   placeholder="e.g. Md. Khaled Parvez"
-                  className="border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                  className="border border-border bg-muted rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition"
                 />
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Email</label>
+                <label htmlFor="register-email" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Email</label>
                 <input
+                  id="register-email"
                   type="email"
                   required
                   value={form.email}
                   onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
                   placeholder="you@example.com"
-                  className="border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                  className="border border-border bg-muted rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition"
                 />
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Password</label>
+                <label htmlFor="register-password" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Password</label>
                 <input
+                  id="register-password"
                   type="password"
                   required
                   minLength={8}
                   value={form.password}
                   onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
                   placeholder="At least 8 characters"
-                  className="border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                  className="border border-border bg-muted rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition"
                 />
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Initials</label>
+                <label htmlFor="register-initials" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Initials</label>
                 <input
+                  id="register-initials"
                   type="text"
                   required
                   value={form.initials}
                   onChange={(e) => setForm((f) => ({ ...f, initials: e.target.value }))}
                   placeholder="e.g. MKP"
-                  className="border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                  className="border border-border bg-muted rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition"
                 />
               </div>
 
@@ -132,15 +140,15 @@ export default function RegisterTeacherPage() {
                 {loading ? "Registering…" : "Register"}
               </Button>
 
-              <p className="text-center text-xs text-gray-400">
+              <p className="text-center text-xs text-slate">
                 Already have an account?{" "}
-                <Link href="/login/teacher" className="text-indigo-600 font-semibold hover:text-indigo-700">
+                <Link href="/login/teacher" className="text-primary font-semibold hover:opacity-80">
                   Sign in
                 </Link>
               </p>
-              <p className="text-center text-xs text-gray-400">
+              <p className="text-center text-xs text-slate">
                 Registering as a student instead?{" "}
-                <Link href="/register/student" className="text-indigo-600 font-semibold hover:text-indigo-700">
+                <Link href="/register/student" className="text-primary font-semibold hover:opacity-80">
                   Register as a student
                 </Link>
               </p>
@@ -149,25 +157,26 @@ export default function RegisterTeacherPage() {
 
           {step === "code" && (
             <form onSubmit={handleVerify} className="px-8 py-6 space-y-4">
-              <div className="rounded-lg px-4 py-3 text-sm bg-amber-50 text-amber-800 border border-amber-200">
+              <div className="rounded-lg px-4 py-3 text-sm bg-moved/10 text-moved border border-moved/20">
                 <p className="font-semibold">Dev mode: your code is {devCode}</p>
-                <p className="text-xs mt-1 text-amber-700">
+                <p className="text-xs mt-1 text-moved">
                   In production this would be e-mailed to {registeredEmail}.
                 </p>
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                <label htmlFor="register-code" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                   Verification code
                 </label>
                 <input
+                  id="register-code"
                   type="text"
                   required
                   maxLength={6}
                   value={code}
                   onChange={(e) => setCode(e.target.value)}
                   placeholder="123456"
-                  className="border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm tracking-widest focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                  className="border border-border bg-muted rounded-lg px-3 py-2.5 text-sm tracking-widest focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition"
                 />
               </div>
 
@@ -184,7 +193,7 @@ export default function RegisterTeacherPage() {
               <Message type="success">E-mail verified. Your account is now awaiting admin approval.</Message>
               <Link
                 href="/login/teacher"
-                className="block text-center w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-2.5 rounded-lg text-sm transition-colors shadow-sm"
+                className="block text-center w-full bg-primary hover:opacity-90 text-primary-foreground font-semibold px-6 py-2.5 rounded-lg text-sm transition-colors shadow-sm"
               >
                 Go to sign in
               </Link>

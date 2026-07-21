@@ -117,31 +117,33 @@ export default function TimeSlotsSection() {
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                Label <span className="text-red-400">*</span>
+              <label htmlFor="timeslot-label" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Label <span className="text-cancelled">*</span>
               </label>
               <input
+                id="timeslot-label"
                 type="text"
                 required
                 value={form.label}
                 onChange={(e) => setForm((f) => ({ ...f, label: e.target.value }))}
                 placeholder="e.g. 8:30 - 10:00"
-                className="border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                className="border border-border bg-muted rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition"
               />
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                Sort Order <span className="text-red-400">*</span>
+              <label htmlFor="timeslot-sort" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Sort Order <span className="text-cancelled">*</span>
               </label>
               <input
+                id="timeslot-sort"
                 type="number"
                 required
                 min={1}
                 value={form.sortOrder}
                 onChange={(e) => setForm((f) => ({ ...f, sortOrder: e.target.value }))}
                 placeholder="e.g. 1"
-                className="border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                className="border border-border bg-muted rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition"
               />
             </div>
           </div>

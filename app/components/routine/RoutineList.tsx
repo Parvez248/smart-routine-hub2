@@ -115,7 +115,7 @@ export function RoutineList<T extends FilterableSession>({
     { label: <SortHead label="Batch / Section" active={sortKey === "batch"} dir={sortDir} onClick={() => toggleSort("batch")} /> },
     { label: <SortHead label="Room" active={sortKey === "room"} dir={sortDir} onClick={() => toggleSort("room")} /> },
     { label: <SortHead label="Status" active={sortKey === "status"} dir={sortDir} onClick={() => toggleSort("status")} /> },
-    ...(renderActions ? [{ label: "" }] : []),
+    ...(renderActions ? [{ label: <span className="print:hidden"></span> }] : []),
   ];
 
   if (loading) {
@@ -189,7 +189,7 @@ export function RoutineList<T extends FilterableSession>({
               <td className="px-5 py-3.5">
                 <StatusBadge status={cancelled ? "Cancelled" : "Active"} />
               </td>
-              {renderActions && <td className="px-5 py-3.5 text-right whitespace-nowrap">{renderActions(s)}</td>}
+              {renderActions && <td className="print:hidden px-5 py-3.5 text-right whitespace-nowrap">{renderActions(s)}</td>}
             </tr>
           </Fragment>
         );

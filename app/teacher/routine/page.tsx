@@ -7,6 +7,7 @@ import { Loading } from "@/app/components/ui/Loading";
 import { useRoutineFilters } from "@/app/components/routine/useRoutineFilters";
 import { RoutineFilterBar } from "@/app/components/routine/RoutineFilterBar";
 import { RoutineList } from "@/app/components/routine/RoutineList";
+import { PrintButton, PrintHeader } from "@/app/components/routine/PrintPanel";
 import type { FilterableSession } from "@/app/components/routine/types";
 
 type RoutineSession = FilterableSession & { id: number };
@@ -33,13 +34,15 @@ function TeacherRoutineInner() {
       />
 
       <Card>
-        <CardHeader title="Routine" />
+        <CardHeader title="Routine" action={<PrintButton />} />
 
-        <div className="px-6 py-4 border-b border-border">
+        <PrintHeader subtitle="Full Department Routine" filterSummary={filterState.chips.map((c) => c.label).join(", ")} />
+
+        <div className="px-6 py-4 border-b border-border print:hidden">
           <RoutineFilterBar state={filterState} />
         </div>
 
-        <div className="px-6 py-3 text-xs text-slate">
+        <div className="px-6 py-3 text-xs text-slate print:hidden">
           Showing <span className="font-data">{filtered.length}</span> of <span className="font-data">{totalCount}</span> classes
         </div>
 

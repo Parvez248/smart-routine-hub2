@@ -1,3 +1,7 @@
+"use client";
+
+import { useEffect } from "react";
+
 export function PageHeader({
   title,
   description,
@@ -7,6 +11,12 @@ export function PageHeader({
   description?: string;
   action?: React.ReactNode;
 }) {
+  useEffect(() => {
+    if (typeof title === "string") {
+      document.title = `${title} · Routine Management System`;
+    }
+  }, [title]);
+
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
       <div>

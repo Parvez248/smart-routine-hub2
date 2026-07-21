@@ -25,6 +25,10 @@ export default function RegisterStudentPage() {
   const [verifyLoading, setVerifyLoading] = useState(false);
 
   useEffect(() => {
+    document.title = "Student Registration · Routine Management System";
+  }, []);
+
+  useEffect(() => {
     fetch("/api/public/batches")
       .then((res) => res.json())
       .then((json) => { if (json.ok) setBatches(json.data); });
@@ -85,7 +89,7 @@ export default function RegisterStudentPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-canvas flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <Card>
           <CardHeader title="SmartRoutineHub" description="Student registration" accent />
@@ -93,49 +97,53 @@ export default function RegisterStudentPage() {
           {step === "form" && (
             <form onSubmit={handleRegister} className="px-8 py-6 space-y-4">
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Name</label>
+                <label htmlFor="register-name" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Name</label>
                 <input
+                  id="register-name"
                   type="text"
                   required
                   value={form.name}
                   onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                   placeholder="e.g. Jamal Uddin"
-                  className="border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                  className="border border-border bg-muted rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition"
                 />
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Email</label>
+                <label htmlFor="register-email" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Email</label>
                 <input
+                  id="register-email"
                   type="email"
                   required
                   value={form.email}
                   onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
                   placeholder="you@example.com"
-                  className="border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                  className="border border-border bg-muted rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition"
                 />
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Password</label>
+                <label htmlFor="register-password" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Password</label>
                 <input
+                  id="register-password"
                   type="password"
                   required
                   minLength={8}
                   value={form.password}
                   onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
                   placeholder="At least 8 characters"
-                  className="border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                  className="border border-border bg-muted rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition"
                 />
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Batch</label>
+                <label htmlFor="register-batch" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Batch</label>
                 <select
+                  id="register-batch"
                   required
                   value={form.batchId}
                   onChange={(e) => setForm((f) => ({ ...f, batchId: e.target.value }))}
-                  className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                  className="w-full border border-border bg-muted rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition"
                 >
                   <option value="">Select batch</option>
                   {batches.map((b) => (
@@ -145,15 +153,16 @@ export default function RegisterStudentPage() {
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                  Student ID <span className="text-gray-300 normal-case font-normal">(optional)</span>
+                <label htmlFor="register-student-id" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  Student ID <span className="text-slate/60 normal-case font-normal">(optional)</span>
                 </label>
                 <input
+                  id="register-student-id"
                   type="text"
                   value={form.studentId}
                   onChange={(e) => setForm((f) => ({ ...f, studentId: e.target.value }))}
                   placeholder="e.g. 2021-1-60-001"
-                  className="border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                  className="border border-border bg-muted rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition"
                 />
               </div>
 
@@ -163,9 +172,9 @@ export default function RegisterStudentPage() {
                 {loading ? "Registering…" : "Register"}
               </Button>
 
-              <p className="text-center text-xs text-gray-400">
+              <p className="text-center text-xs text-slate">
                 Already have an account?{" "}
-                <Link href="/login/student" className="text-indigo-600 font-semibold hover:text-indigo-700">
+                <Link href="/login/student" className="text-primary font-semibold hover:opacity-80">
                   Sign in
                 </Link>
               </p>
@@ -174,25 +183,26 @@ export default function RegisterStudentPage() {
 
           {step === "code" && (
             <form onSubmit={handleVerify} className="px-8 py-6 space-y-4">
-              <div className="rounded-lg px-4 py-3 text-sm bg-amber-50 text-amber-800 border border-amber-200">
+              <div className="rounded-lg px-4 py-3 text-sm bg-moved/10 text-moved border border-moved/20">
                 <p className="font-semibold">Dev mode: your code is {devCode}</p>
-                <p className="text-xs mt-1 text-amber-700">
+                <p className="text-xs mt-1 text-moved">
                   In production this would be e-mailed to {registeredEmail}.
                 </p>
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                <label htmlFor="register-code" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                   Verification code
                 </label>
                 <input
+                  id="register-code"
                   type="text"
                   required
                   maxLength={6}
                   value={code}
                   onChange={(e) => setCode(e.target.value)}
                   placeholder="123456"
-                  className="border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm tracking-widest focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                  className="border border-border bg-muted rounded-lg px-3 py-2.5 text-sm tracking-widest focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition"
                 />
               </div>
 
@@ -209,7 +219,7 @@ export default function RegisterStudentPage() {
               <Message type="success">E-mail verified. You can sign in now — no approval needed.</Message>
               <Link
                 href="/login/student"
-                className="block text-center w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-2.5 rounded-lg text-sm transition-colors shadow-sm"
+                className="block text-center w-full bg-primary hover:opacity-90 text-primary-foreground font-semibold px-6 py-2.5 rounded-lg text-sm transition-colors shadow-sm"
               >
                 Go to sign in
               </Link>

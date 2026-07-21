@@ -64,6 +64,8 @@ function MultiSelectDropdown({
       <button
         type="button"
         disabled={disabled}
+        aria-haspopup="listbox"
+        aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
         className={`h-8 border rounded-lg px-3 text-xs font-semibold flex items-center gap-1.5 transition-colors whitespace-nowrap ${
           disabled
@@ -222,8 +224,17 @@ export function RoutineFilterBar({ state }: { state: FiltersState }) {
             <Badge
               key={c.key}
               variant="secondary"
-              className="cursor-pointer gap-1 pl-2.5 pr-1.5 bg-primary/10 text-primary hover:bg-primary/15"
+              role="button"
+              tabIndex={0}
+              aria-label={`Remove filter: ${c.label}`}
+              className="cursor-pointer gap-1 pl-2.5 pr-1.5 bg-primary/10 text-primary hover:bg-primary/15 focus-visible:outline-none"
               onClick={c.onRemove}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  c.onRemove();
+                }
+              }}
             >
               {c.label}
               <XIcon className="h-2.5 w-2.5" />

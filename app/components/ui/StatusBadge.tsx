@@ -18,14 +18,17 @@ const STATUS_STYLES: Record<Status, string> = {
 
 export function StatusBadge({ status, className }: { status: Status; className?: string }) {
   return (
-    <span
-      className={cn(
-        "inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold whitespace-nowrap",
-        STATUS_STYLES[status],
-        className
-      )}
-    >
-      {status}
-    </span>
+    <>
+      <span
+        className={cn(
+          "print:hidden inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold whitespace-nowrap",
+          STATUS_STYLES[status],
+          className
+        )}
+      >
+        {status}
+      </span>
+      <span className={cn("hidden print:inline text-xs font-semibold", className)}>[{status}]</span>
+    </>
   );
 }
