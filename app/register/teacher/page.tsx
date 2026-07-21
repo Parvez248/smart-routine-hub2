@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Card, CardHeader } from "@/app/components/ui/Card";
 import { Button } from "@/app/components/ui/Button";
 import { Message } from "@/app/components/ui/Message";
+import { AuthSplitPanel } from "@/app/components/AuthSplitPanel";
 
 type RegisterForm = { name: string; email: string; password: string; initials: string };
 const emptyForm: RegisterForm = { name: "", email: "", password: "", initials: "" };
@@ -74,8 +75,7 @@ export default function RegisterTeacherPage() {
   }
 
   return (
-    <div className="min-h-screen bg-canvas flex items-center justify-center px-4">
-      <div className="w-full max-w-sm">
+    <AuthSplitPanel>
         <Card>
           <CardHeader title="SmartRoutineHub" description="Teacher registration" accent />
 
@@ -200,7 +200,6 @@ export default function RegisterTeacherPage() {
             </div>
           )}
         </Card>
-      </div>
-    </div>
+    </AuthSplitPanel>
   );
 }

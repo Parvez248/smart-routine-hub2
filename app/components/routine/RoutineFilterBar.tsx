@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { daySolidVar } from "@/lib/ui/dayColors";
 import type { useRoutineFilters, Option } from "./useRoutineFilters";
 
 type FiltersState = ReturnType<typeof useRoutineFilters>;
@@ -141,7 +142,7 @@ export function RoutineFilterBar({ state }: { state: FiltersState }) {
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
-        <div className="relative flex-1 min-w-[180px] max-w-xs">
+        <div className="relative flex-1 min-w-[180px] max-w-xs rounded-lg transition-shadow focus-within:[box-shadow:0_0_0_2px_var(--brand-from),0_0_0_4px_color-mix(in_srgb,var(--brand-to)_35%,transparent)]">
           <span className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
             <SearchIcon />
           </span>
@@ -150,7 +151,7 @@ export function RoutineFilterBar({ state }: { state: FiltersState }) {
             value={qInput}
             onChange={(e) => setQInput(e.target.value)}
             placeholder="Search course, teacher, room…"
-            className="h-8 pl-8 pr-7 text-xs bg-card"
+            className="h-8 pl-8 pr-7 text-xs bg-card focus-visible:ring-0 focus-visible:border-border"
           />
           {qInput && (
             <button
@@ -220,26 +221,36 @@ export function RoutineFilterBar({ state }: { state: FiltersState }) {
 
       {chips.length > 0 && (
         <div className="flex flex-wrap items-center gap-1.5">
-          {chips.map((c) => (
-            <Badge
-              key={c.key}
-              variant="secondary"
-              role="button"
-              tabIndex={0}
-              aria-label={`Remove filter: ${c.label}`}
-              className="cursor-pointer gap-1 pl-2.5 pr-1.5 bg-primary/10 text-primary hover:bg-primary/15 focus-visible:outline-none"
-              onClick={c.onRemove}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  c.onRemove();
+          {chips.map((c) => {
+            // Day chips are coloured in their own day's colour; everything else uses brand.
+            const dayCode = c.key.startsWith("day-") ? c.key.slice(4) : null;
+            const dayColor = dayCode ? daySolidVar(dayCode) : null;
+            return (
+              <Badge
+                key={c.key}
+                variant="secondary"
+                role="button"
+                tabIndex={0}
+                aria-label={`Remove filter: ${c.label}`}
+                className={
+                  dayColor
+                    ? "cursor-pointer gap-1 pl-2.5 pr-1.5 focus-visible:outline-none"
+                    : "cursor-pointer gap-1 pl-2.5 pr-1.5 bg-primary/10 text-primary hover:bg-primary/15 focus-visible:outline-none"
                 }
-              }}
-            >
-              {c.label}
-              <XIcon className="h-2.5 w-2.5" />
-            </Badge>
-          ))}
+                style={dayColor ? { backgroundColor: `color-mix(in srgb, ${dayColor} 15%, transparent)`, color: dayColor } : undefined}
+                onClick={c.onRemove}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    c.onRemove();
+                  }
+                }}
+              >
+                {c.label}
+                <XIcon className="h-2.5 w-2.5" />
+              </Badge>
+            );
+          })}
           <button type="button" onClick={clearAll} className="text-[11px] font-semibold text-muted-foreground hover:text-cancelled px-1.5 py-1">
             Clear all
           </button>

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Card, CardHeader } from "@/app/components/ui/Card";
 import { Button } from "@/app/components/ui/Button";
 import { Message } from "@/app/components/ui/Message";
+import { AuthSplitPanel } from "@/app/components/AuthSplitPanel";
 
 export default function VerifyPage() {
   const [email, setEmail] = useState("");
@@ -41,8 +42,7 @@ export default function VerifyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-canvas flex items-center justify-center px-4">
-      <div className="w-full max-w-sm">
+    <AuthSplitPanel>
         <Card>
           <CardHeader title="SmartRoutineHub" description="Verify your e-mail" accent />
 
@@ -95,7 +95,6 @@ export default function VerifyPage() {
             </form>
           )}
         </Card>
-      </div>
-    </div>
+    </AuthSplitPanel>
   );
 }

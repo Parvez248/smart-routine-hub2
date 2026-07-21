@@ -8,6 +8,7 @@ import { Card, CardHeader } from "@/app/components/ui/Card";
 import { Button } from "@/app/components/ui/Button";
 import { Message } from "@/app/components/ui/Message";
 import { Input } from "@/components/ui/input";
+import { AuthSplitPanel } from "@/app/components/AuthSplitPanel";
 
 type Role = "ADMIN" | "TEACHER" | "STUDENT";
 
@@ -97,14 +98,13 @@ export default function RoleLoginForm({
   }
 
   return (
-    <div className="min-h-screen bg-canvas flex items-center justify-center px-4">
-      <div className="w-full max-w-sm">
+    <AuthSplitPanel>
         <Card>
           <CardHeader
             title={
               <span className="flex items-center gap-2">
                 {heading}
-                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-primary/10 text-primary">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-primary/10 text-primary">
                   {ROLE_NAME[role]}
                 </span>
               </span>
@@ -163,7 +163,6 @@ export default function RoleLoginForm({
             </p>
           </form>
         </Card>
-      </div>
-    </div>
+    </AuthSplitPanel>
   );
 }

@@ -19,7 +19,7 @@ function AudienceBadge({ audience }: { audience: string }) {
     STUDENTS: "bg-confirmed/10 text-confirmed",
   };
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold ${styles[audience] ?? "bg-muted text-muted-foreground"}`}>
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${styles[audience] ?? "bg-muted text-muted-foreground"}`}>
       {audience === "ALL" ? "Everyone" : audience.charAt(0) + audience.slice(1).toLowerCase()}
     </span>
   );

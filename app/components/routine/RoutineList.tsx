@@ -5,11 +5,26 @@ import { Table } from "@/app/components/ui/Table";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { StatusBadge } from "@/app/components/ui/StatusBadge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DAY_NAME, DAY_ORDER, dayGradient, daySpineClass } from "@/lib/ui/dayColors";
 import type { FilterableSession } from "./types";
 
 type SortKey = "day" | "slot" | "course" | "teacher" | "batch" | "room" | "status";
-const DAY_ORDER = ["Sat", "Sun", "Mon", "Tues", "Wed"];
-const DAY_NAME: Record<string, string> = { Sat: "Saturday", Sun: "Sunday", Mon: "Monday", Tues: "Tuesday", Wed: "Wednesday" };
+
+function TypePill({ type, day }: { type: string; day: string }) {
+  const isLab = type === "LAB";
+  return (
+    <span
+      className={
+        isLab
+          ? "inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold text-white print:text-foreground print:border print:border-foreground"
+          : "inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold border border-slate text-slate print:border-foreground print:text-foreground"
+      }
+      style={isLab ? { backgroundImage: dayGradient(day) } : undefined}
+    >
+      {isLab ? "LAB" : "THEORY"}
+    </span>
+  );
+}
 
 function formatMovedDate(value: string | null): string | null {
   if (!value) return null;
@@ -34,10 +49,12 @@ function SortHead({ label, active, dir, onClick }: { label: string; active: bool
   );
 }
 
-function stripeShadow(cancelled: boolean, moved: boolean): string {
-  if (cancelled) return "shadow-[inset_3px_0_0_0_var(--cancelled)]";
-  if (moved) return "shadow-[inset_3px_0_0_0_var(--moved)]";
-  return "shadow-[inset_3px_0_0_0_var(--confirmed)]";
+// Every row keeps a day-coloured spine — status always wins over day colour,
+// so a cancelled/moved class stays visible even inside its day's colour block.
+function stripeShadow(day: string, cancelled: boolean, moved: boolean): string {
+  if (cancelled) return "shadow-[inset_4px_0_0_0_var(--cancelled)]";
+  if (moved) return "shadow-[inset_4px_0_0_0_var(--moved)]";
+  return daySpineClass(day);
 }
 
 function SkeletonRows({ columns }: { columns: number }) {
@@ -157,17 +174,31 @@ export function RoutineList<T extends FilterableSession>({
         return (
           <Fragment key={s.id}>
             {showDayHeader && (
-              <tr key={`day-${s.day}`} className="bg-muted/40 hover:bg-muted/40">
-                <td colSpan={headers.length} className="px-5 py-1.5 text-[11px] font-semibold text-slate uppercase tracking-wide">
-                  {DAY_NAME[s.day] ?? s.day} <span className="font-normal normal-case text-muted-foreground">· {dayCount} classes</span>
+              <tr key={`day-${s.day}`} className="hover:bg-transparent">
+                <td colSpan={headers.length} className="p-0">
+                  <div
+                    className="on-gradient print:bg-white flex items-center gap-2 px-5 py-2"
+                    style={{ backgroundImage: dayGradient(s.day) }}
+                  >
+                    <span className="font-heading font-bold text-white text-xs uppercase tracking-wide print:text-foreground">
+                      {DAY_NAME[s.day as keyof typeof DAY_NAME] ?? s.day}
+                    </span>
+                    <span className="text-white/90 text-[11px] font-semibold bg-white/20 px-2 py-0.5 rounded-full print:hidden">
+                      {dayCount} classes
+                    </span>
+                    <span className="hidden print:inline text-[11px] text-muted-foreground">· {dayCount} classes</span>
+                  </div>
                 </td>
               </tr>
             )}
             <tr key={s.id} className={`hover:bg-muted/40 transition-colors group ${cancelled ? "text-muted-foreground" : ""}`}>
-              <td className={`px-5 py-3.5 font-semibold font-data whitespace-nowrap ${stripeShadow(cancelled, moved)}`}>{s.day}</td>
+              <td className={`px-5 py-3.5 font-semibold font-data whitespace-nowrap ${stripeShadow(s.day, cancelled, moved)}`}>{s.day}</td>
               <td className="px-5 py-3.5 text-muted-foreground font-data whitespace-nowrap">{s.timeSlot.label}</td>
               <td className="px-5 py-3.5">
-                <div className={`font-semibold font-data ${cancelled ? "text-muted-foreground line-through" : "text-foreground"}`}>{s.course.code}</div>
+                <div className="flex items-center gap-1.5">
+                  <span className={`font-semibold font-heading ${cancelled ? "text-muted-foreground line-through" : "text-foreground"}`}>{s.course.code}</span>
+                  <TypePill type={s.course.type} day={s.day} />
+                </div>
                 <div className="text-xs text-slate truncate max-w-[180px]" title={s.course.title}>{s.course.title}</div>
                 {cancelled && <StatusBadge status="Cancelled" className="mt-1" />}
                 {moved && (

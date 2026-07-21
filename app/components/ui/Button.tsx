@@ -10,6 +10,11 @@ const VARIANT_MAP: Record<ButtonVariant, "default" | "outline" | "destructive"> 
   danger: "destructive",
 };
 
+// Primary buttons carry the one brand gradient in the app — never a second gradient
+// direction, never on secondary/destructive actions. Buttons never print (Step 24).
+const GRADIENT_PRIMARY =
+  "print:hidden bg-brand-gradient text-white border-transparent shadow-tinted hover:opacity-90 hover:-translate-y-0.5 transition-[opacity,transform]";
+
 export function Button({
   variant = "primary",
   loading = false,
@@ -22,7 +27,7 @@ export function Button({
     <ShadcnButton
       variant={VARIANT_MAP[variant]}
       disabled={disabled || loading}
-      className={cn("h-9 px-6 text-sm font-medium gap-2", className)}
+      className={cn("h-9 px-6 text-sm font-medium gap-2", variant === "primary" && GRADIENT_PRIMARY, className)}
       {...props}
     >
       {loading && <Loader2 className="size-4 animate-spin" />}

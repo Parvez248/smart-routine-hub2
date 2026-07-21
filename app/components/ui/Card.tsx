@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 export function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <ShadcnCard className={cn("rounded-lg border border-border bg-card py-0 gap-0 shadow-none ring-0", className)}>
+    <ShadcnCard className={cn("rounded-2xl border border-border bg-card py-0 gap-0 shadow-tinted ring-0", className)}>
       {children}
     </ShadcnCard>
   );

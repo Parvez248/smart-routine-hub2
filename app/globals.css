@@ -57,19 +57,55 @@
   --color-confirmed: var(--confirmed);
   --color-moved: var(--moved);
   --color-cancelled: var(--cancelled);
+  --color-pending: var(--pending);
+
+  /* Vivid redesign (Step 25) — day colours + brand gradient, all token-driven. */
+  --color-day-sat: var(--day-sat-from);
+  --color-day-sun: var(--day-sun-from);
+  --color-day-mon: var(--day-mon-from);
+  --color-day-tues: var(--day-tues-from);
+  --color-day-wed: var(--day-wed-from);
+  --color-brand-from: var(--brand-from);
+  --color-brand-to: var(--brand-to);
+
+  /* Headings pick up Space Grotesk everywhere font-heading is already used
+     (shadcn CardTitle, DialogTitle, …) without touching those components. */
+  --font-heading: var(--font-space-grotesk);
+
+  /* Controls (buttons, inputs, dropdowns) sit at the 10px step; cards get a
+     fixed 16px regardless of the base radius, per the vivid redesign spec. */
+  --radius-2xl: 1rem;
 }
 
 :root {
-  /* Design tokens — cool institutional neutrals, one calm primary, clear status colours.
-     Status colours (confirmed/moved/cancelled) are for status only, never decoration. */
+  /* Design tokens — vivid "vibrant timetable" identity (Step 25). Status colours
+     (confirmed/moved/cancelled/pending) are for status only, never decoration. */
   --ink: #16202b;
   --slate: #5a6675;
   --line: #e2e6eb;
   --surface: #ffffff;
-  --canvas: #f6f8fa;
-  --confirmed: #17795e;
-  --moved: #b26a00;
-  --cancelled: #a8324a;
+  --canvas: #f7f8fc;
+  --confirmed: #10b981;
+  --moved: #f59e0b;
+  --cancelled: #f43f5e;
+  --pending: #8b5cf6;
+
+  /* Day colours — the backbone of the whole design. Each day owns a gradient
+     pair (from → to); never hard-code these hexes in a page, read the tokens. */
+  --day-sat-from: #7c3aed;
+  --day-sat-to: #a855f7;
+  --day-sun-from: #0891b2;
+  --day-sun-to: #22d3ee;
+  --day-mon-from: #d97706;
+  --day-mon-to: #fbbf24;
+  --day-tues-from: #e11d48;
+  --day-tues-to: #fb7185;
+  --day-wed-from: #059669;
+  --day-wed-to: #34d399;
+
+  /* One brand gradient, used for the logo, primary buttons, active nav, hero cards. */
+  --brand-from: #6366f1;
+  --brand-to: #d946ef;
 
   --background: var(--canvas);
   --foreground: var(--ink);
@@ -77,7 +113,7 @@
   --card-foreground: var(--ink);
   --popover: var(--surface);
   --popover-foreground: var(--ink);
-  --primary: #1e4e8c;
+  --primary: #6366f1;
   --primary-foreground: #ffffff;
   --secondary: var(--surface);
   --secondary-foreground: var(--ink);
@@ -95,7 +131,7 @@
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --radius: 0.375rem;
+  --radius: 0.625rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -107,16 +143,32 @@
 }
 
 .dark {
-  /* Derived (not inverted) dark palette — same institutional/timetable identity,
-     re-tuned for dark surfaces rather than a flat colour invert. */
+  /* Derived (not inverted) dark palette — same vivid identity, re-tuned for dark
+     surfaces: page/card/border per spec, day colours shifted to their lighter
+     ends, gradients slightly desaturated so they don't glow. */
   --ink: #e6ecf2;
   --slate: #93a1b0;
-  --line: #26313d;
-  --surface: #161e27;
-  --canvas: #0f151c;
-  --confirmed: #3fae8a;
-  --moved: #e0a64b;
-  --cancelled: #e2637f;
+  --line: #262c3a;
+  --surface: #171b26;
+  --canvas: #0e1017;
+  --confirmed: #34d399;
+  --moved: #fbbf24;
+  --cancelled: #fb7185;
+  --pending: #a78bfa;
+
+  --day-sat-from: #a855f7;
+  --day-sat-to: #c084fc;
+  --day-sun-from: #22d3ee;
+  --day-sun-to: #67e8f9;
+  --day-mon-from: #fbbf24;
+  --day-mon-to: #fde047;
+  --day-tues-from: #fb7185;
+  --day-tues-to: #fda4af;
+  --day-wed-from: #34d399;
+  --day-wed-to: #6ee7b7;
+
+  --brand-from: #818cf8;
+  --brand-to: #e879f9;
 
   --background: var(--canvas);
   --foreground: var(--ink);
@@ -124,16 +176,16 @@
   --card-foreground: var(--ink);
   --popover: var(--surface);
   --popover-foreground: var(--ink);
-  --primary: #6fa3e8;
-  --primary-foreground: #0f151c;
+  --primary: #818cf8;
+  --primary-foreground: #0e1017;
   --secondary: var(--surface);
   --secondary-foreground: var(--ink);
-  --muted: #1b232d;
+  --muted: #1b202c;
   --muted-foreground: var(--slate);
-  --accent: #1b232d;
+  --accent: #1b202c;
   --accent-foreground: var(--ink);
   --destructive: var(--cancelled);
-  --destructive-foreground: #0f151c;
+  --destructive-foreground: #0e1017;
   --border: var(--line);
   --input: var(--line);
   --ring: var(--primary);
@@ -231,14 +283,26 @@
     --confirmed: #16202b;
     --moved: #16202b;
     --cancelled: #16202b;
+    --pending: #16202b;
   }
 
+  /* Gradients (day headers, hero stat cards, brand text/buttons) never print —
+     the vivid palette stays on-screen only; printed pages stay black-and-white
+     with the same text labels as the screen ([Cancelled], [Moved → …]). */
   * {
     box-shadow: none !important;
+    background-image: none !important;
     text-shadow: none !important;
     color-adjust: exact;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+  }
+
+  .on-gradient,
+  .on-gradient *,
+  .text-brand-gradient {
+    color: var(--ink) !important;
+    -webkit-text-fill-color: var(--ink) !important;
   }
 
   a {
@@ -267,4 +331,25 @@
 
 .print-header {
   display: none;
+}
+
+/* Vivid redesign (Step 25) — brand gradient + tinted shadow helpers. One gradient
+   direction (135°) everywhere so the whole app feels related; body text and table
+   rows never sit on a gradient, only accents (buttons, hero cards, headers, logo). */
+.bg-brand-gradient {
+  background-image: linear-gradient(135deg, var(--brand-from), var(--brand-to));
+}
+
+.text-brand-gradient {
+  background-image: linear-gradient(135deg, var(--brand-from), var(--brand-to));
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+.shadow-tinted {
+  box-shadow:
+    0 1px 2px color-mix(in srgb, var(--brand-from) 10%, transparent),
+    0 6px 16px color-mix(in srgb, var(--brand-from) 10%, transparent);
 }

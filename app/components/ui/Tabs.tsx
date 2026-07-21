@@ -34,7 +34,7 @@ export function Tabs({
             aria-current={activeKey === t.key ? "page" : undefined}
             className={`px-4 py-2.5 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors -mb-px ${
               activeKey === t.key
-                ? "border-primary text-primary"
+                ? "text-primary [border-image:linear-gradient(135deg,var(--brand-from),var(--brand-to))_1] print:border-primary print:[border-image:none]"
                 : "border-transparent text-slate hover:text-foreground"
             }`}
           >

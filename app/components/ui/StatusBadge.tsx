@@ -12,7 +12,7 @@ const STATUS_STYLES: Record<Status, string> = {
   Cancelled: "bg-cancelled/10 text-cancelled",
   Rejected: "bg-cancelled/10 text-cancelled",
   Moved: "bg-moved/10 text-moved",
-  Pending: "bg-moved/10 text-moved",
+  Pending: "bg-pending/10 text-pending",
   "In use": "bg-muted text-muted-foreground",
 };
 
@@ -21,7 +21,7 @@ export function StatusBadge({ status, className }: { status: Status; className?:
     <>
       <span
         className={cn(
-          "print:hidden inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold whitespace-nowrap",
+          "print:hidden inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap",
           STATUS_STYLES[status],
           className
         )}

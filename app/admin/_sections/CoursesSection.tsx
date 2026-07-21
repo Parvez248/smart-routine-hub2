@@ -15,7 +15,7 @@ const emptyForm: CourseForm = { code: "", title: "", type: "THEORY" };
 
 function TypeBadge({ type }: { type: string }) {
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold ${
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
       type === "LAB" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
     }`}>
       {type === "LAB" ? "Lab" : "Theory"}

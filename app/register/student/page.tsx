@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Card, CardHeader } from "@/app/components/ui/Card";
 import { Button } from "@/app/components/ui/Button";
 import { Message } from "@/app/components/ui/Message";
+import { AuthSplitPanel } from "@/app/components/AuthSplitPanel";
 
 type Batch = { id: number; name: string; semester: string };
 
@@ -89,8 +90,7 @@ export default function RegisterStudentPage() {
   }
 
   return (
-    <div className="min-h-screen bg-canvas flex items-center justify-center px-4">
-      <div className="w-full max-w-sm">
+    <AuthSplitPanel>
         <Card>
           <CardHeader title="SmartRoutineHub" description="Student registration" accent />
 
@@ -226,7 +226,6 @@ export default function RegisterStudentPage() {
             </div>
           )}
         </Card>
-      </div>
-    </div>
+    </AuthSplitPanel>
   );
 }

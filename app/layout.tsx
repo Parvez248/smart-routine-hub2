@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, IBM_Plex_Sans_Condensed, Geist_Mono } from "next/font/google";
+import { Inter, IBM_Plex_Sans_Condensed, Geist_Mono, Space_Grotesk } from "next/font/google";
 import { SessionProvider } from "next-auth/react";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "@/app/components/ThemeProvider";
@@ -18,6 +18,12 @@ const plexCondensed = IBM_Plex_Sans_Condensed({
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-space-grotesk",
+  weight: ["600", "700"],
   subsets: ["latin"],
 });
 
@@ -45,7 +51,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${inter.variable} ${plexCondensed.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${inter.variable} ${plexCondensed.variable} ${geistMono.variable} ${spaceGrotesk.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>

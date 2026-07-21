@@ -23,7 +23,7 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
     <div className="min-h-screen bg-canvas">
       <header className="bg-surface border-b border-border sticky top-0 z-10 print:hidden">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
-          <Link href="/teacher/classes" className="text-lg font-bold text-foreground shrink-0">
+          <Link href="/teacher/classes" className="font-heading text-lg font-bold text-brand-gradient shrink-0">
             SmartRoutineHub
           </Link>
           <div className="flex items-center gap-4 shrink-0">
@@ -49,7 +49,7 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
                 href={link.href}
                 className={`px-2.5 py-1.5 rounded-full transition-colors ${
                   pathname === link.href
-                    ? "bg-primary/10 text-primary"
+                    ? "bg-brand-gradient text-white shadow-tinted"
                     : "text-slate hover:text-foreground"
                 }`}
               >

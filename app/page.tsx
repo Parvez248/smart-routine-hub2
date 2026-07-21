@@ -34,7 +34,7 @@ export default function Home() {
         <p className="text-xs font-semibold text-primary uppercase tracking-wide mb-3">
           Hamdard University Bangladesh &middot; Dept. of CSE
         </p>
-        <h1 className="text-3xl font-bold text-foreground">Routine Management System</h1>
+        <h1 className="font-heading text-3xl font-bold text-brand-gradient">Routine Management System</h1>
         <p className="text-sm text-slate mt-3 leading-relaxed max-w-lg mx-auto">
           A class routine system for the department — build, publish, and manage the academic
           schedule in one place.
