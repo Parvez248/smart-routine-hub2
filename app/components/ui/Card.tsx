@@ -1,8 +1,17 @@
+import {
+  Card as ShadcnCard,
+  CardHeader as ShadcnCardHeader,
+  CardTitle,
+  CardDescription,
+  CardAction,
+} from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+
 export function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${className}`}>
+    <ShadcnCard className={cn("rounded-lg border border-border bg-card py-0 gap-0 shadow-none ring-0", className)}>
       {children}
-    </div>
+    </ShadcnCard>
   );
 }
 
@@ -18,12 +27,15 @@ export function CardHeader({
   action?: React.ReactNode;
 }) {
   return (
-    <div className={`px-6 py-4 border-b border-gray-100 flex items-center justify-between gap-4 ${accent ? "bg-gradient-to-r from-indigo-50 to-white" : ""}`}>
-      <div>
-        <h2 className="text-base font-semibold text-gray-800">{title}</h2>
-        {description && <p className="text-xs text-gray-400 mt-0.5">{description}</p>}
-      </div>
-      {action && <div className="shrink-0">{action}</div>}
-    </div>
+    <ShadcnCardHeader
+      className={cn(
+        "border-b border-border py-4",
+        accent && "bg-gradient-to-r from-primary/5 to-transparent"
+      )}
+    >
+      <CardTitle className="text-base font-semibold text-foreground">{title}</CardTitle>
+      {description && <CardDescription className="text-xs text-muted-foreground mt-0.5">{description}</CardDescription>}
+      {action && <CardAction className="shrink-0">{action}</CardAction>}
+    </ShadcnCardHeader>
   );
 }

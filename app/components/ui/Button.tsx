@@ -1,18 +1,13 @@
-function Spinner({ className = "h-4 w-4" }: { className?: string }) {
-  return (
-    <svg className={`animate-spin ${className}`} viewBox="0 0 24 24" fill="none">
-      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-    </svg>
-  );
-}
+import { Loader2 } from "lucide-react";
+import { Button as ShadcnButton } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 type ButtonVariant = "primary" | "secondary" | "danger";
 
-const VARIANT_CLASSES: Record<ButtonVariant, string> = {
-  primary: "bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm",
-  secondary: "bg-white hover:bg-gray-50 text-gray-700 border border-gray-200",
-  danger: "bg-red-600 hover:bg-red-700 text-white shadow-sm",
+const VARIANT_MAP: Record<ButtonVariant, "default" | "outline" | "destructive"> = {
+  primary: "default",
+  secondary: "outline",
+  danger: "destructive",
 };
 
 export function Button({
@@ -24,34 +19,39 @@ export function Button({
   ...props
 }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant; loading?: boolean }) {
   return (
-    <button
+    <ShadcnButton
+      variant={VARIANT_MAP[variant]}
       disabled={disabled || loading}
-      className={`inline-flex items-center justify-center gap-2 font-semibold px-6 py-2.5 rounded-lg text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${VARIANT_CLASSES[variant]} ${className}`}
+      className={cn("h-9 px-6 text-sm font-medium gap-2", className)}
       {...props}
     >
-      {loading && <Spinner />}
+      {loading && <Loader2 className="size-4 animate-spin" />}
       {children}
-    </button>
+    </ShadcnButton>
   );
 }
 
 type LinkTone = "neutral" | "primary" | "danger" | "success" | "warning";
 
 const LINK_TONE_CLASSES: Record<LinkTone, string> = {
-  neutral: "text-gray-400 hover:text-gray-600",
-  primary: "text-indigo-600 hover:text-indigo-700",
-  danger: "text-red-500 hover:text-red-600",
-  success: "text-emerald-600 hover:text-emerald-700",
-  warning: "text-amber-600 hover:text-amber-700",
+  neutral: "text-slate hover:text-ink",
+  primary: "text-primary hover:opacity-80",
+  danger: "text-cancelled hover:opacity-80",
+  success: "text-confirmed hover:opacity-80",
+  warning: "text-moved hover:opacity-80",
 };
 
 const LINK_TONE_MUTED_CLASSES: Record<LinkTone, string> = {
-  neutral: "text-gray-400 hover:text-gray-600",
-  primary: "text-gray-400 hover:text-indigo-600",
-  danger: "text-gray-400 hover:text-red-500",
-  success: "text-gray-400 hover:text-emerald-600",
-  warning: "text-gray-400 hover:text-amber-600",
+  neutral: "text-slate hover:text-ink",
+  primary: "text-slate hover:text-primary",
+  danger: "text-slate hover:text-cancelled",
+  success: "text-slate hover:text-confirmed",
+  warning: "text-slate hover:text-moved",
 };
+
+function Spinner({ className = "h-4 w-4" }: { className?: string }) {
+  return <Loader2 className={cn("animate-spin", className)} />;
+}
 
 export function LinkButton({
   tone = "neutral",
@@ -73,7 +73,7 @@ export function LinkButton({
   return (
     <button
       disabled={disabled || loading}
-      className={`text-xs font-semibold disabled:opacity-50 ${colorClasses} ${revealClasses} ${className}`}
+      className={cn("text-xs font-semibold disabled:opacity-50", colorClasses, revealClasses, className)}
       {...props}
     >
       {loading ? <Spinner className="h-3.5 w-3.5" /> : children}

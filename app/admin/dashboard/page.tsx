@@ -20,9 +20,9 @@ type Stats = {
 
 function Tile({ label, value, color, href }: { label: string; value: string | number; color: string; href?: string }) {
   const inner = (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4 h-full hover:border-gray-200 transition-colors">
-      <p className="text-xs text-gray-400 font-medium">{label}</p>
-      <p className={`text-2xl font-bold mt-1 ${color}`}>{value}</p>
+    <div className="bg-card rounded-lg border border-border px-5 py-4 h-full hover:border-primary/30 transition-colors">
+      <p className="text-xs text-muted-foreground font-medium">{label}</p>
+      <p className={`font-data text-[28px] font-semibold mt-1 leading-none ${color}`}>{value}</p>
     </div>
   );
   return href ? <Link href={href}>{inner}</Link> : inner;
@@ -47,49 +47,49 @@ export default function DashboardPage() {
         <Loading />
       ) : (
         <>
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-6 py-4">
-            <p className="text-xs text-gray-400 font-medium">Published Routine Version</p>
-            <p className="text-xl font-bold text-gray-800 mt-1">
+          <div className="bg-card rounded-lg border border-border px-6 py-4">
+            <p className="text-xs text-muted-foreground font-medium">Published Routine Version</p>
+            <p className="text-xl font-semibold text-foreground mt-1">
               {stats?.publishedVersionName ?? "None published"}
             </p>
           </div>
 
           <div>
-            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Academic Data</h2>
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Academic Data</h2>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-              <Tile label="Courses" value={stats?.courseCount ?? 0} color="text-gray-800" href="/admin/data?tab=courses" />
-              <Tile label="Teachers" value={stats?.teacherCount ?? 0} color="text-gray-800" href="/admin/data?tab=teachers" />
-              <Tile label="Rooms" value={stats?.roomCount ?? 0} color="text-gray-800" href="/admin/data?tab=rooms" />
-              <Tile label="Batches" value={stats?.batchCount ?? 0} color="text-gray-800" href="/admin/data?tab=batches" />
-              <Tile label="Time Slots" value={stats?.timeSlotCount ?? 0} color="text-gray-800" href="/admin/data?tab=timeslots" />
+              <Tile label="Courses" value={stats?.courseCount ?? 0} color="text-foreground" href="/admin/data?tab=courses" />
+              <Tile label="Teachers" value={stats?.teacherCount ?? 0} color="text-foreground" href="/admin/data?tab=teachers" />
+              <Tile label="Rooms" value={stats?.roomCount ?? 0} color="text-foreground" href="/admin/data?tab=rooms" />
+              <Tile label="Batches" value={stats?.batchCount ?? 0} color="text-foreground" href="/admin/data?tab=batches" />
+              <Tile label="Time Slots" value={stats?.timeSlotCount ?? 0} color="text-foreground" href="/admin/data?tab=timeslots" />
             </div>
           </div>
 
           <div>
-            <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Routine</h2>
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Routine</h2>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <Tile
                 label="Sessions (Published)"
                 value={stats?.publishedSessionCount ?? 0}
-                color="text-sky-600"
+                color="text-primary"
                 href="/admin/routine"
               />
               <Tile
                 label="Cancelled Sessions"
                 value={stats?.cancelledSessionCount ?? 0}
-                color="text-red-500"
+                color="text-cancelled"
                 href="/admin/routine"
               />
               <Tile
                 label="Pending Teacher Requests"
                 value={stats?.pendingTeacherRequestCount ?? 0}
-                color="text-amber-600"
+                color="text-moved"
                 href="/admin/people?tab=requests"
               />
               <Tile
                 label="Pending Reschedule Requests"
                 value={stats?.pendingRescheduleRequestCount ?? 0}
-                color="text-amber-600"
+                color="text-moved"
                 href="/admin/people?tab=reschedules"
               />
             </div>

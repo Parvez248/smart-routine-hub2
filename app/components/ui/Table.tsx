@@ -1,3 +1,12 @@
+import {
+  Table as ShadcnTable,
+  TableHeader as ShadcnTableHeader,
+  TableRow as ShadcnTableRow,
+  TableHead as ShadcnTableHead,
+  TableBody as ShadcnTableBody,
+} from "@/components/ui/table";
+import { cn } from "@/lib/utils";
+
 type ColumnHeader = string | { label: React.ReactNode; className?: string };
 
 export function Table({
@@ -8,23 +17,24 @@ export function Table({
   children: React.ReactNode;
 }) {
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="bg-gray-50 text-gray-400 text-xs uppercase tracking-wide">
-            {headers.map((h, i) => {
-              const label = typeof h === "string" ? h : h.label;
-              const className = typeof h === "string" ? "" : h.className ?? "";
-              return (
-                <th key={i} className={`px-5 py-3 text-left font-semibold ${className}`}>
-                  {label}
-                </th>
-              );
-            })}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-50">{children}</tbody>
-      </table>
-    </div>
+    <ShadcnTable className="w-full text-sm">
+      <ShadcnTableHeader>
+        <ShadcnTableRow className="bg-muted/40 hover:bg-muted/40 border-border">
+          {headers.map((h, i) => {
+            const label = typeof h === "string" ? h : h.label;
+            const className = typeof h === "string" ? "" : h.className ?? "";
+            return (
+              <ShadcnTableHead
+                key={i}
+                className={cn("px-5 py-3 h-auto text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide whitespace-normal", className)}
+              >
+                {label}
+              </ShadcnTableHead>
+            );
+          })}
+        </ShadcnTableRow>
+      </ShadcnTableHeader>
+      <ShadcnTableBody className="[&_tr]:border-border">{children}</ShadcnTableBody>
+    </ShadcnTable>
   );
 }

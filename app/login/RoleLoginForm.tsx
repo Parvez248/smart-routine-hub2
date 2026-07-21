@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { Card, CardHeader } from "@/app/components/ui/Card";
 import { Button } from "@/app/components/ui/Button";
 import { Message } from "@/app/components/ui/Message";
+import { Input } from "@/components/ui/input";
 
 type Role = "ADMIN" | "TEACHER" | "STUDENT";
 
@@ -32,12 +33,6 @@ const ROLE_NAME: Record<Role, string> = {
   ADMIN: "Admin",
   TEACHER: "Teacher",
   STUDENT: "Student",
-};
-
-const ROLE_ACCENT: Record<Role, string> = {
-  ADMIN: "bg-indigo-100 text-indigo-700",
-  TEACHER: "bg-violet-100 text-violet-700",
-  STUDENT: "bg-sky-100 text-sky-700",
 };
 
 function isRole(value: unknown): value is Role {
@@ -102,14 +97,14 @@ export default function RoleLoginForm({
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-canvas flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <Card>
           <CardHeader
             title={
               <span className="flex items-center gap-2">
                 {heading}
-                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${ROLE_ACCENT[role]}`}>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-primary/10 text-primary">
                   {ROLE_NAME[role]}
                 </span>
               </span>
@@ -120,26 +115,26 @@ export default function RoleLoginForm({
 
           <form onSubmit={handleSubmit} className="px-8 py-6 space-y-4">
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Email</label>
-              <input
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Email</label>
+              <Input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
-                className="border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                className="h-10 bg-canvas"
               />
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Password</label>
-              <input
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Password</label>
+              <Input
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                className="h-10 bg-canvas"
               />
             </div>
 
@@ -150,17 +145,17 @@ export default function RoleLoginForm({
             </Button>
 
             {signup && (
-              <p className="text-center text-xs text-gray-400">
+              <p className="text-center text-xs text-muted-foreground">
                 New {ROLE_NAME[role].toLowerCase()}?{" "}
-                <Link href={signup.href} className="text-indigo-600 font-semibold hover:text-indigo-700">
+                <Link href={signup.href} className="text-primary font-semibold hover:opacity-80">
                   {signup.label}
                 </Link>
               </p>
             )}
-            {note && <p className="text-center text-xs text-gray-400">{note}</p>}
+            {note && <p className="text-center text-xs text-muted-foreground">{note}</p>}
 
-            <p className="text-center text-xs text-gray-400">
-              <Link href="/" className="text-gray-400 hover:text-gray-600">
+            <p className="text-center text-xs text-muted-foreground">
+              <Link href="/" className="hover:text-foreground">
                 ← Back
               </Link>
             </p>

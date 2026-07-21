@@ -1,10 +1,17 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, IBM_Plex_Sans_Condensed, Geist_Mono } from "next/font/google";
 import { SessionProvider } from "next-auth/react";
+import { Toaster } from "sonner";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-sans",
+  subsets: ["latin"],
+});
+
+const plexCondensed = IBM_Plex_Sans_Condensed({
+  variable: "--font-plex-condensed",
+  weight: ["400", "500", "600"],
   subsets: ["latin"],
 });
 
@@ -26,10 +33,11 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${inter.variable} ${plexCondensed.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <SessionProvider>{children}</SessionProvider>
+        <Toaster richColors closeButton position="top-right" />
       </body>
     </html>
   );
