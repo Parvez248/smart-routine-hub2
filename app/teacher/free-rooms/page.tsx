@@ -4,13 +4,12 @@ import { useEffect, useState } from "react";
 import { PageHeader } from "@/app/components/ui/PageHeader";
 import { Card, CardHeader } from "@/app/components/ui/Card";
 import { Button } from "@/app/components/ui/Button";
+import { formatDateOnly, today, parseDateOnly, isClassDay, isOnOrAfterToday } from "@/lib/services/dates";
 
 type Room = { id: number; name: string; capacity: number };
 
-const DAYS = ["Sat", "Sun", "Mon", "Tues", "Wed"];
-
 export default function TeacherFreeRoomsPage() {
-  const [day, setDay] = useState("");
+  const [date, setDate] = useState("");
   const [timeSlotId, setTimeSlotId] = useState("");
   const [timeSlots, setTimeSlots] = useState<{ id: number; label: string }[]>([]);
   const [rooms, setRooms] = useState<Room[] | null>(null);
@@ -25,12 +24,25 @@ export default function TeacherFreeRoomsPage() {
 
   async function handleSearch(e: React.FormEvent) {
     e.preventDefault();
-    if (!day || !timeSlotId) return;
+    if (!date || !timeSlotId) return;
+
+    const parsed = parseDateOnly(date);
+    if (!parsed || !isOnOrAfterToday(parsed)) {
+      setError("Please pick today or a future date.");
+      setRooms(null);
+      return;
+    }
+    if (!isClassDay(parsed)) {
+      setError("That date has no classes (Thu/Fri) — pick a Sat–Wed date.");
+      setRooms(null);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setRooms(null);
     try {
-      const res = await fetch(`/api/teacher/free-rooms?day=${encodeURIComponent(day)}&timeSlotId=${timeSlotId}`);
+      const res = await fetch(`/api/teacher/free-rooms?date=${date}&timeSlotId=${timeSlotId}`);
       const json = await res.json();
       if (json.ok) {
         setRooms(json.data);
@@ -46,22 +58,21 @@ export default function TeacherFreeRoomsPage() {
 
   return (
     <>
-      <PageHeader title="Free Room Finder" description="Pick a day and time slot to see which rooms are available." />
+      <PageHeader title="Free Room Finder" description="Pick a date and time slot to see which rooms are available." />
 
       <Card>
         <CardHeader title="Search" accent />
         <form onSubmit={handleSearch} className="p-6 flex flex-wrap items-end gap-4">
-          <div className="w-40 flex flex-col gap-1">
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Day</label>
-            <select
+          <div className="w-44 flex flex-col gap-1">
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Date</label>
+            <input
+              type="date"
               required
-              value={day}
-              onChange={(e) => setDay(e.target.value)}
+              min={formatDateOnly(today())}
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
               className="border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-            >
-              <option value="">Select day</option>
-              {DAYS.map((d) => <option key={d} value={d}>{d}</option>)}
-            </select>
+            />
           </div>
 
           <div className="w-56 flex flex-col gap-1">
@@ -87,7 +98,7 @@ export default function TeacherFreeRoomsPage() {
         {rooms && (
           <div className="px-6 pb-6">
             {rooms.length === 0 ? (
-              <p className="text-sm text-gray-400">No rooms are free at this day &amp; time.</p>
+              <p className="text-sm text-gray-400">No rooms are free at this date &amp; time.</p>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {rooms.map((r) => (

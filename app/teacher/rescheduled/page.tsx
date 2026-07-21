@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/app/components/ui/PageHeader";
 import { Card, CardHeader } from "@/app/components/ui/Card";
 import { Table } from "@/app/components/ui/Table";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { Loading } from "@/app/components/ui/Loading";
+import { isOnOrAfterToday } from "@/lib/services/dates";
 
 type RescheduledClass = {
   id: number;
@@ -13,6 +14,9 @@ type RescheduledClass = {
   teacher: { initials: string; name: string };
   batch: { name: string };
   section: string | null;
+  kind: "dated" | "legacy";
+  originalDate: string | null;
+  newDate: string | null;
   fromDay: string;
   fromTimeSlot: { label: string } | null;
   fromRoom: { name: string } | null;
@@ -21,6 +25,33 @@ type RescheduledClass = {
   toRoom: { name: string } | null;
   reason: string | null;
 };
+
+function formatDate(value: string | null): string | null {
+  if (!value) return null;
+  return new Date(value).toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
+}
+
+function Row({ r }: { r: RescheduledClass }) {
+  return (
+    <tr className="hover:bg-slate-50 transition-colors align-top">
+      <td className="px-5 py-3.5">
+        <span className="font-semibold text-gray-700">{r.teacher.initials}</span>
+        <div className="text-xs text-gray-400">{r.teacher.name}</div>
+      </td>
+      <td className="px-5 py-3.5">
+        <span className="font-medium text-gray-700">{r.course.code}</span>
+        <div className="text-xs text-gray-400">{r.batch.name}{r.section ? ` (${r.section})` : ""}</div>
+      </td>
+      <td className="px-5 py-3.5 text-xs text-gray-500 whitespace-nowrap">
+        {formatDate(r.originalDate) ?? r.fromDay} {r.fromTimeSlot?.label}<br />Room {r.fromRoom?.name}
+      </td>
+      <td className="px-5 py-3.5 text-xs text-gray-700 font-medium whitespace-nowrap">
+        {formatDate(r.newDate) ?? r.toDay} {r.toTimeSlot?.label}<br />Room {r.toRoom?.name}
+      </td>
+      <td className="px-5 py-3.5 text-xs text-gray-500 max-w-[200px]">{r.reason ?? "—"}</td>
+    </tr>
+  );
+}
 
 export default function TeacherRescheduledPage() {
   const [items, setItems] = useState<RescheduledClass[]>([]);
@@ -32,6 +63,20 @@ export default function TeacherRescheduledPage() {
       .then((json) => { if (json.ok) setItems(json.data); })
       .finally(() => setLoadingState(false));
   }, []);
+
+  const { upcoming, past, permanent } = useMemo(() => {
+    const dated = items.filter((r) => r.kind === "dated");
+    const upcoming = dated
+      .filter((r) => r.newDate && isOnOrAfterToday(new Date(r.newDate)))
+      .sort((a, b) => new Date(a.newDate!).getTime() - new Date(b.newDate!).getTime());
+    const past = dated
+      .filter((r) => r.newDate && !isOnOrAfterToday(new Date(r.newDate)))
+      .sort((a, b) => new Date(b.newDate!).getTime() - new Date(a.newDate!).getTime());
+    const permanent = items.filter((r) => r.kind === "legacy");
+    return { upcoming, past, permanent };
+  }, [items]);
+
+  const headers = ["Teacher", "Class", "From", "To", "Reason"];
 
   return (
     <>
@@ -48,27 +93,26 @@ export default function TeacherRescheduledPage() {
         ) : items.length === 0 ? (
           <EmptyState icon="🔄" message="No classes are currently rescheduled." />
         ) : (
-          <Table headers={["Teacher", "Class", "From", "To", "Reason"]}>
-            {items.map((r) => (
-              <tr key={r.id} className="hover:bg-slate-50 transition-colors align-top">
-                <td className="px-5 py-3.5">
-                  <span className="font-semibold text-gray-700">{r.teacher.initials}</span>
-                  <div className="text-xs text-gray-400">{r.teacher.name}</div>
-                </td>
-                <td className="px-5 py-3.5">
-                  <span className="font-medium text-gray-700">{r.course.code}</span>
-                  <div className="text-xs text-gray-400">{r.batch.name}{r.section ? ` (${r.section})` : ""}</div>
-                </td>
-                <td className="px-5 py-3.5 text-xs text-gray-500 whitespace-nowrap">
-                  {r.fromDay} {r.fromTimeSlot?.label}<br />Room {r.fromRoom?.name}
-                </td>
-                <td className="px-5 py-3.5 text-xs text-gray-700 font-medium whitespace-nowrap">
-                  {r.toDay} {r.toTimeSlot?.label}<br />Room {r.toRoom?.name}
-                </td>
-                <td className="px-5 py-3.5 text-xs text-gray-500 max-w-[200px]">{r.reason ?? "—"}</td>
-              </tr>
-            ))}
-          </Table>
+          <div className="divide-y divide-gray-100">
+            {upcoming.length > 0 && (
+              <div>
+                <h3 className="px-5 pt-4 pb-1 text-xs font-semibold text-gray-500 uppercase tracking-wide">Upcoming</h3>
+                <Table headers={headers}>{upcoming.map((r) => <Row key={r.id} r={r} />)}</Table>
+              </div>
+            )}
+            {permanent.length > 0 && (
+              <div>
+                <h3 className="px-5 pt-4 pb-1 text-xs font-semibold text-gray-500 uppercase tracking-wide">Permanent (weekly)</h3>
+                <Table headers={headers}>{permanent.map((r) => <Row key={r.id} r={r} />)}</Table>
+              </div>
+            )}
+            {past.length > 0 && (
+              <div>
+                <h3 className="px-5 pt-4 pb-1 text-xs font-semibold text-gray-500 uppercase tracking-wide">Past</h3>
+                <Table headers={headers}>{past.map((r) => <Row key={r.id} r={r} />)}</Table>
+              </div>
+            )}
+          </div>
         )}
       </Card>
     </>

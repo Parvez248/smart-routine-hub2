@@ -25,7 +25,6 @@ export async function GET() {
     const overrides = sessionIds.length
       ? await db.reschedule.findMany({
           where: { sessionId: { in: sessionIds }, status: "APPROVED", appliedToMaster: false },
-          orderBy: { reviewedAt: "desc" },
         })
       : [];
 
@@ -44,9 +43,12 @@ export async function GET() {
           teacher: s.teacher,
           batch: s.batch,
           section: s.section,
-          fromDay: s.day,
-          fromTimeSlot: slotById.get(s.timeSlotId) ?? null,
-          fromRoom: roomById.get(s.roomId) ?? null,
+          kind: o.originalDate ? "dated" : "legacy",
+          originalDate: o.originalDate,
+          newDate: o.newDate,
+          fromDay: o.oldDay,
+          fromTimeSlot: slotById.get(o.oldTimeSlotId) ?? null,
+          fromRoom: roomById.get(o.oldRoomId) ?? null,
           toDay: o.newDay,
           toTimeSlot: slotById.get(o.newTimeSlotId) ?? null,
           toRoom: roomById.get(o.newRoomId) ?? null,

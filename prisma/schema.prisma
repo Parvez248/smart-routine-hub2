@@ -143,5 +143,7 @@ model Reschedule {
   reviewedAt    DateTime?
   adminNote     String?   @db.Text
   appliedToMaster Boolean @default(false)
+  originalDate  DateTime?
+  newDate       DateTime?
   createdAt     DateTime  @default(now())
 }

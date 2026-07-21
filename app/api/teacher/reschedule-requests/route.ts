@@ -3,7 +3,14 @@ import { z } from "zod";
 import { getDb } from "@/lib/db";
 import { getAuthenticatedTeacher } from "@/lib/services/teacher-auth";
 import { rescheduleRequestSchema } from "@/lib/validation/reschedule";
-import { checkConflict, checkCapacity } from "@/lib/services/scheduling";
+import { checkConflictForDate, checkCapacity } from "@/lib/services/scheduling";
+import {
+  parseDateOnly,
+  dayNameForDate,
+  isClassDay,
+  isOnOrAfterToday,
+  isWithinReschedulingWindow,
+} from "@/lib/services/dates";
 
 export async function GET() {
   const teacher = await getAuthenticatedTeacher();
@@ -40,6 +47,8 @@ export async function GET() {
         batch: s?.batch ?? null,
         section: s?.section ?? null,
         status: r.status,
+        originalDate: r.originalDate,
+        newDate: r.newDate,
         oldDay: r.oldDay,
         oldTimeSlot: slotById.get(r.oldTimeSlotId) ?? null,
         oldRoom: roomById.get(r.oldRoomId) ?? null,
@@ -75,7 +84,14 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-    const { sessionId, newDay, newTimeSlotId, newRoomId, reason } = parsed.data;
+    const { sessionId, originalDate: originalDateStr, newDate: newDateStr, newTimeSlotId, newRoomId, reason } =
+      parsed.data;
+
+    const originalDate = parseDateOnly(originalDateStr);
+    const newDate = parseDateOnly(newDateStr);
+    if (!originalDate || !newDate) {
+      return NextResponse.json({ ok: false, error: "Invalid date" }, { status: 400 });
+    }
 
     const db = getDb();
     const target = await db.session.findUnique({ where: { id: sessionId } });
@@ -92,24 +108,45 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: "This class has no routine version" }, { status: 400 });
     }
 
+    if (dayNameForDate(originalDate) !== target.day) {
+      return NextResponse.json(
+        { ok: false, error: `The class date must fall on a ${target.day} — the day this class is regularly held.` },
+        { status: 400 }
+      );
+    }
+    if (!isOnOrAfterToday(originalDate)) {
+      return NextResponse.json({ ok: false, error: "The class date must be today or later." }, { status: 400 });
+    }
+    if (!isClassDay(newDate)) {
+      return NextResponse.json({ ok: false, error: "The new date must be a class day (Sat–Wed)." }, { status: 400 });
+    }
+    if (!isOnOrAfterToday(newDate)) {
+      return NextResponse.json({ ok: false, error: "The new date must be today or later." }, { status: 400 });
+    }
+    if (!isWithinReschedulingWindow(newDate)) {
+      return NextResponse.json({ ok: false, error: "The new date is too far in the future." }, { status: 400 });
+    }
+
+    const newDay = dayNameForDate(newDate)!;
+
     const existingPending = await db.reschedule.findFirst({
-      where: { sessionId: target.id, status: "PENDING" },
+      where: { sessionId: target.id, status: "PENDING", originalDate },
     });
     if (existingPending) {
       return NextResponse.json(
-        { ok: false, error: "A request for this class is already awaiting approval" },
+        { ok: false, error: "A request for this class on this date is already awaiting approval" },
         { status: 409 }
       );
     }
 
-    const conflict = await checkConflict({
-      day: newDay,
+    const conflict = await checkConflictForDate({
+      versionId: target.versionId,
+      date: newDate,
       timeSlotId: newTimeSlotId,
       batchId: target.batchId,
       section: target.section,
       teacherId: target.teacherId,
       roomId: newRoomId,
-      versionId: target.versionId,
       excludeSessionId: target.id,
     });
     if (!conflict.ok) {
@@ -131,6 +168,8 @@ export async function POST(req: NextRequest) {
         newDay,
         newTimeSlotId,
         newRoomId,
+        originalDate,
+        newDate,
         reason: reason ?? null,
         status: "PENDING",
       },

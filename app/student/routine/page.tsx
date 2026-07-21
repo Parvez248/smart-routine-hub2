@@ -18,7 +18,7 @@ type SessionCell = {
   room: { name: string };
   batch: { id: number; name: string; semester: string };
   timeSlot: { id: number; label: string; sortOrder: number };
-  movedTo: { day: string; timeSlot: { label: string } | null; room: { name: string } | null } | null;
+  movedTo: { day: string; timeSlot: { label: string } | null; room: { name: string } | null; date: string | null } | null;
 };
 
 type Batch = { id: number; name: string; semester: string };
@@ -27,6 +27,11 @@ type AlarmRow = { id: number; sessionId: number; leadMinutes: number; isActive: 
 
 const DAY_ORDER = ["Sat", "Sun", "Mon", "Tues", "Wed"];
 const LEAD_OPTIONS = [5, 10, 15, 30];
+
+function formatMovedDate(value: string | null): string | null {
+  if (!value) return null;
+  return new Date(value).toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
+}
 
 function TypeBadge({ type }: { type: string }) {
   return (
@@ -286,7 +291,7 @@ export default function StudentRoutinePage() {
                                     {!cancelled && s.movedTo && (
                                       <p className="text-[11px] text-amber-700 mt-1">
                                         <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-700 mr-1">
-                                          Moved
+                                          {s.movedTo.date ? `Moved on ${formatMovedDate(s.movedTo.date)}` : "Moved"}
                                         </span>
                                         to {s.movedTo.day}, {s.movedTo.timeSlot?.label}, Room {s.movedTo.room?.name}
                                       </p>

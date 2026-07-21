@@ -16,6 +16,8 @@ type RescheduleRequest = {
   batch: { name: string } | null;
   section: string | null;
   status: string;
+  originalDate: string | null;
+  newDate: string | null;
   oldDay: string;
   oldTimeSlot: { label: string } | null;
   oldRoom: { name: string } | null;
@@ -41,6 +43,11 @@ function StatusBadge({ status }: { status: string }) {
       {status.charAt(0) + status.slice(1).toLowerCase()}
     </span>
   );
+}
+
+function formatDate(value: string | null): string | null {
+  if (!value) return null;
+  return new Date(value).toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
 }
 
 export default function TeacherRequestsPage() {
@@ -100,10 +107,10 @@ export default function TeacherRequestsPage() {
                   <div className="text-xs text-gray-400">{r.batch?.name}{r.section ? ` (${r.section})` : ""}</div>
                 </td>
                 <td className="px-5 py-3.5 text-xs text-gray-500 whitespace-nowrap">
-                  {r.oldDay} {r.oldTimeSlot?.label}<br />Room {r.oldRoom?.name}
+                  {formatDate(r.originalDate) ?? r.oldDay} {r.oldTimeSlot?.label}<br />Room {r.oldRoom?.name}
                 </td>
                 <td className="px-5 py-3.5 text-xs text-gray-700 font-medium whitespace-nowrap">
-                  {r.newDay} {r.newTimeSlot?.label}<br />Room {r.newRoom?.name}
+                  {formatDate(r.newDate) ?? r.newDay} {r.newTimeSlot?.label}<br />Room {r.newRoom?.name}
                 </td>
                 <td className="px-5 py-3.5 text-xs text-gray-500 max-w-[160px]">{r.reason ?? "—"}</td>
                 <td className="px-5 py-3.5"><StatusBadge status={r.status} /></td>

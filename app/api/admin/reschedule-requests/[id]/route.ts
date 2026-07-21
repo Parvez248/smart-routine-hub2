@@ -3,7 +3,8 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { reviewRescheduleSchema } from "@/lib/validation/reschedule";
-import { checkConflict, checkCapacity } from "@/lib/services/scheduling";
+import { checkConflict, checkConflictForDate, checkCapacity } from "@/lib/services/scheduling";
+import { isOnOrAfterToday } from "@/lib/services/dates";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -35,6 +36,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
 
     const adminUserId = Number(session.user.id);
+    const isDated = request.originalDate !== null && request.newDate !== null;
 
     if (action === "reject") {
       if (request.status !== "PENDING") {
@@ -65,16 +67,27 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         return NextResponse.json({ ok: false, error: "This request is not an active override" }, { status: 409 });
       }
 
-      const conflict = await checkConflict({
-        day: targetSession.day,
-        timeSlotId: targetSession.timeSlotId,
-        batchId: targetSession.batchId,
-        section: targetSession.section,
-        teacherId: targetSession.teacherId,
-        roomId: targetSession.roomId,
-        versionId: targetSession.versionId,
-        excludeSessionId: targetSession.id,
-      });
+      const conflict = isDated
+        ? await checkConflictForDate({
+            versionId: targetSession.versionId,
+            date: request.originalDate!,
+            timeSlotId: request.oldTimeSlotId,
+            batchId: targetSession.batchId,
+            section: targetSession.section,
+            teacherId: targetSession.teacherId,
+            roomId: request.oldRoomId,
+            excludeSessionId: targetSession.id,
+          })
+        : await checkConflict({
+            day: targetSession.day,
+            timeSlotId: targetSession.timeSlotId,
+            batchId: targetSession.batchId,
+            section: targetSession.section,
+            teacherId: targetSession.teacherId,
+            roomId: targetSession.roomId,
+            versionId: targetSession.versionId,
+            excludeSessionId: targetSession.id,
+          });
       if (!conflict.ok) {
         return NextResponse.json(
           { ok: false, error: `Cannot revert: the original slot is now occupied. ${conflict.reason ?? ""}`.trim() },
@@ -91,26 +104,51 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       return NextResponse.json({ ok: false, error: "This request has already been decided" }, { status: 409 });
     }
 
+    if (isDated && !isOnOrAfterToday(request.newDate!)) {
+      return NextResponse.json({ ok: false, error: "This request's date has passed" }, { status: 409 });
+    }
+
     const activeOverride = await db.reschedule.findFirst({
-      where: { sessionId: request.sessionId, status: "APPROVED", appliedToMaster: false },
+      where: {
+        sessionId: request.sessionId,
+        status: "APPROVED",
+        appliedToMaster: false,
+        originalDate: isDated ? request.originalDate : null,
+      },
     });
     if (activeOverride) {
       return NextResponse.json(
-        { ok: false, error: "This class already has an active reschedule override. Revert it before approving a new one." },
+        {
+          ok: false,
+          error: isDated
+            ? "This class already has an active reschedule for that date. Revert it before approving a new one."
+            : "This class already has an active reschedule override. Revert it before approving a new one.",
+        },
         { status: 409 }
       );
     }
 
-    const conflict = await checkConflict({
-      day: request.newDay,
-      timeSlotId: request.newTimeSlotId,
-      batchId: targetSession.batchId,
-      section: targetSession.section,
-      teacherId: targetSession.teacherId,
-      roomId: request.newRoomId,
-      versionId: targetSession.versionId,
-      excludeSessionId: targetSession.id,
-    });
+    const conflict = isDated
+      ? await checkConflictForDate({
+          versionId: targetSession.versionId,
+          date: request.newDate!,
+          timeSlotId: request.newTimeSlotId,
+          batchId: targetSession.batchId,
+          section: targetSession.section,
+          teacherId: targetSession.teacherId,
+          roomId: request.newRoomId,
+          excludeSessionId: targetSession.id,
+        })
+      : await checkConflict({
+          day: request.newDay,
+          timeSlotId: request.newTimeSlotId,
+          batchId: targetSession.batchId,
+          section: targetSession.section,
+          teacherId: targetSession.teacherId,
+          roomId: request.newRoomId,
+          versionId: targetSession.versionId,
+          excludeSessionId: targetSession.id,
+        });
     if (!conflict.ok) {
       return NextResponse.json({ ok: false, error: conflict.reason }, { status: 409 });
     }

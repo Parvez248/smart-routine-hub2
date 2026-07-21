@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { getAuthenticatedTeacher } from "@/lib/services/teacher-auth";
-import { getFreeRooms } from "@/lib/services/scheduling";
-
-const DAYS = ["Sat", "Sun", "Mon", "Tues", "Wed"];
+import { getFreeRoomsForDate } from "@/lib/services/scheduling";
+import { parseDateOnly } from "@/lib/services/dates";
 
 export async function GET(req: NextRequest) {
   const teacher = await getAuthenticatedTeacher();
@@ -12,12 +11,13 @@ export async function GET(req: NextRequest) {
   }
 
   const { searchParams } = new URL(req.url);
-  const day = searchParams.get("day");
+  const dateRaw = searchParams.get("date");
   const rawTimeSlotId = searchParams.get("timeSlotId");
   const timeSlotId = Number(rawTimeSlotId);
 
-  if (!day || !DAYS.includes(day) || !rawTimeSlotId || !Number.isInteger(timeSlotId) || timeSlotId <= 0) {
-    return NextResponse.json({ ok: false, error: "Invalid day or timeSlotId" }, { status: 400 });
+  const date = dateRaw ? parseDateOnly(dateRaw) : null;
+  if (!date || !rawTimeSlotId || !Number.isInteger(timeSlotId) || timeSlotId <= 0) {
+    return NextResponse.json({ ok: false, error: "Invalid date or timeSlotId" }, { status: 400 });
   }
 
   try {
@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
     if (!published) {
       return NextResponse.json({ ok: true, data: [] });
     }
-    const rooms = await getFreeRooms(day, timeSlotId, published.id);
+    const rooms = await getFreeRoomsForDate(published.id, date, timeSlotId);
     return NextResponse.json({ ok: true, data: rooms });
   } catch (error) {
     console.error(error);

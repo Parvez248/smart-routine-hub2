@@ -17,12 +17,17 @@ type RoutineSession = {
   room: { name: string };
   batch: { id: number; name: string; semester: string };
   timeSlot: { id: number; label: string; sortOrder: number };
-  movedTo: { day: string; timeSlot: { label: string } | null; room: { name: string } | null } | null;
+  movedTo: { day: string; timeSlot: { label: string } | null; room: { name: string } | null; date: string | null } | null;
 };
 
 type Batch = { id: number; name: string; semester: string };
 
 const DAYS = ["Sat", "Sun", "Mon", "Tues", "Wed"];
+
+function formatMovedDate(value: string | null): string | null {
+  if (!value) return null;
+  return new Date(value).toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
+}
 
 export default function TeacherRoutinePage() {
   const [sessions, setSessions] = useState<RoutineSession[]>([]);
@@ -113,7 +118,7 @@ export default function TeacherRoutinePage() {
                   {s.status !== "CANCELLED" && s.movedTo && (
                     <div className="mt-1 text-xs font-normal text-amber-700">
                       <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-700 mr-1">
-                        Moved
+                        {s.movedTo.date ? `Moved on ${formatMovedDate(s.movedTo.date)}` : "Moved"}
                       </span>
                       to {s.movedTo.day}, {s.movedTo.timeSlot?.label}, Room {s.movedTo.room?.name}
                     </div>

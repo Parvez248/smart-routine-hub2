@@ -25,8 +25,13 @@ type SessionRow = {
   room: Room;
   batch: Batch;
   timeSlot: TimeSlot;
-  movedTo: { day: string; timeSlot: TimeSlot | null; room: Room | null } | null;
+  movedTo: { day: string; timeSlot: TimeSlot | null; room: Room | null; date: string | null } | null;
 };
+
+function formatMovedDate(value: string | null): string | null {
+  if (!value) return null;
+  return new Date(value).toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
+}
 
 type RefData = {
   courses: Course[];
@@ -494,7 +499,7 @@ export default function ScheduleSection() {
                     {!cancelled && s.movedTo && (
                       <div className="mt-1 text-xs font-normal text-amber-700">
                         <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-700 mr-1">
-                          Moved
+                          {s.movedTo.date ? `Moved on ${formatMovedDate(s.movedTo.date)}` : "Moved"}
                         </span>
                         to {s.movedTo.day}, {s.movedTo.timeSlot?.label}, Room {s.movedTo.room?.name}
                       </div>

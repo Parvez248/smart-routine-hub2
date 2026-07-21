@@ -53,6 +53,7 @@ export async function GET(req: NextRequest) {
               day: override.newDay,
               timeSlot: slotById.get(override.newTimeSlotId) ?? null,
               room: roomById.get(override.newRoomId) ?? null,
+              date: override.newDate,
             }
           : null,
       };
