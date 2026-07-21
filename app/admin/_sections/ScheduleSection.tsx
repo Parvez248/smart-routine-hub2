@@ -8,7 +8,6 @@ import { Message } from "@/app/components/ui/Message";
 import { Loading } from "@/app/components/ui/Loading";
 import { useRoutineFilters } from "@/app/components/routine/useRoutineFilters";
 import { RoutineFilterBar } from "@/app/components/routine/RoutineFilterBar";
-import { RoutineGrid } from "@/app/components/routine/RoutineGrid";
 import { RoutineList } from "@/app/components/routine/RoutineList";
 
 type Course   = { id: number; code: string; title: string; type: string };
@@ -234,7 +233,7 @@ export default function ScheduleSection() {
   }
 
   const filterState = useRoutineFilters(sessions, { storageKey: "admin" });
-  const { filtered, filteredStats, totalCount, view, clearAll } = filterState;
+  const { filtered, totalCount, clearAll } = filterState;
 
   const stats = {
     total: sessions.length,
@@ -429,16 +428,10 @@ export default function ScheduleSection() {
 
         <div className="px-6 py-3 text-xs text-gray-400">
           Showing {filtered.length} of {totalCount} classes
-          {filteredStats.cancelled > 0 && ` · ${filteredStats.cancelled} cancelled`}
-          {filteredStats.rescheduled > 0 && ` · ${filteredStats.rescheduled} rescheduled`}
         </div>
 
         {sessionsLoading ? (
           <Loading />
-        ) : view === "grid" ? (
-          <div className="px-6 pb-6">
-            <RoutineGrid sessions={filtered} onClearFilters={clearAll} />
-          </div>
         ) : (
           <RoutineList
             sessions={filtered}

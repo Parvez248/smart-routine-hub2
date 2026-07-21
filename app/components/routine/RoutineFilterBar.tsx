@@ -1,10 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
-import type { useRoutineFilters, ClassTypeFilter, StatusFilter } from "./useRoutineFilters";
+import type { useRoutineFilters, Option } from "./useRoutineFilters";
 
 type FiltersState = ReturnType<typeof useRoutineFilters>;
+
+const DAY_OPTIONS: Option[] = [
+  { value: "Sat", label: "Sat" },
+  { value: "Sun", label: "Sun" },
+  { value: "Mon", label: "Mon" },
+  { value: "Tues", label: "Tues" },
+  { value: "Wed", label: "Wed" },
+];
 
 function ChevronIcon() {
   return (
@@ -15,9 +22,9 @@ function ChevronIcon() {
 }
 
 function MultiSelectDropdown({
-  label, options, selected, onToggle,
+  label, options, selected, onToggle, disabled,
 }: {
-  label: string; options: string[]; selected: string[]; onToggle: (v: string) => void;
+  label: string; options: Option[]; selected: string[]; onToggle: (v: string) => void; disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -30,32 +37,39 @@ function MultiSelectDropdown({
     return () => document.removeEventListener("mousedown", onDocClick);
   }, []);
 
-  const summary = selected.length === 0 ? `All ${label}` : selected.length === 1 ? selected[0] : `${selected.length} selected`;
+  const selectedLabels = options.filter((o) => selected.includes(o.value));
+  const summary =
+    selectedLabels.length === 0 ? `All ${label}` : selectedLabels.length === 1 ? selectedLabels[0].label : `${selectedLabels.length} selected`;
 
   return (
     <div className="relative" ref={ref}>
       <button
         type="button"
+        disabled={disabled}
         onClick={() => setOpen((o) => !o)}
-        className="border border-gray-200 bg-gray-50 rounded-lg px-3 py-1.5 text-xs font-semibold text-gray-700 flex items-center gap-1.5 hover:bg-gray-100 transition-colors whitespace-nowrap"
+        className={`border rounded-lg px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 transition-colors whitespace-nowrap ${
+          disabled
+            ? "border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed"
+            : "border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100"
+        }`}
       >
         <span className="text-gray-400">{label}:</span> {summary}
         <ChevronIcon />
       </button>
-      {open && (
-        <div className="absolute z-20 mt-1 w-56 max-h-64 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg py-1">
+      {open && !disabled && (
+        <div className="absolute z-20 mt-1 w-60 max-h-64 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg py-1">
           {options.length === 0 ? (
             <p className="px-3 py-2 text-xs text-gray-400">No options</p>
           ) : (
             options.map((opt) => (
-              <label key={opt} className="flex items-center gap-2 px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50 cursor-pointer">
+              <label key={opt.value} className="flex items-center gap-2 px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50 cursor-pointer">
                 <input
                   type="checkbox"
-                  checked={selected.includes(opt)}
-                  onChange={() => onToggle(opt)}
+                  checked={selected.includes(opt.value)}
+                  onChange={() => onToggle(opt.value)}
                   className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                 />
-                {opt}
+                {opt.label}
               </label>
             ))
           )}
@@ -65,101 +79,44 @@ function MultiSelectDropdown({
   );
 }
 
-function Segmented<T extends string>({
-  value, options, onChange,
-}: {
-  value: T; options: { value: T; label: string }[]; onChange: (v: T) => void;
-}) {
-  return (
-    <div className="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-0.5">
-      {options.map((o) => (
-        <button
-          key={o.value}
-          type="button"
-          onClick={() => onChange(o.value)}
-          className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors whitespace-nowrap ${
-            value === o.value ? "bg-indigo-600 text-white" : "text-gray-500 hover:text-gray-700"
-          }`}
-        >
-          {o.label}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function PresetButton({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
+function TodayToggle({ active, onClick }: { active: boolean; onClick: () => void }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="text-xs font-semibold bg-white border border-gray-200 text-gray-600 px-2.5 py-1.5 rounded-full hover:border-indigo-300 hover:text-indigo-600 transition-colors whitespace-nowrap"
+      aria-pressed={active}
+      className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors whitespace-nowrap ${
+        active ? "bg-indigo-600 border-indigo-600 text-white" : "bg-white border-gray-200 text-gray-600 hover:border-indigo-300 hover:text-indigo-600"
+      }`}
     >
-      {children}
+      Today
     </button>
   );
 }
 
-export function RoutineFilterBar({
-  state,
-  showBatchFilter = true,
-  showMyClassesPreset = false,
-  freeRoomsHref,
-}: {
-  state: FiltersState;
-  showBatchFilter?: boolean;
-  showMyClassesPreset?: boolean;
-  freeRoomsHref?: string;
-}) {
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const { filters, qInput, setQInput, setFilter, toggleMulti, clearAll, view, setView, options, activeCount, chips, presets } = state;
-
-  const FilterControls = (
+function FilterControls({ state }: { state: FiltersState }) {
+  const { filters, toggleMulti, options } = state;
+  return (
     <div className="flex flex-wrap items-center gap-2">
-      <MultiSelectDropdown label="Year" options={options.yearBands} selected={filters.yearBands} onToggle={(v) => toggleMulti("yearBands", v)} />
-      {showBatchFilter && (
-        <MultiSelectDropdown label="Batch" options={options.batches} selected={filters.batches} onToggle={(v) => toggleMulti("batches", v)} />
-      )}
-      <MultiSelectDropdown label="Day" options={["Sat", "Sun", "Mon", "Tues", "Wed"]} selected={filters.days} onToggle={(v) => toggleMulti("days", v)} />
+      <MultiSelectDropdown label="Batch" options={options.batches} selected={filters.batches} onToggle={(v) => toggleMulti("batches", v)} />
+      <MultiSelectDropdown
+        label="Day"
+        options={DAY_OPTIONS}
+        selected={filters.days}
+        onToggle={(v) => toggleMulti("days", v)}
+        disabled={filters.today}
+      />
       <MultiSelectDropdown label="Teacher" options={options.teachers} selected={filters.teachers} onToggle={(v) => toggleMulti("teachers", v)} />
       <MultiSelectDropdown label="Room" options={options.rooms} selected={filters.rooms} onToggle={(v) => toggleMulti("rooms", v)} />
       <MultiSelectDropdown label="Course" options={options.courses} selected={filters.courses} onToggle={(v) => toggleMulti("courses", v)} />
       <MultiSelectDropdown label="Slot" options={options.timeSlots} selected={filters.timeSlots} onToggle={(v) => toggleMulti("timeSlots", v)} />
-
-      <select
-        value={filters.section}
-        onChange={(e) => setFilter("section", e.target.value)}
-        className="border border-gray-200 bg-gray-50 rounded-lg px-3 py-1.5 text-xs font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-      >
-        <option value="ALL">All Sections</option>
-        <option value="NONE">No section</option>
-        {options.sections.map((s) => (
-          <option key={s} value={s}>{s}</option>
-        ))}
-      </select>
-
-      <Segmented<ClassTypeFilter>
-        value={filters.classType}
-        onChange={(v) => setFilter("classType", v)}
-        options={[
-          { value: "ALL", label: "All" },
-          { value: "THEORY", label: "Theory" },
-          { value: "LAB", label: "Lab" },
-        ]}
-      />
-
-      <Segmented<StatusFilter>
-        value={filters.status}
-        onChange={(v) => setFilter("status", v)}
-        options={[
-          { value: "ALL", label: "All" },
-          { value: "ACTIVE", label: "Active" },
-          { value: "CANCELLED", label: "Cancelled" },
-          { value: "RESCHEDULED", label: "Rescheduled" },
-        ]}
-      />
     </div>
   );
+}
+
+export function RoutineFilterBar({ state }: { state: FiltersState }) {
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const { filters, qInput, setQInput, toggleToday, clearAll, activeCount, chips } = state;
 
   return (
     <div className="space-y-3">
@@ -177,17 +134,8 @@ export function RoutineFilterBar({
           </svg>
         </div>
 
-        <div className="hidden sm:flex flex-wrap items-center gap-2">
-          <PresetButton onClick={presets.applyToday}>Today</PresetButton>
-          <PresetButton onClick={presets.applyThisWeek}>This week</PresetButton>
-          <PresetButton onClick={presets.applyLabsOnly}>Labs only</PresetButton>
-          {showMyClassesPreset && <PresetButton onClick={presets.applyMyClasses}>My classes</PresetButton>}
-          <PresetButton onClick={presets.applyRescheduledOnly}>Rescheduled</PresetButton>
-          {freeRoomsHref && (
-            <Link href={freeRoomsHref} className="text-xs font-semibold bg-white border border-gray-200 text-gray-600 px-2.5 py-1.5 rounded-full hover:border-indigo-300 hover:text-indigo-600 transition-colors whitespace-nowrap">
-              Free rooms now →
-            </Link>
-          )}
+        <div className="hidden sm:block">
+          <TodayToggle active={filters.today} onClick={toggleToday} />
         </div>
 
         <div className="ml-auto flex items-center gap-2">
@@ -203,27 +151,12 @@ export function RoutineFilterBar({
               </span>
             )}
           </button>
-
-          <div className="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-0.5">
-            <button
-              type="button"
-              onClick={() => setView("grid")}
-              className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors ${view === "grid" ? "bg-indigo-600 text-white" : "text-gray-500 hover:text-gray-700"}`}
-            >
-              Grid
-            </button>
-            <button
-              type="button"
-              onClick={() => setView("list")}
-              className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors ${view === "list" ? "bg-indigo-600 text-white" : "text-gray-500 hover:text-gray-700"}`}
-            >
-              List
-            </button>
-          </div>
         </div>
       </div>
 
-      <div className="hidden sm:block">{FilterControls}</div>
+      <div className="hidden sm:block">
+        <FilterControls state={state} />
+      </div>
 
       {mobileOpen && (
         <div className="sm:hidden fixed inset-0 z-30 flex flex-col justify-end">
@@ -235,14 +168,10 @@ export function RoutineFilterBar({
                 Done
               </button>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <PresetButton onClick={presets.applyToday}>Today</PresetButton>
-              <PresetButton onClick={presets.applyThisWeek}>This week</PresetButton>
-              <PresetButton onClick={presets.applyLabsOnly}>Labs only</PresetButton>
-              {showMyClassesPreset && <PresetButton onClick={presets.applyMyClasses}>My classes</PresetButton>}
-              <PresetButton onClick={presets.applyRescheduledOnly}>Rescheduled</PresetButton>
+            <TodayToggle active={filters.today} onClick={toggleToday} />
+            <div className="flex flex-col gap-2">
+              <FilterControls state={state} />
             </div>
-            <div className="flex flex-col gap-2">{FilterControls}</div>
             {activeCount > 0 && (
               <button type="button" onClick={clearAll} className="text-xs font-semibold text-red-500 hover:text-red-600">
                 Clear all filters

@@ -5,28 +5,22 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { FilterableSession } from "./types";
 import { dayNameForDate } from "@/lib/services/dates";
 
-export type ClassTypeFilter = "ALL" | "THEORY" | "LAB";
-export type StatusFilter = "ALL" | "ACTIVE" | "CANCELLED" | "RESCHEDULED";
-export type ViewMode = "grid" | "list";
+export type Option = { value: string; label: string };
 
 export type RoutineFiltersState = {
   q: string;
-  yearBands: string[];
+  today: boolean;
   batches: string[];
   days: string[];
   teachers: string[];
   rooms: string[];
   courses: string[];
-  classType: ClassTypeFilter;
   timeSlots: string[];
-  section: string; // "ALL" | "NONE" | an actual section value
-  status: StatusFilter;
 };
 
-type MultiKey = "yearBands" | "batches" | "days" | "teachers" | "rooms" | "courses" | "timeSlots";
-const MULTI_KEYS: MultiKey[] = ["yearBands", "batches", "days", "teachers", "rooms", "courses", "timeSlots"];
+type MultiKey = "batches" | "days" | "teachers" | "rooms" | "courses" | "timeSlots";
+const MULTI_KEYS: MultiKey[] = ["batches", "days", "teachers", "rooms", "courses", "timeSlots"];
 const PARAM_MAP: Record<MultiKey, string> = {
-  yearBands: "year",
   batches: "batch",
   days: "day",
   teachers: "teacher",
@@ -37,67 +31,47 @@ const PARAM_MAP: Record<MultiKey, string> = {
 
 const DEFAULT_FILTERS: RoutineFiltersState = {
   q: "",
-  yearBands: [],
+  today: false,
   batches: [],
   days: [],
   teachers: [],
   rooms: [],
   courses: [],
-  classType: "ALL",
   timeSlots: [],
-  section: "ALL",
-  status: "ALL",
 };
-
-export function yearBandOf(semester: string): string {
-  const n = parseInt(semester, 10);
-  if (!Number.isFinite(n) || n <= 0) return "Other";
-  const band = Math.ceil(n / 2);
-  const ordinals: Record<number, string> = { 1: "1st", 2: "2nd", 3: "3rd", 4: "4th", 5: "5th", 6: "6th" };
-  return `${ordinals[band] ?? `${band}th`} Year`;
-}
 
 function encodeFilters(f: RoutineFiltersState): URLSearchParams {
   const params = new URLSearchParams();
   if (f.q.trim()) params.set("q", f.q.trim());
+  if (f.today) params.set("today", "1");
   for (const key of MULTI_KEYS) {
     const arr = f[key];
     if (arr.length) params.set(PARAM_MAP[key], arr.join(","));
   }
-  if (f.classType !== "ALL") params.set("type", f.classType);
-  if (f.section !== "ALL") params.set("section", f.section);
-  if (f.status !== "ALL") params.set("status", f.status);
   return params;
 }
 
 function decodeFilters(params: URLSearchParams): RoutineFiltersState | null {
-  if ([...params.keys()].filter((k) => k !== "view").length === 0) return null;
+  if ([...params.keys()].length === 0) return null;
   const getList = (k: string) => params.get(k)?.split(",").map((s) => s.trim()).filter(Boolean) ?? [];
   return {
     q: params.get("q") ?? "",
-    yearBands: getList("year"),
+    today: params.get("today") === "1",
     batches: getList("batch"),
     days: getList("day"),
     teachers: getList("teacher"),
     rooms: getList("room"),
     courses: getList("course"),
-    classType: (params.get("type") as ClassTypeFilter) ?? "ALL",
     timeSlots: getList("slot"),
-    section: params.get("section") ?? "ALL",
-    status: (params.get("status") as StatusFilter) ?? "ALL",
   };
 }
 
-export function useRoutineFilters<T extends FilterableSession>(
-  sessions: T[],
-  opts: { storageKey: string; currentTeacherInitials?: string | null }
-) {
+export function useRoutineFilters<T extends FilterableSession>(sessions: T[], opts: { storageKey: string }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   const [filters, setFiltersState] = useState<RoutineFiltersState>(DEFAULT_FILTERS);
-  const [view, setView] = useState<ViewMode>("grid");
   const [qInput, setQInput] = useState("");
   const initialized = useRef(false);
 
@@ -107,24 +81,20 @@ export function useRoutineFilters<T extends FilterableSession>(
     initialized.current = true;
 
     const fromUrl = decodeFilters(searchParams);
-    const viewParam = searchParams.get("view");
-
     if (fromUrl) {
       setFiltersState(fromUrl);
       setQInput(fromUrl.q);
-      if (viewParam === "list" || viewParam === "grid") setView(viewParam);
       return;
     }
 
     try {
       const raw = localStorage.getItem(`routine-filters:${opts.storageKey}`);
       if (raw) {
-        const saved = JSON.parse(raw) as { filters?: RoutineFiltersState; view?: ViewMode };
+        const saved = JSON.parse(raw) as { filters?: RoutineFiltersState };
         if (saved.filters) {
           setFiltersState(saved.filters);
           setQInput(saved.filters.q ?? "");
         }
-        if (saved.view === "grid" || saved.view === "list") setView(saved.view);
       }
     } catch {
       // ignore malformed storage
@@ -140,23 +110,26 @@ export function useRoutineFilters<T extends FilterableSession>(
     return () => clearTimeout(t);
   }, [qInput]);
 
-  // Mirror filters + view to the URL and localStorage.
+  // Mirror filters to the URL and localStorage.
   useEffect(() => {
     if (!initialized.current) return;
     const params = encodeFilters(filters);
-    if (view !== "grid") params.set("view", view);
     const qs = params.toString();
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
     try {
-      localStorage.setItem(`routine-filters:${opts.storageKey}`, JSON.stringify({ filters, view }));
+      localStorage.setItem(`routine-filters:${opts.storageKey}`, JSON.stringify({ filters }));
     } catch {
       // ignore storage failures (private mode, quota, etc.)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, view, pathname, opts.storageKey]);
+  }, [filters, pathname, opts.storageKey]);
 
   const setFilter = useCallback(<K extends keyof RoutineFiltersState>(key: K, value: RoutineFiltersState[K]) => {
     setFiltersState((f) => ({ ...f, [key]: value }));
+  }, []);
+
+  const toggleToday = useCallback(() => {
+    setFiltersState((f) => ({ ...f, today: !f.today }));
   }, []);
 
   const toggleMulti = useCallback((key: MultiKey, value: string) => {
@@ -177,123 +150,106 @@ export function useRoutineFilters<T extends FilterableSession>(
     setQInput("");
   }, []);
 
-  const presets = useMemo(
-    () => ({
-      applyToday: () => {
-        const d = dayNameForDate(new Date());
-        setFiltersState((f) => ({ ...f, days: d ? [d] : [] }));
-      },
-      applyThisWeek: () => setFiltersState((f) => ({ ...f, days: [] })),
-      applyLabsOnly: () => setFiltersState((f) => ({ ...f, classType: "LAB" })),
-      applyMyClasses: () => {
-        if (!opts.currentTeacherInitials) return;
-        setFiltersState((f) => ({ ...f, teachers: [opts.currentTeacherInitials!] }));
-      },
-      applyRescheduledOnly: () => setFiltersState((f) => ({ ...f, status: "RESCHEDULED" })),
-    }),
-    [opts.currentTeacherInitials]
-  );
+  const todayName = useMemo(() => dayNameForDate(new Date()), []);
 
   const filtered = useMemo(() => {
     const q = filters.q.trim().toLowerCase();
     return sessions.filter((s) => {
-      if (filters.status === "ACTIVE" && s.status !== "ACTIVE") return false;
-      if (filters.status === "CANCELLED" && s.status !== "CANCELLED") return false;
-      if (filters.status === "RESCHEDULED" && !s.movedTo) return false;
-      if (filters.classType !== "ALL" && s.course.type !== filters.classType) return false;
-      if (filters.days.length && !filters.days.includes(s.day)) return false;
+      if (filters.today) {
+        if (!todayName || s.day !== todayName) return false;
+      } else if (filters.days.length && !filters.days.includes(s.day)) {
+        return false;
+      }
       if (filters.batches.length && !filters.batches.includes(s.batch.name)) return false;
       if (filters.teachers.length && !filters.teachers.includes(s.teacher.initials)) return false;
       if (filters.rooms.length && !filters.rooms.includes(s.room.name)) return false;
       if (filters.courses.length && !filters.courses.includes(s.course.code)) return false;
       if (filters.timeSlots.length && !filters.timeSlots.includes(s.timeSlot.label)) return false;
-      if (filters.yearBands.length && !filters.yearBands.includes(yearBandOf(s.batch.semester))) return false;
-      if (filters.section === "NONE" && s.section) return false;
-      if (filters.section !== "ALL" && filters.section !== "NONE" && s.section !== filters.section) return false;
       if (q) {
         const haystack = `${s.course.code} ${s.course.title} ${s.teacher.name} ${s.teacher.initials} ${s.room.name}`.toLowerCase();
         if (!haystack.includes(q)) return false;
       }
       return true;
     });
-  }, [sessions, filters]);
+  }, [sessions, filters, todayName]);
 
   const options = useMemo(() => {
-    const uniq = (arr: string[]) => [...new Set(arr)].sort((a, b) => a.localeCompare(b));
+    const uniqOptions = (values: string[]): Option[] =>
+      [...new Set(values)].sort((a, b) => a.localeCompare(b)).map((v) => ({ value: v, label: v }));
+
+    const teacherMap = new Map<string, string>();
+    sessions.forEach((s) => teacherMap.set(s.teacher.initials, s.teacher.name));
+    const teachers: Option[] = [...teacherMap.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([initials, name]) => ({ value: initials, label: `${initials} – ${name}` }));
+
+    const courseMap = new Map<string, string>();
+    sessions.forEach((s) => courseMap.set(s.course.code, s.course.title));
+    const courses: Option[] = [...courseMap.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([code, title]) => ({ value: code, label: `${code} – ${title}` }));
+
     const slotBySortOrder = [...new Map(sessions.map((s) => [s.timeSlot.label, s.timeSlot.sortOrder])).entries()].sort(
       (a, b) => a[1] - b[1]
     );
+    const timeSlots: Option[] = slotBySortOrder.map(([label]) => ({ value: label, label }));
+
     return {
-      yearBands: uniq(sessions.map((s) => yearBandOf(s.batch.semester))),
-      batches: uniq(sessions.map((s) => s.batch.name)),
-      teachers: uniq(sessions.map((s) => s.teacher.initials)),
-      rooms: uniq(sessions.map((s) => s.room.name)),
-      courses: uniq(sessions.map((s) => s.course.code)),
-      timeSlots: slotBySortOrder.map(([label]) => label),
-      sections: uniq(sessions.map((s) => s.section).filter((v): v is string => Boolean(v))),
+      batches: uniqOptions(sessions.map((s) => s.batch.name)),
+      teachers,
+      rooms: uniqOptions(sessions.map((s) => s.room.name)),
+      courses,
+      timeSlots,
     };
   }, [sessions]);
+
+  const optionLabel = useCallback(
+    (key: "teachers" | "courses", value: string) => options[key].find((o) => o.value === value)?.label ?? value,
+    [options]
+  );
 
   const activeCount = useMemo(() => {
     let n = 0;
     if (filters.q.trim()) n++;
-    for (const key of MULTI_KEYS) n += filters[key].length;
-    if (filters.classType !== "ALL") n++;
-    if (filters.section !== "ALL") n++;
-    if (filters.status !== "ALL") n++;
+    if (filters.today) n++;
+    n += filters.batches.length;
+    if (!filters.today) n += filters.days.length;
+    n += filters.teachers.length + filters.rooms.length + filters.courses.length + filters.timeSlots.length;
     return n;
   }, [filters]);
 
   const chips = useMemo(() => {
     const list: { key: string; label: string; onRemove: () => void }[] = [];
     if (filters.q.trim()) list.push({ key: "q", label: `Search: "${filters.q.trim()}"`, onRemove: () => clearFilter("q") });
-    filters.yearBands.forEach((v) => list.push({ key: `year-${v}`, label: `Year: ${v}`, onRemove: () => toggleMulti("yearBands", v) }));
+    if (filters.today) list.push({ key: "today", label: "Today", onRemove: () => toggleToday() });
     filters.batches.forEach((v) => list.push({ key: `batch-${v}`, label: `Batch: ${v}`, onRemove: () => toggleMulti("batches", v) }));
-    filters.days.forEach((v) => list.push({ key: `day-${v}`, label: `Day: ${v}`, onRemove: () => toggleMulti("days", v) }));
-    filters.teachers.forEach((v) => list.push({ key: `teacher-${v}`, label: `Teacher: ${v}`, onRemove: () => toggleMulti("teachers", v) }));
+    if (!filters.today) {
+      filters.days.forEach((v) => list.push({ key: `day-${v}`, label: `Day: ${v}`, onRemove: () => toggleMulti("days", v) }));
+    }
+    filters.teachers.forEach((v) =>
+      list.push({ key: `teacher-${v}`, label: `Teacher: ${optionLabel("teachers", v)}`, onRemove: () => toggleMulti("teachers", v) })
+    );
     filters.rooms.forEach((v) => list.push({ key: `room-${v}`, label: `Room: ${v}`, onRemove: () => toggleMulti("rooms", v) }));
-    filters.courses.forEach((v) => list.push({ key: `course-${v}`, label: `Course: ${v}`, onRemove: () => toggleMulti("courses", v) }));
+    filters.courses.forEach((v) =>
+      list.push({ key: `course-${v}`, label: `Course: ${optionLabel("courses", v)}`, onRemove: () => toggleMulti("courses", v) })
+    );
     filters.timeSlots.forEach((v) => list.push({ key: `slot-${v}`, label: `Slot: ${v}`, onRemove: () => toggleMulti("timeSlots", v) }));
-    if (filters.classType !== "ALL") {
-      list.push({ key: "type", label: `Type: ${filters.classType === "LAB" ? "Lab" : "Theory"}`, onRemove: () => clearFilter("classType") });
-    }
-    if (filters.section !== "ALL") {
-      list.push({ key: "section", label: `Section: ${filters.section === "NONE" ? "None" : filters.section}`, onRemove: () => clearFilter("section") });
-    }
-    if (filters.status !== "ALL") {
-      list.push({
-        key: "status",
-        label: `Status: ${filters.status.charAt(0) + filters.status.slice(1).toLowerCase()}`,
-        onRemove: () => clearFilter("status"),
-      });
-    }
     return list;
-  }, [filters, clearFilter, toggleMulti]);
-
-  const filteredStats = useMemo(
-    () => ({
-      cancelled: filtered.filter((s) => s.status === "CANCELLED").length,
-      rescheduled: filtered.filter((s) => Boolean(s.movedTo)).length,
-    }),
-    [filtered]
-  );
+  }, [filters, clearFilter, toggleMulti, toggleToday, optionLabel]);
 
   return {
     filters,
     qInput,
     setQInput,
     setFilter,
+    toggleToday,
     toggleMulti,
     clearFilter,
     clearAll,
-    view,
-    setView,
     filtered,
-    filteredStats,
     totalCount: sessions.length,
     options,
     activeCount,
     chips,
-    presets,
   };
 }

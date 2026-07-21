@@ -9,7 +9,6 @@ import { Loading } from "@/app/components/ui/Loading";
 import { nextOccurrenceOf } from "@/lib/services/timeslot";
 import { useRoutineFilters } from "@/app/components/routine/useRoutineFilters";
 import { RoutineFilterBar } from "@/app/components/routine/RoutineFilterBar";
-import { RoutineList } from "@/app/components/routine/RoutineList";
 import type { FilterableSession } from "@/app/components/routine/types";
 
 type SessionCell = {
@@ -116,7 +115,7 @@ function StudentRoutineInner() {
   }
 
   const filterState = useRoutineFilters(sessions, { storageKey: "student" });
-  const { filtered, filteredStats, totalCount, view, clearAll } = filterState;
+  const { filtered, totalCount, clearAll } = filterState;
 
   const cellFor = (day: string, timeSlotId: number) =>
     filtered.filter((s) => s.day === day && s.timeSlot.id === timeSlotId);
@@ -230,21 +229,17 @@ function StudentRoutineInner() {
         <CardHeader title="Weekly Routine" />
 
         <div className="px-6 py-4 border-b border-gray-100">
-          <RoutineFilterBar state={filterState} showBatchFilter={false} />
+          <RoutineFilterBar state={filterState} />
         </div>
 
         <div className="px-6 py-3 text-xs text-gray-400">
           Showing {filtered.length} of {totalCount} classes
-          {filteredStats.cancelled > 0 && ` · ${filteredStats.cancelled} cancelled`}
-          {filteredStats.rescheduled > 0 && ` · ${filteredStats.rescheduled} rescheduled`}
         </div>
 
         {loading ? (
           <Loading />
         ) : message ? (
           <EmptyState icon="🗓️" message={message} />
-        ) : view === "list" ? (
-          <RoutineList sessions={filtered} onClearFilters={clearAll} />
         ) : filtered.length === 0 ? (
           <EmptyState icon="🔍" message="No classes match these filters." action={
             <button type="button" onClick={clearAll} className="text-xs font-semibold text-indigo-600 hover:text-indigo-700">

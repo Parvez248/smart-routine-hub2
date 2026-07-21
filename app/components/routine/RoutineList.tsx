@@ -5,7 +5,7 @@ import { Table } from "@/app/components/ui/Table";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import type { FilterableSession } from "./types";
 
-type SortKey = "day" | "course" | "teacher" | "batch" | "room" | "status";
+type SortKey = "day" | "slot" | "course" | "teacher" | "batch" | "room" | "status";
 const DAY_ORDER = ["Sat", "Sun", "Mon", "Tues", "Wed"];
 
 function formatMovedDate(value: string | null): string | null {
@@ -59,6 +59,9 @@ export function RoutineList<T extends FilterableSession>({
         case "day":
           cmp = DAY_ORDER.indexOf(a.day) - DAY_ORDER.indexOf(b.day) || a.timeSlot.sortOrder - b.timeSlot.sortOrder;
           break;
+        case "slot":
+          cmp = a.timeSlot.sortOrder - b.timeSlot.sortOrder;
+          break;
         case "course":
           cmp = a.course.code.localeCompare(b.course.code);
           break;
@@ -97,7 +100,8 @@ export function RoutineList<T extends FilterableSession>({
   }
 
   const headers = [
-    { label: <SortHead label="Day / Slot" active={sortKey === "day"} dir={sortDir} onClick={() => toggleSort("day")} /> },
+    { label: <SortHead label="Day" active={sortKey === "day"} dir={sortDir} onClick={() => toggleSort("day")} /> },
+    { label: <SortHead label="Time Slot" active={sortKey === "slot"} dir={sortDir} onClick={() => toggleSort("slot")} /> },
     { label: <SortHead label="Course" active={sortKey === "course"} dir={sortDir} onClick={() => toggleSort("course")} /> },
     { label: <SortHead label="Teacher" active={sortKey === "teacher"} dir={sortDir} onClick={() => toggleSort("teacher")} /> },
     { label: <SortHead label="Batch / Section" active={sortKey === "batch"} dir={sortDir} onClick={() => toggleSort("batch")} /> },
@@ -112,10 +116,8 @@ export function RoutineList<T extends FilterableSession>({
         const cancelled = s.status === "CANCELLED";
         return (
           <tr key={s.id} className={`hover:bg-slate-50 transition-colors group ${cancelled ? "bg-gray-50/60 opacity-60" : ""}`}>
-            <td className="px-5 py-3.5 whitespace-nowrap">
-              <span className="font-semibold text-gray-700">{s.day}</span>
-              <div className="text-xs text-gray-500">{s.timeSlot.label}</div>
-            </td>
+            <td className="px-5 py-3.5 font-semibold text-gray-700 whitespace-nowrap">{s.day}</td>
+            <td className="px-5 py-3.5 text-gray-500 whitespace-nowrap">{s.timeSlot.label}</td>
             <td className="px-5 py-3.5 font-semibold text-gray-800">
               {s.course.code}
               {cancelled && (
