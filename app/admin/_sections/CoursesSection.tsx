@@ -15,8 +15,8 @@ const emptyForm: CourseForm = { code: "", title: "", type: "THEORY" };
 
 function TypeBadge({ type }: { type: string }) {
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
-      type === "LAB" ? "bg-violet-100 text-violet-700" : "bg-sky-100 text-sky-700"
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold ${
+      type === "LAB" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
     }`}>
       {type === "LAB" ? "Lab" : "Theory"}
     </span>
@@ -181,7 +181,7 @@ export default function CoursesSection() {
       </Card>
 
       <Card>
-        <CardHeader title={<>Courses <span className="ml-2 text-sm font-normal text-gray-400">{courses.length}</span></>} />
+        <CardHeader title={<>Courses <span className="ml-2 text-sm font-normal text-slate">{courses.length}</span></>} />
 
         {loading ? (
           <Loading />
@@ -191,26 +191,26 @@ export default function CoursesSection() {
           <Table headers={["Code", "Title", "Type", ""]}>
             {courses.map((c) =>
               editingId === c.id ? (
-                <tr key={c.id} className="bg-indigo-50/40">
+                <tr key={c.id} className="bg-primary/5">
                   <td className="px-5 py-3">
                     <input
                       value={editForm.code}
                       onChange={(e) => setEditForm((f) => ({ ...f, code: e.target.value }))}
-                      className="w-full border border-gray-200 bg-white rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full border border-border bg-card rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                     />
                   </td>
                   <td className="px-5 py-3">
                     <input
                       value={editForm.title}
                       onChange={(e) => setEditForm((f) => ({ ...f, title: e.target.value }))}
-                      className="w-full border border-gray-200 bg-white rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full border border-border bg-card rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                     />
                   </td>
                   <td className="px-5 py-3">
                     <select
                       value={editForm.type}
                       onChange={(e) => setEditForm((f) => ({ ...f, type: e.target.value as "THEORY" | "LAB" }))}
-                      className="w-full border border-gray-200 bg-white rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full border border-border bg-card rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                     >
                       <option value="THEORY">Theory</option>
                       <option value="LAB">Lab</option>
@@ -226,9 +226,9 @@ export default function CoursesSection() {
                   </td>
                 </tr>
               ) : (
-                <tr key={c.id} className="hover:bg-slate-50 transition-colors group">
-                  <td className="px-5 py-3.5 font-semibold text-gray-800">{c.code}</td>
-                  <td className="px-5 py-3.5 text-gray-600">{c.title}</td>
+                <tr key={c.id} className="hover:bg-muted/40 transition-colors group">
+                  <td className="px-5 py-3.5 font-semibold font-data text-foreground">{c.code}</td>
+                  <td className="px-5 py-3.5 text-muted-foreground">{c.title}</td>
                   <td className="px-5 py-3.5"><TypeBadge type={c.type} /></td>
                   <td className="px-5 py-3.5 text-right whitespace-nowrap">
                     <LinkButton tone="primary" muted revealOnHover onClick={() => startEdit(c)} className="mr-3">

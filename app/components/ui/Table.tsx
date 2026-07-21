@@ -18,15 +18,15 @@ export function Table({
 }) {
   return (
     <ShadcnTable className="w-full text-sm">
-      <ShadcnTableHeader>
-        <ShadcnTableRow className="bg-muted/40 hover:bg-muted/40 border-border">
+      <ShadcnTableHeader className="sticky top-0 z-10 bg-canvas">
+        <ShadcnTableRow className="bg-canvas hover:bg-canvas border-border">
           {headers.map((h, i) => {
             const label = typeof h === "string" ? h : h.label;
             const className = typeof h === "string" ? "" : h.className ?? "";
             return (
               <ShadcnTableHead
                 key={i}
-                className={cn("px-5 py-3 h-auto text-left font-semibold text-muted-foreground text-xs uppercase tracking-wide whitespace-normal", className)}
+                className={cn("px-5 py-3 h-auto text-left font-semibold text-slate text-xs uppercase tracking-wide whitespace-normal", className)}
               >
                 {label}
               </ShadcnTableHead>

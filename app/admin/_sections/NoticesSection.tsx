@@ -14,12 +14,12 @@ const emptyForm: NoticeForm = { title: "", body: "", audience: "ALL" };
 
 function AudienceBadge({ audience }: { audience: string }) {
   const styles: Record<string, string> = {
-    ALL: "bg-indigo-100 text-indigo-700",
-    TEACHERS: "bg-violet-100 text-violet-700",
-    STUDENTS: "bg-sky-100 text-sky-700",
+    ALL: "bg-primary/10 text-primary",
+    TEACHERS: "bg-moved/10 text-moved",
+    STUDENTS: "bg-confirmed/10 text-confirmed",
   };
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${styles[audience] ?? "bg-gray-100 text-gray-600"}`}>
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold ${styles[audience] ?? "bg-muted text-muted-foreground"}`}>
       {audience === "ALL" ? "Everyone" : audience.charAt(0) + audience.slice(1).toLowerCase()}
     </span>
   );
@@ -188,26 +188,26 @@ export default function NoticesSection() {
       </Card>
 
       <Card>
-        <CardHeader title={<>Notices <span className="ml-2 text-sm font-normal text-gray-400">{notices.length}</span></>} />
+        <CardHeader title={<>Notices <span className="ml-2 text-sm font-normal text-slate">{notices.length}</span></>} />
 
         {loading ? (
           <Loading />
         ) : notices.length === 0 ? (
           <EmptyState icon="📣" message="No notices yet. Post one above." />
         ) : (
-          <div className="divide-y divide-gray-50">
+          <div className="divide-y divide-border">
             {notices.map((n) =>
               editingId === n.id ? (
-                <div key={n.id} className="p-6 bg-indigo-50/40 space-y-3">
+                <div key={n.id} className="p-6 bg-primary/5 space-y-3">
                   <input
                     value={editForm.title}
                     onChange={(e) => setEditForm((f) => ({ ...f, title: e.target.value }))}
-                    className="w-full border border-gray-200 bg-white rounded-lg px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full border border-border bg-card rounded-lg px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                   <select
                     value={editForm.audience}
                     onChange={(e) => setEditForm((f) => ({ ...f, audience: e.target.value as NoticeForm["audience"] }))}
-                    className="border border-gray-200 bg-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="border border-border bg-card rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                   >
                     <option value="ALL">Everyone</option>
                     <option value="TEACHERS">Teachers</option>
@@ -217,7 +217,7 @@ export default function NoticesSection() {
                     rows={3}
                     value={editForm.body}
                     onChange={(e) => setEditForm((f) => ({ ...f, body: e.target.value }))}
-                    className="w-full border border-gray-200 bg-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-y"
+                    className="w-full border border-border bg-card rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-y"
                   />
                   <div>
                     <LinkButton tone="primary" loading={editSubmitting} onClick={() => handleEditSubmit(n.id)} className="mr-3">
@@ -233,11 +233,11 @@ export default function NoticesSection() {
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-semibold text-gray-800">{n.title}</h3>
+                        <h3 className="font-semibold text-foreground">{n.title}</h3>
                         <AudienceBadge audience={n.audience} />
                       </div>
-                      <p className="text-sm text-gray-600 mt-1.5 whitespace-pre-wrap">{n.body}</p>
-                      <p className="text-xs text-gray-400 mt-2">
+                      <p className="text-sm text-muted-foreground mt-1.5 whitespace-pre-wrap">{n.body}</p>
+                      <p className="text-xs text-slate mt-2 font-data">
                         {new Date(n.createdAt).toLocaleString()}
                       </p>
                     </div>

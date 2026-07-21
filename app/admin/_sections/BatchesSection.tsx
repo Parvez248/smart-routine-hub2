@@ -171,7 +171,7 @@ export default function BatchesSection() {
       </Card>
 
       <Card>
-        <CardHeader title={<>Batches <span className="ml-2 text-sm font-normal text-gray-400">{batches.length}</span></>} />
+        <CardHeader title={<>Batches <span className="ml-2 text-sm font-normal text-slate">{batches.length}</span></>} />
 
         {loading ? (
           <Loading />
@@ -181,19 +181,19 @@ export default function BatchesSection() {
           <Table headers={["Name", "Semester", "Students", ""]}>
             {batches.map((b) =>
               editingId === b.id ? (
-                <tr key={b.id} className="bg-indigo-50/40">
+                <tr key={b.id} className="bg-primary/5">
                   <td className="px-5 py-3">
                     <input
                       value={editForm.name}
                       onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
-                      className="w-full border border-gray-200 bg-white rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full border border-border bg-card rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                     />
                   </td>
                   <td className="px-5 py-3">
                     <input
                       value={editForm.semester}
                       onChange={(e) => setEditForm((f) => ({ ...f, semester: e.target.value }))}
-                      className="w-full border border-gray-200 bg-white rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full border border-border bg-card rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                     />
                   </td>
                   <td className="px-5 py-3">
@@ -202,7 +202,7 @@ export default function BatchesSection() {
                       min={0}
                       value={editForm.studentCount}
                       onChange={(e) => setEditForm((f) => ({ ...f, studentCount: e.target.value }))}
-                      className="w-full border border-gray-200 bg-white rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full border border-border bg-card rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                     />
                   </td>
                   <td className="px-5 py-3 text-right whitespace-nowrap">
@@ -215,10 +215,10 @@ export default function BatchesSection() {
                   </td>
                 </tr>
               ) : (
-                <tr key={b.id} className="hover:bg-slate-50 transition-colors group">
-                  <td className="px-5 py-3.5 font-semibold text-gray-800">{b.name}</td>
-                  <td className="px-5 py-3.5 text-gray-600">{b.semester}</td>
-                  <td className="px-5 py-3.5 text-gray-600">{b.studentCount}</td>
+                <tr key={b.id} className="hover:bg-muted/40 transition-colors group">
+                  <td className="px-5 py-3.5 font-semibold font-data text-foreground">{b.name}</td>
+                  <td className="px-5 py-3.5 text-muted-foreground font-data">{b.semester}</td>
+                  <td className="px-5 py-3.5 text-muted-foreground font-data">{b.studentCount}</td>
                   <td className="px-5 py-3.5 text-right whitespace-nowrap">
                     <LinkButton tone="primary" muted revealOnHover onClick={() => startEdit(b)} className="mr-3">
                       Edit

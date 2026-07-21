@@ -112,7 +112,7 @@ export default function StudentAlarmsPage() {
         title="Reminders"
         description="Reminders fire as an on-screen banner (and a browser notification, if allowed) while this site is open."
         action={
-          <span className="text-xs bg-indigo-50 text-indigo-600 font-semibold px-3 py-1 rounded-full">
+          <span className="text-xs bg-primary/10 text-primary font-semibold px-3 py-1 rounded-full">
             {alarms.length} reminders
           </span>
         }
@@ -121,7 +121,7 @@ export default function StudentAlarmsPage() {
       {status && <Message type={status.type}>{status.msg}</Message>}
 
       <Card>
-        <CardHeader title={<>Reminders <span className="ml-2 text-sm font-normal text-gray-400">{alarms.length}</span></>} />
+        <CardHeader title={<>Reminders <span className="ml-2 text-sm font-normal text-slate">{alarms.length}</span></>} />
 
         {loading ? (
           <Loading />
@@ -130,25 +130,25 @@ export default function StudentAlarmsPage() {
         ) : (
           <Table headers={["Class", "Day · Time", "Room", "Remind me before", "Active", ""]}>
             {alarms.map((a) => (
-              <tr key={a.id} className="hover:bg-slate-50 transition-colors">
+              <tr key={a.id} className="hover:bg-muted/40 transition-colors">
                 <td className="px-5 py-3.5">
-                  <span className="font-semibold text-gray-800">{a.session?.course.code ?? "—"}</span>
+                  <span className="font-semibold font-data text-foreground">{a.session?.course.code ?? "—"}</span>
                   {a.session?.status === "CANCELLED" && (
-                    <span className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-red-100 text-red-700">
+                    <span className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-cancelled/10 text-cancelled">
                       Cancelled
                     </span>
                   )}
                 </td>
-                <td className="px-5 py-3.5 text-gray-600 whitespace-nowrap">
+                <td className="px-5 py-3.5 text-muted-foreground font-data whitespace-nowrap">
                   {a.session ? `${a.session.day} · ${a.session.timeSlot.label}` : "—"}
                 </td>
-                <td className="px-5 py-3.5 text-gray-600">{a.session ? `Room ${a.session.room.name}` : "—"}</td>
+                <td className="px-5 py-3.5 text-muted-foreground font-data">{a.session ? `Room ${a.session.room.name}` : "—"}</td>
                 <td className="px-5 py-3.5">
                   <select
                     value={a.leadMinutes}
                     disabled={actingId === a.id}
                     onChange={(e) => handleLeadChange(a.id, Number(e.target.value))}
-                    className="border border-gray-200 bg-gray-50 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="border border-border bg-muted rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                   >
                     {LEAD_OPTIONS.map((m) => (
                       <option key={m} value={m}>{m} min</option>
@@ -160,7 +160,7 @@ export default function StudentAlarmsPage() {
                     onClick={() => handleToggleActive(a)}
                     disabled={actingId === a.id}
                     className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold disabled:opacity-50 transition-colors ${
-                      a.isActive ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"
+                      a.isActive ? "bg-confirmed/10 text-confirmed" : "bg-muted text-muted-foreground"
                     }`}
                   >
                     {a.isActive ? "On" : "Off"}

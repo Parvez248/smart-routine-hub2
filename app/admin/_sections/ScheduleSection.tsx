@@ -5,7 +5,6 @@ import Link from "next/link";
 import { Card, CardHeader } from "@/app/components/ui/Card";
 import { Button, LinkButton } from "@/app/components/ui/Button";
 import { Message } from "@/app/components/ui/Message";
-import { Loading } from "@/app/components/ui/Loading";
 import { useRoutineFilters } from "@/app/components/routine/useRoutineFilters";
 import { RoutineFilterBar } from "@/app/components/routine/RoutineFilterBar";
 import { RoutineList } from "@/app/components/routine/RoutineList";
@@ -56,14 +55,14 @@ function Select({
 }) {
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
         {label}{required && <span className="text-red-400 ml-0.5">*</span>}
       </label>
       <select
         required={required}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+        className="w-full border border-border bg-muted rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition"
       >
         {children}
       </select>
@@ -245,13 +244,13 @@ export default function ScheduleSection() {
   return (
     <>
       {/* Version selector */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-6 py-4 flex flex-wrap items-center justify-between gap-4">
+      <div className="bg-card rounded-2xl border border-border shadow-sm px-6 py-4 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Version</label>
+          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Version</label>
           <select
             value={selectedVersionId}
             onChange={(e) => setSelectedVersionId(e.target.value)}
-            className="border border-gray-200 bg-gray-50 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+            className="border border-border bg-muted rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition"
           >
             {versions.length === 0 && <option value="">No versions yet</option>}
             {versions.map((v) => (
@@ -261,7 +260,7 @@ export default function ScheduleSection() {
             ))}
           </select>
         </div>
-        <Link href="/admin/routine?tab=versions" className="text-xs font-semibold text-indigo-600 hover:text-indigo-700">
+        <Link href="/admin/routine?tab=versions" className="text-xs font-semibold text-primary hover:opacity-80">
           Manage versions →
         </Link>
       </div>
@@ -269,13 +268,13 @@ export default function ScheduleSection() {
       {/* Stats row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: "Total Sessions", value: stats.total, color: "text-gray-800" },
+          { label: "Total Sessions", value: stats.total, color: "text-foreground" },
           { label: "Theory Classes", value: stats.theory, color: "text-sky-600" },
           { label: "Lab Classes",    value: stats.lab,    color: "text-violet-600" },
-          { label: "Days Covered",   value: `${stats.days} / 5`, color: "text-emerald-600" },
+          { label: "Days Covered",   value: `${stats.days} / 5`, color: "text-confirmed" },
         ].map((s) => (
-          <div key={s.label} className="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4">
-            <p className="text-xs text-gray-400 font-medium">{s.label}</p>
+          <div key={s.label} className="bg-card rounded-xl border border-border shadow-sm px-5 py-4">
+            <p className="text-xs text-slate font-medium">{s.label}</p>
             <p className={`text-2xl font-bold mt-1 ${s.color}`}>{s.value}</p>
           </div>
         ))}
@@ -311,11 +310,11 @@ export default function ScheduleSection() {
         {freeRooms && (
           <div className="px-6 pb-6">
             {freeRooms.length === 0 ? (
-              <p className="text-sm text-gray-400">No rooms are free at this day &amp; time.</p>
+              <p className="text-sm text-slate">No rooms are free at this day &amp; time.</p>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {freeRooms.map((r) => (
-                  <span key={r.id} className="text-xs font-semibold bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-full">
+                  <span key={r.id} className="text-xs font-semibold font-data bg-confirmed/10 text-confirmed px-3 py-1.5 rounded-full">
                     Room {r.name} (cap {r.capacity})
                   </span>
                 ))}
@@ -327,12 +326,12 @@ export default function ScheduleSection() {
 
       {/* Form card */}
       <Card>
-        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-indigo-50 to-white flex items-center justify-between">
+        <div className="px-6 py-4 border-b border-border bg-gradient-to-r from-primary/5 to-transparent flex items-center justify-between">
           <div>
-            <h2 className="text-base font-semibold text-gray-800">
+            <h2 className="text-base font-semibold text-foreground">
               {editingId ? "Edit Session" : "Add New Session"}
             </h2>
-            <p className="text-xs text-gray-400 mt-0.5">
+            <p className="text-xs text-slate mt-0.5">
               Conflicts in room, teacher, and batch, and room capacity are checked automatically.
             </p>
           </div>
@@ -362,15 +361,15 @@ export default function ScheduleSection() {
             </Select>
 
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                Section <span className="text-gray-300 normal-case font-normal">(optional)</span>
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Section <span className="text-muted-foreground/60 normal-case font-normal">(optional)</span>
               </label>
               <input
                 type="text"
                 value={form.section}
                 onChange={(e) => field("section", e.target.value)}
                 placeholder="e.g. Sec 1"
-                className="border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                className="border border-border bg-muted rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition"
               />
             </div>
           </div>
@@ -418,23 +417,21 @@ export default function ScheduleSection() {
 
       {/* Sessions table */}
       <Card>
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between gap-3">
-          <h2 className="text-base font-semibold text-gray-800">Saved Sessions</h2>
+        <div className="px-6 py-4 border-b border-border flex items-center justify-between gap-3">
+          <h2 className="text-base font-semibold text-foreground">Saved Sessions</h2>
         </div>
 
-        <div className="px-6 py-4 border-b border-gray-100">
+        <div className="px-6 py-4 border-b border-border">
           <RoutineFilterBar state={filterState} />
         </div>
 
-        <div className="px-6 py-3 text-xs text-gray-400">
-          Showing {filtered.length} of {totalCount} classes
+        <div className="px-6 py-3 text-xs text-slate">
+          Showing <span className="font-data">{filtered.length}</span> of <span className="font-data">{totalCount}</span> classes
         </div>
 
-        {sessionsLoading ? (
-          <Loading />
-        ) : (
-          <RoutineList
+        <RoutineList
             sessions={filtered}
+            loading={sessionsLoading}
             onClearFilters={clearAll}
             renderActions={(s) => {
               const cancelled = s.status === "CANCELLED";
@@ -471,7 +468,6 @@ export default function ScheduleSection() {
               );
             }}
           />
-        )}
       </Card>
     </>
   );

@@ -39,7 +39,7 @@ function formatMovedDate(value: string | null): string | null {
 function TypeBadge({ type }: { type: string }) {
   return (
     <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold ${
-      type === "LAB" ? "bg-violet-100 text-violet-700" : "bg-sky-100 text-sky-700"
+      type === "LAB" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
     }`}>
       {type === "LAB" ? "Lab" : "Theory"}
     </span>
@@ -193,11 +193,11 @@ function StudentRoutineInner() {
         description={versionName ? `Published version: ${versionName}` : "No routine published yet."}
         action={
           <div className="flex items-center gap-2">
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Batch</label>
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Batch</label>
             <select
               value={selectedBatchId}
               onChange={(e) => handleBatchChange(e.target.value)}
-              className="border border-gray-200 bg-gray-50 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+              className="border border-border bg-muted rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition"
             >
               {batches.map((b) => (
                 <option key={b.id} value={b.id}>{b.name} — {b.semester} sem</option>
@@ -208,18 +208,18 @@ function StudentRoutineInner() {
       />
 
       {nextClass && (
-        <div className="bg-indigo-600 rounded-2xl px-6 py-4 text-white flex items-center justify-between gap-4 flex-wrap">
+        <div className="bg-primary rounded-2xl px-6 py-4 text-white flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <p className="text-xs text-indigo-200 font-semibold uppercase tracking-wide">Next Class</p>
+            <p className="text-xs text-primary-foreground/70 font-semibold uppercase tracking-wide">Next Class</p>
             <p className="text-lg font-bold mt-0.5">
               {nextClass.session.course.code} · {nextClass.session.day} · {nextClass.session.timeSlot.label}
             </p>
-            <p className="text-sm text-indigo-100 mt-0.5">
+            <p className="text-sm text-primary-foreground/80 mt-0.5">
               {nextClass.session.teacher.initials} · Room {nextClass.session.room.name}
             </p>
           </div>
           <div className="text-right">
-            <p className="text-xs text-indigo-200 font-semibold uppercase tracking-wide">Starts in</p>
+            <p className="text-xs text-primary-foreground/70 font-semibold uppercase tracking-wide">Starts in</p>
             <p className="text-2xl font-bold tabular-nums">{formatCountdown(nextClass.at.getTime() - now.getTime())}</p>
           </div>
         </div>
@@ -228,11 +228,11 @@ function StudentRoutineInner() {
       <Card>
         <CardHeader title="Weekly Routine" />
 
-        <div className="px-6 py-4 border-b border-gray-100">
+        <div className="px-6 py-4 border-b border-border">
           <RoutineFilterBar state={filterState} />
         </div>
 
-        <div className="px-6 py-3 text-xs text-gray-400">
+        <div className="px-6 py-3 text-xs text-slate">
           Showing {filtered.length} of {totalCount} classes
         </div>
 
@@ -242,7 +242,7 @@ function StudentRoutineInner() {
           <EmptyState icon="🗓️" message={message} />
         ) : filtered.length === 0 ? (
           <EmptyState icon="🔍" message="No classes match these filters." action={
-            <button type="button" onClick={clearAll} className="text-xs font-semibold text-indigo-600 hover:text-indigo-700">
+            <button type="button" onClick={clearAll} className="text-xs font-semibold text-primary hover:opacity-80">
               Clear all filters
             </button>
           } />
@@ -250,44 +250,45 @@ function StudentRoutineInner() {
           <div className="overflow-x-auto pb-6">
             <table className="w-full text-sm border-collapse">
               <thead>
-                <tr className="bg-gray-50 text-gray-400 text-xs uppercase tracking-wide">
+                <tr className="bg-muted text-slate text-xs uppercase tracking-wide">
                   <th className="px-4 py-3 text-left font-semibold whitespace-nowrap">Time Slot</th>
                   {DAY_ORDER.map((d) => (
                     <th key={d} className="px-4 py-3 text-left font-semibold whitespace-nowrap">{d}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-border">
                 {timeSlots.map((slot) => (
                   <tr key={slot.id}>
-                    <td className="px-4 py-3 text-gray-500 font-medium whitespace-nowrap align-top">{slot.label}</td>
+                    <td className="px-4 py-3 text-muted-foreground font-medium whitespace-nowrap align-top">{slot.label}</td>
                     {DAY_ORDER.map((day) => {
                       const cellSessions = cellFor(day, slot.id);
                       return (
                         <td key={day} className="px-4 py-3 align-top min-w-[140px]">
                           {cellSessions.length === 0 ? (
-                            <span className="text-gray-200">—</span>
+                            <span className="text-border">—</span>
                           ) : (
                             <div className="space-y-2">
                               {cellSessions.map((s) => {
                                 const cancelled = s.status === "CANCELLED";
+                                const moved = !cancelled && Boolean(s.movedTo);
                                 const alarm = alarmBySessionId.get(s.id);
                                 const bellOpen = openBellFor === s.id;
                                 return (
                                   <div
                                     key={s.id}
                                     className={`rounded-lg border px-2.5 py-2 ${
-                                      cancelled ? "border-red-100 bg-red-50/50" : "border-gray-100 bg-gray-50"
-                                    }`}
+                                      cancelled ? "border-cancelled/20 bg-cancelled/5" : "border-border bg-muted"
+                                    } ${cancelled ? "shadow-[inset_3px_0_0_0_var(--cancelled)]" : moved ? "shadow-[inset_3px_0_0_0_var(--moved)]" : "shadow-[inset_3px_0_0_0_var(--confirmed)]"}`}
                                   >
                                     <div className="flex items-start justify-between gap-1">
                                       <div className="flex items-center gap-1.5 flex-wrap">
-                                        <span className={`font-semibold text-gray-800 ${cancelled ? "line-through text-gray-400" : ""}`}>
+                                        <span className={`font-semibold text-foreground ${cancelled ? "line-through text-slate" : ""}`}>
                                           {s.course.code}
                                         </span>
                                         <TypeBadge type={s.course.type} />
                                         {cancelled && (
-                                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-red-100 text-red-700">
+                                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-cancelled/10 text-cancelled">
                                             Cancelled
                                           </span>
                                         )}
@@ -302,13 +303,13 @@ function StudentRoutineInner() {
                                         </button>
                                       )}
                                     </div>
-                                    <p className={`text-xs text-gray-500 mt-1 ${cancelled ? "line-through text-gray-300" : ""}`}>
+                                    <p className={`text-xs text-muted-foreground mt-1 ${cancelled ? "line-through text-muted-foreground/60" : ""}`}>
                                       {s.teacher.initials} · Room {s.room.name}
                                       {s.section ? ` · ${s.section}` : ""}
                                     </p>
                                     {!cancelled && s.movedTo && (
-                                      <p className="text-[11px] text-amber-700 mt-1">
-                                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-700 mr-1">
+                                      <p className="text-[11px] text-moved mt-1">
+                                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-moved/10 text-moved mr-1">
                                           {s.movedTo.date ? `Moved on ${formatMovedDate(s.movedTo.date)}` : "Moved"}
                                         </span>
                                         to {s.movedTo.day}, {s.movedTo.timeSlot?.label}, Room {s.movedTo.room?.name}
@@ -316,7 +317,7 @@ function StudentRoutineInner() {
                                     )}
 
                                     {bellOpen && (
-                                      <div className="mt-2 pt-2 border-t border-gray-200 space-y-2">
+                                      <div className="mt-2 pt-2 border-t border-border space-y-2">
                                         <div className="flex items-center gap-1 flex-wrap">
                                           {LEAD_OPTIONS.map((m) => (
                                             <button
@@ -324,8 +325,8 @@ function StudentRoutineInner() {
                                               onClick={() => setBellLeadMinutes(m)}
                                               className={`px-2 py-0.5 rounded-full text-[11px] font-semibold transition-colors ${
                                                 bellLeadMinutes === m
-                                                  ? "bg-indigo-600 text-white"
-                                                  : "bg-white text-gray-500 border border-gray-200 hover:bg-gray-100"
+                                                  ? "bg-primary text-white"
+                                                  : "bg-white text-muted-foreground border border-border hover:bg-muted"
                                               }`}
                                             >
                                               {m}m

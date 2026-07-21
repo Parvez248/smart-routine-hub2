@@ -36,7 +36,7 @@ export default function StudentNoticesPage() {
       <PageHeader title="Notices" description="Announcements from the department." />
 
       <Card>
-        <CardHeader title={<>Notices <span className="ml-2 text-sm font-normal text-gray-400">{notices.length}</span></>} />
+        <CardHeader title={<>Notices <span className="ml-2 text-sm font-normal text-slate">{notices.length}</span></>} />
 
         {loading ? (
           <Loading />

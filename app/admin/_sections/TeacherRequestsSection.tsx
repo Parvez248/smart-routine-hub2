@@ -63,7 +63,7 @@ export default function TeacherRequestsSection() {
       {status && <Message type={status.type}>{status.msg}</Message>}
 
       <Card>
-        <CardHeader title={<>Pending Teacher Requests <span className="ml-2 text-sm font-normal text-gray-400">{requests.length}</span></>} />
+        <CardHeader title={<>Pending Teacher Requests <span className="ml-2 text-sm font-normal text-slate">{requests.length}</span></>} />
 
         {loading ? (
           <Loading />
@@ -72,10 +72,10 @@ export default function TeacherRequestsSection() {
         ) : (
           <Table headers={["Name", "Email", "Initials", ""]}>
             {requests.map((r) => (
-              <tr key={r.id} className="hover:bg-slate-50 transition-colors">
-                <td className="px-5 py-3.5 font-semibold text-gray-800">{r.name ?? "—"}</td>
-                <td className="px-5 py-3.5 text-gray-600">{r.email}</td>
-                <td className="px-5 py-3.5 text-gray-600">{r.initials ?? "—"}</td>
+              <tr key={r.id} className="hover:bg-muted/40 transition-colors">
+                <td className="px-5 py-3.5 font-semibold text-foreground">{r.name ?? "—"}</td>
+                <td className="px-5 py-3.5 text-muted-foreground font-data">{r.email}</td>
+                <td className="px-5 py-3.5 text-muted-foreground font-data">{r.initials ?? "—"}</td>
                 <td className="px-5 py-3.5 text-right whitespace-nowrap">
                   <LinkButton tone="success" loading={actingId === r.id} onClick={() => handleAction(r.id, "approve")} className="mr-3">
                     Approve

@@ -157,7 +157,7 @@ export default function RoomsSection() {
       </Card>
 
       <Card>
-        <CardHeader title={<>Rooms <span className="ml-2 text-sm font-normal text-gray-400">{rooms.length}</span></>} />
+        <CardHeader title={<>Rooms <span className="ml-2 text-sm font-normal text-slate">{rooms.length}</span></>} />
 
         {loading ? (
           <Loading />
@@ -167,12 +167,12 @@ export default function RoomsSection() {
           <Table headers={["Name", "Capacity", ""]}>
             {rooms.map((r) =>
               editingId === r.id ? (
-                <tr key={r.id} className="bg-indigo-50/40">
+                <tr key={r.id} className="bg-primary/5">
                   <td className="px-5 py-3">
                     <input
                       value={editForm.name}
                       onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
-                      className="w-full border border-gray-200 bg-white rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full border border-border bg-card rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                     />
                   </td>
                   <td className="px-5 py-3">
@@ -181,7 +181,7 @@ export default function RoomsSection() {
                       min={1}
                       value={editForm.capacity}
                       onChange={(e) => setEditForm((f) => ({ ...f, capacity: e.target.value }))}
-                      className="w-full border border-gray-200 bg-white rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full border border-border bg-card rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                     />
                   </td>
                   <td className="px-5 py-3 text-right whitespace-nowrap">
@@ -194,9 +194,9 @@ export default function RoomsSection() {
                   </td>
                 </tr>
               ) : (
-                <tr key={r.id} className="hover:bg-slate-50 transition-colors group">
-                  <td className="px-5 py-3.5 font-semibold text-gray-800">Room {r.name}</td>
-                  <td className="px-5 py-3.5 text-gray-600">{r.capacity}</td>
+                <tr key={r.id} className="hover:bg-muted/40 transition-colors group">
+                  <td className="px-5 py-3.5 font-semibold font-data text-foreground">Room {r.name}</td>
+                  <td className="px-5 py-3.5 text-muted-foreground font-data">{r.capacity}</td>
                   <td className="px-5 py-3.5 text-right whitespace-nowrap">
                     <LinkButton tone="primary" muted revealOnHover onClick={() => startEdit(r)} className="mr-3">
                       Edit

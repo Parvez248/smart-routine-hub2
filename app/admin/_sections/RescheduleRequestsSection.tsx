@@ -7,6 +7,7 @@ import { Table } from "@/app/components/ui/Table";
 import { Message } from "@/app/components/ui/Message";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { Loading } from "@/app/components/ui/Loading";
+import { StatusBadge, type Status } from "@/app/components/ui/StatusBadge";
 
 type RescheduleRequest = {
   id: number;
@@ -28,27 +29,19 @@ type RescheduleRequest = {
   createdAt: string;
 };
 
-const STATUS_TONE: Record<string, string> = {
-  PENDING: "bg-amber-100 text-amber-700",
-  APPROVED: "bg-emerald-100 text-emerald-700",
-  REJECTED: "bg-red-100 text-red-700",
-  CANCELLED: "bg-gray-100 text-gray-500",
+const STATUS_LABEL: Record<string, Status> = {
+  PENDING: "Pending",
+  APPROVED: "Approved",
+  REJECTED: "Rejected",
+  CANCELLED: "Cancelled",
 };
-
-function StatusBadge({ status }: { status: string }) {
-  return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${STATUS_TONE[status] ?? "bg-gray-100 text-gray-500"}`}>
-      {status.charAt(0) + status.slice(1).toLowerCase()}
-    </span>
-  );
-}
 
 function MoveDescription({ r }: { r: RescheduleRequest }) {
   return (
-    <div className="text-xs">
-      <span className="text-gray-500">{r.oldDay} {r.oldTimeSlot?.label} · Room {r.oldRoom?.name}</span>
-      <span className="mx-1.5 text-gray-300">→</span>
-      <span className="font-semibold text-gray-700">{r.newDay} {r.newTimeSlot?.label} · Room {r.newRoom?.name}</span>
+    <div className="text-xs font-data">
+      <span className="text-slate">{r.oldDay} {r.oldTimeSlot?.label} · Room {r.oldRoom?.name}</span>
+      <span className="mx-1.5 text-muted-foreground/50">→</span>
+      <span className="font-semibold text-foreground">{r.newDay} {r.newTimeSlot?.label} · Room {r.newRoom?.name}</span>
     </div>
   );
 }
@@ -104,7 +97,7 @@ export default function RescheduleRequestsSection() {
       {status && <Message type={status.type}>{status.msg}</Message>}
 
       <Card>
-        <CardHeader title={<>Pending Reschedule Requests <span className="ml-2 text-sm font-normal text-gray-400">{pending.length}</span></>} />
+        <CardHeader title={<>Pending Reschedule Requests <span className="ml-2 text-sm font-normal text-slate">{pending.length}</span></>} />
 
         {loading ? (
           <Loading />
@@ -113,26 +106,26 @@ export default function RescheduleRequestsSection() {
         ) : (
           <Table headers={["Teacher", "Class", "Move", "Reason", "Note", ""]}>
             {pending.map((r) => (
-              <tr key={r.id} className="hover:bg-slate-50 transition-colors align-top">
+              <tr key={r.id} className="hover:bg-muted/40 transition-colors align-top">
                 <td className="px-5 py-3.5">
-                  <span className="font-semibold text-gray-700">{r.teacher?.initials}</span>
-                  <div className="text-xs text-gray-400">{r.teacher?.name}</div>
+                  <span className="font-semibold font-data text-foreground">{r.teacher?.initials}</span>
+                  <div className="text-xs text-slate">{r.teacher?.name}</div>
                 </td>
                 <td className="px-5 py-3.5">
-                  <span className="font-medium text-gray-700">{r.course?.code}</span>
-                  <div className="text-xs text-gray-400">
+                  <span className="font-medium font-data text-foreground">{r.course?.code}</span>
+                  <div className="text-xs text-slate">
                     {r.batch?.name}{r.section ? ` (${r.section})` : ""}
                   </div>
                 </td>
                 <td className="px-5 py-3.5"><MoveDescription r={r} /></td>
-                <td className="px-5 py-3.5 text-gray-500 text-xs max-w-[160px]">{r.reason ?? "—"}</td>
+                <td className="px-5 py-3.5 text-muted-foreground text-xs max-w-[160px]">{r.reason ?? "—"}</td>
                 <td className="px-5 py-3.5">
                   <input
                     type="text"
                     value={noteById[r.id] ?? ""}
                     onChange={(e) => setNoteById((m) => ({ ...m, [r.id]: e.target.value }))}
                     placeholder="Optional note"
-                    className="w-36 border border-gray-200 bg-white rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-36 border border-border bg-card rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                 </td>
                 <td className="px-5 py-3.5 text-right whitespace-nowrap">
@@ -150,27 +143,27 @@ export default function RescheduleRequestsSection() {
       </Card>
 
       <Card>
-        <CardHeader title={<>Decided Requests <span className="ml-2 text-sm font-normal text-gray-400">{history.length}</span></>} />
+        <CardHeader title={<>Decided Requests <span className="ml-2 text-sm font-normal text-slate">{history.length}</span></>} />
 
         {!loading && history.length === 0 ? (
           <EmptyState icon="🗂️" message="No decided requests yet." />
         ) : (
           <Table headers={["Teacher", "Class", "Move", "Status", "Note", "Decided"]}>
             {history.map((r) => (
-              <tr key={r.id} className="hover:bg-slate-50 transition-colors align-top">
+              <tr key={r.id} className="hover:bg-muted/40 transition-colors align-top">
                 <td className="px-5 py-3.5">
-                  <span className="font-semibold text-gray-700">{r.teacher?.initials}</span>
+                  <span className="font-semibold font-data text-foreground">{r.teacher?.initials}</span>
                 </td>
                 <td className="px-5 py-3.5">
-                  <span className="font-medium text-gray-700">{r.course?.code}</span>
-                  <div className="text-xs text-gray-400">
+                  <span className="font-medium font-data text-foreground">{r.course?.code}</span>
+                  <div className="text-xs text-slate">
                     {r.batch?.name}{r.section ? ` (${r.section})` : ""}
                   </div>
                 </td>
                 <td className="px-5 py-3.5"><MoveDescription r={r} /></td>
-                <td className="px-5 py-3.5"><StatusBadge status={r.status} /></td>
-                <td className="px-5 py-3.5 text-gray-500 text-xs max-w-[160px]">{r.adminNote ?? "—"}</td>
-                <td className="px-5 py-3.5 text-gray-400 text-xs whitespace-nowrap">
+                <td className="px-5 py-3.5"><StatusBadge status={STATUS_LABEL[r.status] ?? "Pending"} /></td>
+                <td className="px-5 py-3.5 text-muted-foreground text-xs max-w-[160px]">{r.adminNote ?? "—"}</td>
+                <td className="px-5 py-3.5 text-slate text-xs whitespace-nowrap font-data">
                   {r.reviewedAt ? new Date(r.reviewedAt).toLocaleString() : "—"}
                 </td>
               </tr>

@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import type { useRoutineFilters, Option } from "./useRoutineFilters";
 
 type FiltersState = ReturnType<typeof useRoutineFilters>;
@@ -15,8 +17,24 @@ const DAY_OPTIONS: Option[] = [
 
 function ChevronIcon() {
   return (
-    <svg className="h-3 w-3 text-gray-400 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+    <svg className="h-3 w-3 text-slate shrink-0" viewBox="0 0 20 20" fill="currentColor">
       <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
+    </svg>
+  );
+}
+
+function SearchIcon() {
+  return (
+    <svg className="h-3.5 w-3.5 text-slate" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
+    </svg>
+  );
+}
+
+function XIcon({ className = "h-3 w-3" }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
     </svg>
   );
 }
@@ -47,27 +65,27 @@ function MultiSelectDropdown({
         type="button"
         disabled={disabled}
         onClick={() => setOpen((o) => !o)}
-        className={`border rounded-lg px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 transition-colors whitespace-nowrap ${
+        className={`h-8 border rounded-lg px-3 text-xs font-semibold flex items-center gap-1.5 transition-colors whitespace-nowrap ${
           disabled
-            ? "border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed"
-            : "border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100"
+            ? "border-border/60 bg-muted/40 text-muted-foreground/50 cursor-not-allowed"
+            : "border-border bg-card text-foreground hover:bg-muted/50"
         }`}
       >
-        <span className="text-gray-400">{label}:</span> {summary}
+        <span className="text-slate font-normal">{label}:</span> {summary}
         <ChevronIcon />
       </button>
       {open && !disabled && (
-        <div className="absolute z-20 mt-1 w-60 max-h-64 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg py-1">
+        <div className="absolute z-20 mt-1 w-60 max-h-64 overflow-y-auto bg-popover text-popover-foreground border border-border rounded-lg shadow-md ring-1 ring-foreground/10 py-1">
           {options.length === 0 ? (
-            <p className="px-3 py-2 text-xs text-gray-400">No options</p>
+            <p className="px-3 py-2 text-xs text-muted-foreground">No options</p>
           ) : (
             options.map((opt) => (
-              <label key={opt.value} className="flex items-center gap-2 px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50 cursor-pointer">
+              <label key={opt.value} className="flex items-center gap-2 px-3 py-1.5 text-xs text-foreground hover:bg-accent cursor-pointer">
                 <input
                   type="checkbox"
                   checked={selected.includes(opt.value)}
                   onChange={() => onToggle(opt.value)}
-                  className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                  className="rounded-[4px] border-input text-primary focus:ring-ring"
                 />
                 {opt.label}
               </label>
@@ -85,8 +103,8 @@ function TodayToggle({ active, onClick }: { active: boolean; onClick: () => void
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors whitespace-nowrap ${
-        active ? "bg-indigo-600 border-indigo-600 text-white" : "bg-white border-gray-200 text-gray-600 hover:border-indigo-300 hover:text-indigo-600"
+      className={`h-8 text-xs font-semibold px-3 rounded-full border transition-colors whitespace-nowrap ${
+        active ? "bg-primary border-primary text-primary-foreground" : "bg-card border-border text-foreground hover:border-primary/40 hover:text-primary"
       }`}
     >
       Today
@@ -122,16 +140,26 @@ export function RoutineFilterBar({ state }: { state: FiltersState }) {
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative flex-1 min-w-[180px] max-w-xs">
-          <input
+          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
+            <SearchIcon />
+          </span>
+          <Input
             type="search"
             value={qInput}
             onChange={(e) => setQInput(e.target.value)}
             placeholder="Search course, teacher, room…"
-            className="w-full border border-gray-200 bg-gray-50 rounded-lg pl-8 pr-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+            className="h-8 pl-8 pr-7 text-xs bg-card"
           />
-          <svg className="absolute left-2.5 top-2 h-3.5 w-3.5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
-          </svg>
+          {qInput && (
+            <button
+              type="button"
+              onClick={() => setQInput("")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-slate hover:text-foreground"
+              aria-label="Clear search"
+            >
+              <XIcon />
+            </button>
+          )}
         </div>
 
         <div className="hidden sm:block">
@@ -142,11 +170,11 @@ export function RoutineFilterBar({ state }: { state: FiltersState }) {
           <button
             type="button"
             onClick={() => setMobileOpen(true)}
-            className="sm:hidden relative text-xs font-semibold bg-white border border-gray-200 text-gray-600 px-3 py-1.5 rounded-full hover:border-indigo-300 hover:text-indigo-600 transition-colors"
+            className="sm:hidden relative h-8 text-xs font-semibold bg-card border border-border text-foreground px-3 rounded-full hover:border-primary/40 hover:text-primary transition-colors"
           >
             Filters
             {activeCount > 0 && (
-              <span className="ml-1.5 inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full text-[10px] font-bold bg-indigo-600 text-white align-middle">
+              <span className="ml-1.5 inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full text-[10px] font-bold bg-primary text-primary-foreground align-middle font-data">
                 {activeCount}
               </span>
             )}
@@ -161,10 +189,17 @@ export function RoutineFilterBar({ state }: { state: FiltersState }) {
       {mobileOpen && (
         <div className="sm:hidden fixed inset-0 z-30 flex flex-col justify-end">
           <div className="absolute inset-0 bg-black/30" onClick={() => setMobileOpen(false)} />
-          <div className="relative bg-white rounded-t-2xl shadow-xl max-h-[80vh] overflow-y-auto p-5 space-y-4">
+          <div className="relative bg-card rounded-t-2xl shadow-lg max-h-[80vh] overflow-y-auto p-5 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-gray-800">Filters</h3>
-              <button type="button" onClick={() => setMobileOpen(false)} className="text-xs font-semibold text-indigo-600">
+              <h3 className="text-sm font-semibold text-foreground">
+                Filters
+                {activeCount > 0 && (
+                  <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold bg-primary text-primary-foreground align-middle font-data">
+                    {activeCount}
+                  </span>
+                )}
+              </h3>
+              <button type="button" onClick={() => setMobileOpen(false)} className="text-xs font-semibold text-primary">
                 Done
               </button>
             </div>
@@ -173,7 +208,7 @@ export function RoutineFilterBar({ state }: { state: FiltersState }) {
               <FilterControls state={state} />
             </div>
             {activeCount > 0 && (
-              <button type="button" onClick={clearAll} className="text-xs font-semibold text-red-500 hover:text-red-600">
+              <button type="button" onClick={clearAll} className="text-xs font-semibold text-cancelled hover:opacity-80">
                 Clear all filters
               </button>
             )}
@@ -184,17 +219,17 @@ export function RoutineFilterBar({ state }: { state: FiltersState }) {
       {chips.length > 0 && (
         <div className="flex flex-wrap items-center gap-1.5">
           {chips.map((c) => (
-            <button
+            <Badge
               key={c.key}
-              type="button"
+              variant="secondary"
+              className="cursor-pointer gap-1 pl-2.5 pr-1.5 bg-primary/10 text-primary hover:bg-primary/15"
               onClick={c.onRemove}
-              className="inline-flex items-center gap-1 text-[11px] font-semibold bg-indigo-50 text-indigo-700 pl-2.5 pr-1.5 py-1 rounded-full hover:bg-indigo-100 transition-colors"
             >
               {c.label}
-              <span className="text-indigo-400">×</span>
-            </button>
+              <XIcon className="h-2.5 w-2.5" />
+            </Badge>
           ))}
-          <button type="button" onClick={clearAll} className="text-[11px] font-semibold text-gray-400 hover:text-red-500 px-1.5 py-1">
+          <button type="button" onClick={clearAll} className="text-[11px] font-semibold text-muted-foreground hover:text-cancelled px-1.5 py-1">
             Clear all
           </button>
         </div>

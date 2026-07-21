@@ -198,28 +198,28 @@ export default function TeachersSection() {
             accent
           />
           <div className="p-6 space-y-4">
-            <div className="overflow-x-auto rounded-lg border border-amber-200">
+            <div className="overflow-x-auto rounded-lg border border-moved/30">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-amber-50 text-amber-700 text-xs uppercase tracking-wide">
+                  <tr className="bg-moved/10 text-moved text-xs uppercase tracking-wide">
                     <th className="px-4 py-2 text-left font-semibold">Teacher</th>
                     <th className="px-4 py-2 text-left font-semibold">Email</th>
                     <th className="px-4 py-2 text-left font-semibold">Password</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-amber-100">
+                <tbody className="divide-y divide-moved/20">
                   {reveal.map((c) => (
                     <tr key={c.email}>
                       <td className="px-4 py-2.5">{c.name} ({c.initials})</td>
-                      <td className="px-4 py-2.5 font-mono">{c.email}</td>
-                      <td className="px-4 py-2.5 font-mono font-semibold">{c.password}</td>
+                      <td className="px-4 py-2.5 font-data">{c.email}</td>
+                      <td className="px-4 py-2.5 font-data font-semibold">{c.password}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
 
-            <p className="text-xs font-semibold text-amber-700">
+            <p className="text-xs font-semibold text-moved">
               ⚠️ Save or hand out these credentials now. This list disappears once you refresh or leave this page and cannot be recovered — use &quot;Reset password&quot; if a teacher loses theirs.
             </p>
 
@@ -283,7 +283,7 @@ export default function TeachersSection() {
 
       <Card>
         <CardHeader
-          title={<>Teachers <span className="ml-2 text-sm font-normal text-gray-400">{teachers.length}</span></>}
+          title={<>Teachers <span className="ml-2 text-sm font-normal text-slate">{teachers.length}</span></>}
           action={
             teachersWithoutLogin > 0 ? (
               <Button type="button" variant="secondary" loading={bulkBusy} onClick={handleCreateAllLogins}>
@@ -301,22 +301,22 @@ export default function TeachersSection() {
           <Table headers={["Initials", "Name", "Login", ""]}>
             {teachers.map((t) =>
               editingId === t.id ? (
-                <tr key={t.id} className="bg-indigo-50/40">
+                <tr key={t.id} className="bg-primary/5">
                   <td className="px-5 py-3">
                     <input
                       value={editForm.initials}
                       onChange={(e) => setEditForm((f) => ({ ...f, initials: e.target.value }))}
-                      className="w-full border border-gray-200 bg-white rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full border border-border bg-card rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                     />
                   </td>
                   <td className="px-5 py-3">
                     <input
                       value={editForm.name}
                       onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
-                      className="w-full border border-gray-200 bg-white rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full border border-border bg-card rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                     />
                   </td>
-                  <td className="px-5 py-3 text-gray-400 text-xs">{t.email ?? "—"}</td>
+                  <td className="px-5 py-3 text-muted-foreground text-xs">{t.email ?? "—"}</td>
                   <td className="px-5 py-3 text-right whitespace-nowrap">
                     <LinkButton tone="primary" loading={editSubmitting} onClick={() => handleEditSubmit(t.id)} className="mr-3">
                       Save
@@ -327,11 +327,11 @@ export default function TeachersSection() {
                   </td>
                 </tr>
               ) : (
-                <tr key={t.id} className="hover:bg-slate-50 transition-colors group">
-                  <td className="px-5 py-3.5 font-semibold text-gray-800">{t.initials}</td>
-                  <td className="px-5 py-3.5 text-gray-600">{t.name}</td>
-                  <td className="px-5 py-3.5 text-gray-600 font-mono text-xs">
-                    {t.email ?? <span className="text-gray-300 font-sans italic">No login</span>}
+                <tr key={t.id} className="hover:bg-muted/40 transition-colors group">
+                  <td className="px-5 py-3.5 font-semibold font-data text-foreground">{t.initials}</td>
+                  <td className="px-5 py-3.5 text-muted-foreground">{t.name}</td>
+                  <td className="px-5 py-3.5 text-muted-foreground font-data text-xs">
+                    {t.email ?? <span className="text-muted-foreground/60 font-sans italic">No login</span>}
                   </td>
                   <td className="px-5 py-3.5 text-right whitespace-nowrap">
                     {t.userId ? (

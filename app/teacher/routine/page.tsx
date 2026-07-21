@@ -35,15 +35,15 @@ function TeacherRoutineInner() {
       <Card>
         <CardHeader title="Routine" />
 
-        <div className="px-6 py-4 border-b border-gray-100">
+        <div className="px-6 py-4 border-b border-border">
           <RoutineFilterBar state={filterState} />
         </div>
 
-        <div className="px-6 py-3 text-xs text-gray-400">
-          Showing {filtered.length} of {totalCount} classes
+        <div className="px-6 py-3 text-xs text-slate">
+          Showing <span className="font-data">{filtered.length}</span> of <span className="font-data">{totalCount}</span> classes
         </div>
 
-        {loading ? <Loading /> : <RoutineList sessions={filtered} onClearFilters={clearAll} />}
+        <RoutineList sessions={filtered} loading={loading} onClearFilters={clearAll} />
       </Card>
     </>
   );

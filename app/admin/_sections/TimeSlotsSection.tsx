@@ -157,7 +157,7 @@ export default function TimeSlotsSection() {
       </Card>
 
       <Card>
-        <CardHeader title={<>Time Slots <span className="ml-2 text-sm font-normal text-gray-400">{timeSlots.length}</span></>} />
+        <CardHeader title={<>Time Slots <span className="ml-2 text-sm font-normal text-slate">{timeSlots.length}</span></>} />
 
         {loading ? (
           <Loading />
@@ -167,12 +167,12 @@ export default function TimeSlotsSection() {
           <Table headers={["Label", "Sort Order", ""]}>
             {timeSlots.map((t) =>
               editingId === t.id ? (
-                <tr key={t.id} className="bg-indigo-50/40">
+                <tr key={t.id} className="bg-primary/5">
                   <td className="px-5 py-3">
                     <input
                       value={editForm.label}
                       onChange={(e) => setEditForm((f) => ({ ...f, label: e.target.value }))}
-                      className="w-full border border-gray-200 bg-white rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full border border-border bg-card rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                     />
                   </td>
                   <td className="px-5 py-3">
@@ -181,7 +181,7 @@ export default function TimeSlotsSection() {
                       min={1}
                       value={editForm.sortOrder}
                       onChange={(e) => setEditForm((f) => ({ ...f, sortOrder: e.target.value }))}
-                      className="w-full border border-gray-200 bg-white rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full border border-border bg-card rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                     />
                   </td>
                   <td className="px-5 py-3 text-right whitespace-nowrap">
@@ -194,9 +194,9 @@ export default function TimeSlotsSection() {
                   </td>
                 </tr>
               ) : (
-                <tr key={t.id} className="hover:bg-slate-50 transition-colors group">
-                  <td className="px-5 py-3.5 font-semibold text-gray-800">{t.label}</td>
-                  <td className="px-5 py-3.5 text-gray-600">{t.sortOrder}</td>
+                <tr key={t.id} className="hover:bg-muted/40 transition-colors group">
+                  <td className="px-5 py-3.5 font-semibold font-data text-foreground">{t.label}</td>
+                  <td className="px-5 py-3.5 text-muted-foreground font-data">{t.sortOrder}</td>
                   <td className="px-5 py-3.5 text-right whitespace-nowrap">
                     <LinkButton tone="primary" muted revealOnHover onClick={() => startEdit(t)} className="mr-3">
                       Edit

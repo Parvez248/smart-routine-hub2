@@ -8,6 +8,7 @@ import { Table } from "@/app/components/ui/Table";
 import { Message } from "@/app/components/ui/Message";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { Loading } from "@/app/components/ui/Loading";
+import { StatusBadge } from "@/app/components/ui/StatusBadge";
 import { nextOccurrences, formatDateOnly, isClassDay, isOnOrAfterToday, parseDateOnly, today } from "@/lib/services/dates";
 
 type ClassSession = {
@@ -185,7 +186,7 @@ export default function TeacherClassesPage() {
         title="My Classes"
         description="Classes from the published routine. Reschedule requests need admin approval before the class moves."
         action={
-          <span className="text-xs bg-indigo-50 text-indigo-600 font-semibold px-3 py-1 rounded-full">
+          <span className="text-xs bg-primary/10 text-primary font-semibold px-3 py-1 rounded-full">
             {classes.length} classes
           </span>
         }
@@ -194,7 +195,7 @@ export default function TeacherClassesPage() {
       {status && <Message type={status.type}>{status.msg}</Message>}
 
       <Card>
-        <CardHeader title={<>My Classes <span className="ml-2 text-sm font-normal text-gray-400">{classes.length}</span></>} />
+        <CardHeader title={<>My Classes <span className="ml-2 text-sm font-normal text-slate">{classes.length}</span></>} />
 
         {loading ? (
           <Loading />
@@ -204,19 +205,19 @@ export default function TeacherClassesPage() {
           <Table headers={["Day", "Time Slot", "Batch", "Course", "Room", "Status", ""]}>
             {classes.map((c) =>
               reschedulingId === c.id ? (
-                <tr key={c.id} className="bg-indigo-50/40">
+                <tr key={c.id} className="bg-primary/5">
                   <td colSpan={7} className="px-5 py-4">
                     <form onSubmit={handleReschedule} className="space-y-4">
                       <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
                         <div className="flex flex-col gap-1">
-                          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                             Which class date?
                           </label>
                           <select
                             required
                             value={form.originalDate}
                             onChange={(e) => setForm((f) => ({ ...f, originalDate: e.target.value }))}
-                            className="border border-gray-200 bg-white rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            className="border border-border bg-white rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                           >
                             {occurrences.map((d) => (
                               <option key={formatDateOnly(d)} value={formatDateOnly(d)}>
@@ -227,24 +228,24 @@ export default function TeacherClassesPage() {
                         </div>
 
                         <div className="flex flex-col gap-1">
-                          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">New Date</label>
+                          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">New Date</label>
                           <input
                             type="date"
                             required
                             min={minDate}
                             value={form.newDate}
                             onChange={(e) => handleNewDateChange(e.target.value)}
-                            className="border border-gray-200 bg-white rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            className="border border-border bg-white rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                           />
                         </div>
 
                         <div className="flex flex-col gap-1">
-                          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">New Time Slot</label>
+                          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">New Time Slot</label>
                           <select
                             required
                             value={form.newTimeSlotId}
                             onChange={(e) => handleNewTimeSlotChange(e.target.value)}
-                            className="border border-gray-200 bg-white rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            className="border border-border bg-white rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                           >
                             <option value="">Select slot</option>
                             {ref?.timeSlots.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
@@ -252,15 +253,15 @@ export default function TeacherClassesPage() {
                         </div>
 
                         <div className="flex flex-col gap-1">
-                          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                            Reason <span className="text-gray-300 normal-case font-normal">(optional)</span>
+                          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                            Reason <span className="text-muted-foreground/60 normal-case font-normal">(optional)</span>
                           </label>
                           <input
                             type="text"
                             value={form.reason}
                             onChange={(e) => setForm((f) => ({ ...f, reason: e.target.value }))}
                             placeholder="e.g. Conflict with seminar"
-                            className="border border-gray-200 bg-white rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            className="border border-border bg-white rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                           />
                         </div>
                       </div>
@@ -268,16 +269,16 @@ export default function TeacherClassesPage() {
                       {dateError && <Message type="error">{dateError}</Message>}
 
                       <div>
-                        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                           Free rooms for that date &amp; slot
                         </label>
                         <div className="mt-2">
                           {!form.newDate || !form.newTimeSlotId || dateError ? (
-                            <p className="text-xs text-gray-400">Pick a new date and time slot to see free rooms.</p>
+                            <p className="text-xs text-slate">Pick a new date and time slot to see free rooms.</p>
                           ) : freeRoomsLoading ? (
-                            <p className="text-xs text-gray-400">Searching…</p>
+                            <p className="text-xs text-slate">Searching…</p>
                           ) : freeRooms && freeRooms.length === 0 ? (
-                            <p className="text-xs text-red-500">No rooms are free at this date &amp; time.</p>
+                            <p className="text-xs text-cancelled">No rooms are free at this date &amp; time.</p>
                           ) : (
                             <div className="flex flex-wrap gap-2">
                               {freeRooms?.map((r) => {
@@ -291,10 +292,10 @@ export default function TeacherClassesPage() {
                                     onClick={() => setForm((f) => ({ ...f, newRoomId: String(r.id) }))}
                                     className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${
                                       tooSmall
-                                        ? "border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed"
+                                        ? "border-border bg-muted text-muted-foreground/60 cursor-not-allowed"
                                         : selected
-                                        ? "border-indigo-600 bg-indigo-600 text-white"
-                                        : "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                                        ? "border-primary bg-primary text-primary-foreground"
+                                        : "border-confirmed/20 bg-confirmed/10 text-confirmed hover:bg-confirmed/15"
                                     }`}
                                     title={tooSmall ? `Too small for batch (${batchStudentCount} students)` : undefined}
                                   >
@@ -321,34 +322,26 @@ export default function TeacherClassesPage() {
               ) : (
                 <tr
                   key={c.id}
-                  className={`hover:bg-slate-50 transition-colors group ${c.status === "CANCELLED" ? "bg-gray-50/60 opacity-60" : ""}`}
+                  className={`hover:bg-muted/40 transition-colors group ${c.status === "CANCELLED" ? "bg-muted/60 opacity-60" : ""}`}
                 >
-                  <td className="px-5 py-3.5 font-semibold text-gray-700">{c.day}</td>
-                  <td className="px-5 py-3.5 text-gray-500 whitespace-nowrap">{c.timeSlot.label}</td>
+                  <td className="px-5 py-3.5 font-semibold font-data text-foreground">{c.day}</td>
+                  <td className="px-5 py-3.5 text-muted-foreground font-data whitespace-nowrap">{c.timeSlot.label}</td>
                   <td className="px-5 py-3.5">
-                    <span className="font-medium text-gray-700">{c.batch.name}</span>
+                    <span className="font-medium text-foreground">{c.batch.name}</span>
                     {c.section && (
-                      <span className="ml-1.5 text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
+                      <span className="ml-1.5 text-xs text-slate bg-muted px-1.5 py-0.5 rounded">
                         {c.section}
                       </span>
                     )}
                   </td>
-                  <td className="px-5 py-3.5 font-semibold text-gray-800">{c.course.code}</td>
-                  <td className="px-5 py-3.5 text-gray-600">Room {c.room.name}</td>
+                  <td className="px-5 py-3.5 font-semibold font-data text-foreground">{c.course.code}</td>
+                  <td className="px-5 py-3.5 text-muted-foreground font-data">Room {c.room.name}</td>
                   <td className="px-5 py-3.5">
-                    {c.status === "CANCELLED" ? (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">
-                        Cancelled
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
-                        Active
-                      </span>
-                    )}
+                    <StatusBadge status={c.status === "CANCELLED" ? "Cancelled" : "Active"} />
                   </td>
                   <td className="px-5 py-3.5 text-right whitespace-nowrap">
                     {pendingSessionIds.has(c.id) ? (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-moved/10 text-moved">
                         Pending approval
                       </span>
                     ) : (

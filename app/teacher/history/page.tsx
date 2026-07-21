@@ -39,7 +39,7 @@ export default function TeacherHistoryPage() {
       <PageHeader title="Reschedule History" description="A record of every change you've made to your classes." />
 
       <Card>
-        <CardHeader title={<>History <span className="ml-2 text-sm font-normal text-gray-400">{history.length}</span></>} />
+        <CardHeader title={<>History <span className="ml-2 text-sm font-normal text-slate">{history.length}</span></>} />
 
         {loading ? (
           <Loading />

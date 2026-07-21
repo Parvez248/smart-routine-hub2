@@ -64,24 +64,24 @@ export default function TeacherFreeRoomsPage() {
         <CardHeader title="Search" accent />
         <form onSubmit={handleSearch} className="p-6 flex flex-wrap items-end gap-4">
           <div className="w-44 flex flex-col gap-1">
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Date</label>
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Date</label>
             <input
               type="date"
               required
               min={formatDateOnly(today())}
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+              className="border border-border bg-muted rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition"
             />
           </div>
 
           <div className="w-56 flex flex-col gap-1">
-            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Time Slot</label>
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Time Slot</label>
             <select
               required
               value={timeSlotId}
               onChange={(e) => setTimeSlotId(e.target.value)}
-              className="border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+              className="border border-border bg-muted rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition"
             >
               <option value="">Select slot</option>
               {timeSlots.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
@@ -93,16 +93,16 @@ export default function TeacherFreeRoomsPage() {
           </Button>
         </form>
 
-        {error && <p className="px-6 pb-4 text-sm text-red-600">{error}</p>}
+        {error && <p className="px-6 pb-4 text-sm text-cancelled">{error}</p>}
 
         {rooms && (
           <div className="px-6 pb-6">
             {rooms.length === 0 ? (
-              <p className="text-sm text-gray-400">No rooms are free at this date &amp; time.</p>
+              <p className="text-sm text-slate">No rooms are free at this date &amp; time.</p>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {rooms.map((r) => (
-                  <span key={r.id} className="text-xs font-semibold bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-full">
+                  <span key={r.id} className="text-xs font-semibold font-data bg-confirmed/10 text-confirmed px-3 py-1.5 rounded-full">
                     Room {r.name} (cap {r.capacity})
                   </span>
                 ))}
