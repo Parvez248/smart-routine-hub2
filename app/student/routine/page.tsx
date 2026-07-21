@@ -1,24 +1,28 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/app/components/ui/PageHeader";
 import { Card, CardHeader } from "@/app/components/ui/Card";
 import { LinkButton } from "@/app/components/ui/Button";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { Loading } from "@/app/components/ui/Loading";
 import { nextOccurrenceOf } from "@/lib/services/timeslot";
+import { useRoutineFilters } from "@/app/components/routine/useRoutineFilters";
+import { RoutineFilterBar } from "@/app/components/routine/RoutineFilterBar";
+import { RoutineList } from "@/app/components/routine/RoutineList";
+import type { FilterableSession } from "@/app/components/routine/types";
 
 type SessionCell = {
   id: number;
   day: string;
   section: string | null;
   status: string;
-  course: { code: string; type: string };
+  course: { code: string; title: string; type: string };
   teacher: { initials: string; name: string };
   room: { name: string };
   batch: { id: number; name: string; semester: string };
   timeSlot: { id: number; label: string; sortOrder: number };
-  movedTo: { day: string; timeSlot: { label: string } | null; room: { name: string } | null; date: string | null } | null;
+  movedTo: FilterableSession["movedTo"];
 };
 
 type Batch = { id: number; name: string; semester: string };
@@ -54,7 +58,7 @@ function formatCountdown(ms: number): string {
   return `${minutes}m ${totalSeconds % 60}s`;
 }
 
-export default function StudentRoutinePage() {
+function StudentRoutineInner() {
   const [sessions, setSessions] = useState<SessionCell[]>([]);
   const [versionName, setVersionName] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -111,8 +115,11 @@ export default function StudentRoutinePage() {
     loadRoutine(batchId);
   }
 
+  const filterState = useRoutineFilters(sessions, { storageKey: "student" });
+  const { filtered, filteredStats, totalCount, view, clearAll } = filterState;
+
   const cellFor = (day: string, timeSlotId: number) =>
-    sessions.filter((s) => s.day === day && s.timeSlot.id === timeSlotId);
+    filtered.filter((s) => s.day === day && s.timeSlot.id === timeSlotId);
 
   const alarmBySessionId = useMemo(
     () => new Map(alarms.map((a) => [a.sessionId, a])),
@@ -222,14 +229,30 @@ export default function StudentRoutinePage() {
       <Card>
         <CardHeader title="Weekly Routine" />
 
+        <div className="px-6 py-4 border-b border-gray-100">
+          <RoutineFilterBar state={filterState} showBatchFilter={false} />
+        </div>
+
+        <div className="px-6 py-3 text-xs text-gray-400">
+          Showing {filtered.length} of {totalCount} classes
+          {filteredStats.cancelled > 0 && ` · ${filteredStats.cancelled} cancelled`}
+          {filteredStats.rescheduled > 0 && ` · ${filteredStats.rescheduled} rescheduled`}
+        </div>
+
         {loading ? (
           <Loading />
         ) : message ? (
           <EmptyState icon="🗓️" message={message} />
-        ) : sessions.length === 0 ? (
-          <EmptyState icon="📭" message="No classes scheduled for this batch." />
+        ) : view === "list" ? (
+          <RoutineList sessions={filtered} onClearFilters={clearAll} />
+        ) : filtered.length === 0 ? (
+          <EmptyState icon="🔍" message="No classes match these filters." action={
+            <button type="button" onClick={clearAll} className="text-xs font-semibold text-indigo-600 hover:text-indigo-700">
+              Clear all filters
+            </button>
+          } />
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto pb-6">
             <table className="w-full text-sm border-collapse">
               <thead>
                 <tr className="bg-gray-50 text-gray-400 text-xs uppercase tracking-wide">
@@ -350,5 +373,13 @@ export default function StudentRoutinePage() {
         )}
       </Card>
     </>
+  );
+}
+
+export default function StudentRoutinePage() {
+  return (
+    <Suspense fallback={<Loading />}>
+      <StudentRoutineInner />
+    </Suspense>
   );
 }

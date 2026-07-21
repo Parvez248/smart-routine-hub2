@@ -1,4 +1,4 @@
-type ColumnHeader = string | { label: string; className?: string };
+type ColumnHeader = string | { label: React.ReactNode; className?: string };
 
 export function Table({
   headers,

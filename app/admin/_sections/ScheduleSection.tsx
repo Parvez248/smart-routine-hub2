@@ -4,10 +4,12 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Card, CardHeader } from "@/app/components/ui/Card";
 import { Button, LinkButton } from "@/app/components/ui/Button";
-import { Table } from "@/app/components/ui/Table";
 import { Message } from "@/app/components/ui/Message";
-import { EmptyState } from "@/app/components/ui/EmptyState";
 import { Loading } from "@/app/components/ui/Loading";
+import { useRoutineFilters } from "@/app/components/routine/useRoutineFilters";
+import { RoutineFilterBar } from "@/app/components/routine/RoutineFilterBar";
+import { RoutineGrid } from "@/app/components/routine/RoutineGrid";
+import { RoutineList } from "@/app/components/routine/RoutineList";
 
 type Course   = { id: number; code: string; title: string; type: string };
 type Teacher  = { id: number; initials: string; name: string };
@@ -28,11 +30,6 @@ type SessionRow = {
   movedTo: { day: string; timeSlot: TimeSlot | null; room: Room | null; date: string | null } | null;
 };
 
-function formatMovedDate(value: string | null): string | null {
-  if (!value) return null;
-  return new Date(value).toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
-}
-
 type RefData = {
   courses: Course[];
   teachers: Teacher[];
@@ -50,18 +47,7 @@ type Version = {
   sessionCount: number;
 };
 
-const DAY_ORDER = ["Sat", "Sun", "Mon", "Tues", "Wed"];
 const empty = { day: "", timeSlotId: "", batchId: "", section: "", courseId: "", teacherId: "", roomId: "" };
-
-function TypeBadge({ type }: { type: string }) {
-  return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
-      type === "LAB" ? "bg-violet-100 text-violet-700" : "bg-sky-100 text-sky-700"
-    }`}>
-      {type === "LAB" ? "Lab" : "Theory"}
-    </span>
-  );
-}
 
 function Select({
   label, required, value, onChange, children,
@@ -93,7 +79,6 @@ export default function ScheduleSection() {
   const [form, setForm] = useState(empty);
   const [status, setStatus] = useState<{ type: "success" | "error"; msg: string } | null>(null);
   const [loading, setLoading] = useState(false);
-  const [filterDay, setFilterDay] = useState("all");
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [statusActingId, setStatusActingId] = useState<number | null>(null);
@@ -248,9 +233,8 @@ export default function ScheduleSection() {
     }
   }
 
-  const filtered = filterDay === "all"
-    ? sessions
-    : sessions.filter((s) => s.day === filterDay);
+  const filterState = useRoutineFilters(sessions, { storageKey: "admin" });
+  const { filtered, filteredStats, totalCount, view, clearAll } = filterState;
 
   const stats = {
     total: sessions.length,
@@ -435,121 +419,65 @@ export default function ScheduleSection() {
 
       {/* Sessions table */}
       <Card>
-        <div className="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <h2 className="text-base font-semibold text-gray-800">
-            Saved Sessions
-            <span className="ml-2 text-sm font-normal text-gray-400">
-              {filtered.length === sessions.length ? sessions.length : `${filtered.length} of ${sessions.length}`}
-            </span>
-          </h2>
+        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between gap-3">
+          <h2 className="text-base font-semibold text-gray-800">Saved Sessions</h2>
+        </div>
 
-          {/* Day filter tabs */}
-          <div className="flex gap-1 flex-wrap">
-            {["all", ...DAY_ORDER].map((d) => (
-              <button
-                key={d}
-                onClick={() => setFilterDay(d)}
-                className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
-                  filterDay === d
-                    ? "bg-indigo-600 text-white"
-                    : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                }`}
-              >
-                {d === "all" ? "All" : d}
-              </button>
-            ))}
-          </div>
+        <div className="px-6 py-4 border-b border-gray-100">
+          <RoutineFilterBar state={filterState} />
+        </div>
+
+        <div className="px-6 py-3 text-xs text-gray-400">
+          Showing {filtered.length} of {totalCount} classes
+          {filteredStats.cancelled > 0 && ` · ${filteredStats.cancelled} cancelled`}
+          {filteredStats.rescheduled > 0 && ` · ${filteredStats.rescheduled} rescheduled`}
         </div>
 
         {sessionsLoading ? (
           <Loading />
-        ) : filtered.length === 0 ? (
-          <EmptyState
-            icon="📋"
-            message={sessions.length === 0 ? "No sessions yet. Add one above." : `No sessions on ${filterDay}.`}
-          />
+        ) : view === "grid" ? (
+          <div className="px-6 pb-6">
+            <RoutineGrid sessions={filtered} onClearFilters={clearAll} />
+          </div>
         ) : (
-          <Table headers={["Day", "Time Slot", "Batch", "Course", "Type", "Teacher", "Room", ""]}>
-            {filtered.map((s) => {
+          <RoutineList
+            sessions={filtered}
+            onClearFilters={clearAll}
+            renderActions={(s) => {
               const cancelled = s.status === "CANCELLED";
               return (
-                <tr
-                  key={s.id}
-                  className={`hover:bg-slate-50 transition-colors group ${cancelled ? "bg-gray-50/60 opacity-60" : ""}`}
-                >
-                  <td className="px-5 py-3.5">
-                    <span className="font-semibold text-gray-700">{s.day}</span>
-                  </td>
-                  <td className="px-5 py-3.5 text-gray-500 whitespace-nowrap">{s.timeSlot.label}</td>
-                  <td className="px-5 py-3.5">
-                    <span className="font-medium text-gray-700">{s.batch.name}</span>
-                    {s.section && (
-                      <span className="ml-1.5 text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
-                        {s.section}
-                      </span>
+                <>
+                  <LinkButton
+                    tone={cancelled ? "success" : "warning"}
+                    revealOnHover
+                    loading={statusActingId === s.id}
+                    onClick={() => handleToggleStatus(s)}
+                    className="mr-3"
+                  >
+                    {cancelled ? "Restore" : "Cancel"}
+                  </LinkButton>
+                  <LinkButton tone="primary" muted revealOnHover onClick={() => startEdit(s)} className="mr-3">
+                    Edit
+                  </LinkButton>
+                  <LinkButton
+                    tone="danger"
+                    muted
+                    revealOnHover
+                    loading={deleteId === s.id}
+                    onClick={() => handleDelete(s.id)}
+                    className="p-1 rounded align-middle"
+                    title="Delete session"
+                  >
+                    {deleteId === s.id ? "…" : (
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
                     )}
-                  </td>
-                  <td className="px-5 py-3.5 font-semibold text-gray-800">
-                    {s.course.code}
-                    {cancelled && (
-                      <span className="ml-1.5 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">
-                        Cancelled
-                      </span>
-                    )}
-                    {!cancelled && s.movedTo && (
-                      <div className="mt-1 text-xs font-normal text-amber-700">
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-700 mr-1">
-                          {s.movedTo.date ? `Moved on ${formatMovedDate(s.movedTo.date)}` : "Moved"}
-                        </span>
-                        to {s.movedTo.day}, {s.movedTo.timeSlot?.label}, Room {s.movedTo.room?.name}
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <TypeBadge type={s.course.type} />
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <span className="font-medium text-gray-700">{s.teacher.initials}</span>
-                    <span className="ml-1.5 text-xs text-gray-400 hidden sm:inline">{s.teacher.name}</span>
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <span className="inline-flex items-center gap-1 text-gray-600">
-                      <span className="font-medium">{s.room.name}</span>
-                    </span>
-                  </td>
-                  <td className="px-5 py-3.5 text-right whitespace-nowrap">
-                    <LinkButton
-                      tone={cancelled ? "success" : "warning"}
-                      revealOnHover
-                      loading={statusActingId === s.id}
-                      onClick={() => handleToggleStatus(s)}
-                      className="mr-3"
-                    >
-                      {cancelled ? "Restore" : "Cancel"}
-                    </LinkButton>
-                    <LinkButton tone="primary" muted revealOnHover onClick={() => startEdit(s)} className="mr-3">
-                      Edit
-                    </LinkButton>
-                    <LinkButton
-                      tone="danger"
-                      muted
-                      revealOnHover
-                      loading={deleteId === s.id}
-                      onClick={() => handleDelete(s.id)}
-                      className="p-1 rounded align-middle"
-                      title="Delete session"
-                    >
-                      {deleteId === s.id ? "…" : (
-                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      )}
-                    </LinkButton>
-                  </td>
-                </tr>
+                  </LinkButton>
+                </>
               );
-            })}
-          </Table>
+            }}
+          />
         )}
       </Card>
     </>
