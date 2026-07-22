@@ -6,9 +6,11 @@ import { Card, CardHeader } from "@/app/components/ui/Card";
 import { Button, LinkButton } from "@/app/components/ui/Button";
 import { Message } from "@/app/components/ui/Message";
 import { useRoutineFilters } from "@/app/components/routine/useRoutineFilters";
-import { RoutineFilterBar } from "@/app/components/routine/RoutineFilterBar";
 import { RoutineList } from "@/app/components/routine/RoutineList";
-import { PrintButton, PrintHeader } from "@/app/components/routine/PrintPanel";
+import { RoutineTimeRail } from "@/app/components/routine/RoutineTimeRail";
+import { RoutineMasthead } from "@/app/components/routine/RoutineMasthead";
+import { FilterCard } from "@/app/components/routine/FilterCard";
+import { ViewToggle, type RoutineView } from "@/app/components/routine/ViewToggle";
 
 type Course   = { id: number; code: string; title: string; type: string };
 type Teacher  = { id: number; initials: string; name: string };
@@ -91,6 +93,7 @@ export default function ScheduleSection() {
 
   const [versions, setVersions] = useState<Version[]>([]);
   const [selectedVersionId, setSelectedVersionId] = useState<string>("");
+  const [view, setView] = useState<RoutineView>("rail");
 
   async function loadRef() {
     const res = await fetch("/api/reference");
@@ -245,11 +248,18 @@ export default function ScheduleSection() {
   };
 
   const selectedVersionName = versions.find((v) => String(v.id) === selectedVersionId)?.name ?? "—";
+  const publishedVersion = versions.find((v) => v.isPublished) ?? null;
 
   return (
     <>
+      <RoutineMasthead
+        versionName={publishedVersion?.name}
+        effectiveDate={publishedVersion?.effectiveDate}
+        filterSummary={filterState.chips.map((c) => c.label).join(", ")}
+      />
+
       {/* Version selector */}
-      <div className="print:hidden bg-card rounded-2xl border border-border shadow-sm px-6 py-4 flex flex-wrap items-center justify-between gap-4">
+      <div className="print:hidden bg-card rounded-lg border border-border px-6 py-4 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <label htmlFor="schedule-version" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Version</label>
           <select
@@ -279,7 +289,7 @@ export default function ScheduleSection() {
           { label: "Lab Classes",    value: stats.lab,    color: "text-primary" },
           { label: "Days Covered",   value: `${stats.days} / 5`, color: "text-confirmed" },
         ].map((s) => (
-          <div key={s.label} className="bg-card rounded-xl border border-border shadow-sm px-5 py-4">
+          <div key={s.label} className="bg-card rounded-lg border border-border px-5 py-4">
             <p className="text-xs text-slate font-medium">{s.label}</p>
             <p className={`text-2xl font-bold mt-1 ${s.color}`}>{s.value}</p>
           </div>
@@ -332,7 +342,7 @@ export default function ScheduleSection() {
 
       {/* Form card */}
       <Card className="print:hidden">
-        <div className="px-6 py-4 border-b border-border bg-gradient-to-r from-primary/5 to-transparent flex items-center justify-between">
+        <div className="px-6 py-4 border-b border-border bg-primary/5 flex items-center justify-between">
           <div>
             <h2 className="text-base font-semibold text-foreground">
               {editingId ? "Edit Session" : "Add New Session"}
@@ -421,67 +431,59 @@ export default function ScheduleSection() {
         </form>
       </Card>
 
-      {/* Sessions table */}
-      <Card>
-        <div className="px-6 py-4 border-b border-border flex items-center justify-between gap-3">
-          <h2 className="text-base font-semibold text-foreground">Saved Sessions</h2>
-          <PrintButton />
-        </div>
+      <FilterCard state={filterState} totalCount={totalCount} />
 
-        <PrintHeader
-          subtitle={`Version: ${selectedVersionName}`}
-          filterSummary={filterState.chips.map((c) => c.label).join(", ")}
-        />
+      {/* Sessions */}
+      <div className="print:hidden flex items-center justify-between">
+        <h2 className="font-heading text-base font-semibold text-foreground">Saved Sessions — {selectedVersionName}</h2>
+        <ViewToggle value={view} onChange={setView} />
+      </div>
 
-        <div className="px-6 py-4 border-b border-border print:hidden">
-          <RoutineFilterBar state={filterState} />
-        </div>
+      {(() => {
+        const renderActions = (s: SessionRow) => {
+          const cancelled = s.status === "CANCELLED";
+          return (
+            <>
+              <LinkButton
+                tone={cancelled ? "success" : "warning"}
+                revealOnHover
+                loading={statusActingId === s.id}
+                onClick={() => handleToggleStatus(s)}
+                className="mr-3"
+              >
+                {cancelled ? "Restore" : "Cancel"}
+              </LinkButton>
+              <LinkButton tone="primary" muted revealOnHover onClick={() => startEdit(s)} className="mr-3">
+                Edit
+              </LinkButton>
+              <LinkButton
+                tone="danger"
+                muted
+                revealOnHover
+                loading={deleteId === s.id}
+                onClick={() => handleDelete(s.id)}
+                className="p-1 rounded align-middle"
+                title="Delete session"
+                aria-label="Delete session"
+              >
+                {deleteId === s.id ? "…" : (
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                )}
+              </LinkButton>
+            </>
+          );
+        };
 
-        <div className="px-6 py-3 text-xs text-slate print:hidden">
-          Showing <span className="font-data">{filtered.length}</span> of <span className="font-data">{totalCount}</span> classes
-        </div>
-
-        <RoutineList
-            sessions={filtered}
-            loading={sessionsLoading}
-            onClearFilters={clearAll}
-            renderActions={(s) => {
-              const cancelled = s.status === "CANCELLED";
-              return (
-                <>
-                  <LinkButton
-                    tone={cancelled ? "success" : "warning"}
-                    revealOnHover
-                    loading={statusActingId === s.id}
-                    onClick={() => handleToggleStatus(s)}
-                    className="mr-3"
-                  >
-                    {cancelled ? "Restore" : "Cancel"}
-                  </LinkButton>
-                  <LinkButton tone="primary" muted revealOnHover onClick={() => startEdit(s)} className="mr-3">
-                    Edit
-                  </LinkButton>
-                  <LinkButton
-                    tone="danger"
-                    muted
-                    revealOnHover
-                    loading={deleteId === s.id}
-                    onClick={() => handleDelete(s.id)}
-                    className="p-1 rounded align-middle"
-                    title="Delete session"
-                    aria-label="Delete session"
-                  >
-                    {deleteId === s.id ? "…" : (
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    )}
-                  </LinkButton>
-                </>
-              );
-            }}
-          />
-      </Card>
+        return view === "rail" ? (
+          <RoutineTimeRail sessions={filtered} loading={sessionsLoading} onClearFilters={clearAll} renderActions={renderActions} />
+        ) : (
+          <div className="bg-card border border-border rounded-lg overflow-hidden">
+            <RoutineList sessions={filtered} loading={sessionsLoading} onClearFilters={clearAll} renderActions={renderActions} />
+          </div>
+        );
+      })()}
     </>
   );
 }

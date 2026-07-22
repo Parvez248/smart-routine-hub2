@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 export function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <ShadcnCard className={cn("rounded-2xl border border-border bg-card py-0 gap-0 shadow-tinted ring-0", className)}>
+    <ShadcnCard className={cn("rounded-lg border border-border bg-card py-0 gap-0 shadow-none ring-0", className)}>
       {children}
     </ShadcnCard>
   );
@@ -30,7 +30,7 @@ export function CardHeader({
     <ShadcnCardHeader
       className={cn(
         "border-b border-border py-4",
-        accent && "bg-gradient-to-r from-primary/5 to-transparent"
+        accent && "bg-primary/5"
       )}
     >
       <CardTitle className="text-base font-semibold text-foreground">{title}</CardTitle>

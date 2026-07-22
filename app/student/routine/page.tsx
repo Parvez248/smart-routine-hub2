@@ -10,7 +10,7 @@ import { nextOccurrenceOf } from "@/lib/services/timeslot";
 import { useRoutineFilters } from "@/app/components/routine/useRoutineFilters";
 import { RoutineFilterBar } from "@/app/components/routine/RoutineFilterBar";
 import { PrintButton, PrintHeader } from "@/app/components/routine/PrintPanel";
-import { DAY_ORDER, dayGradient, daySpineClass } from "@/lib/ui/dayColors";
+import { bandEdgeClass, bandForSemester, bandVar } from "@/lib/ui/bandColors";
 import type { FilterableSession } from "@/app/components/routine/types";
 
 type SessionCell = {
@@ -30,6 +30,7 @@ type Batch = { id: number; name: string; semester: string };
 type TimeSlot = { id: number; label: string; sortOrder: number };
 type AlarmRow = { id: number; sessionId: number; leadMinutes: number; isActive: boolean };
 
+const DAY_ORDER = ["Sat", "Sun", "Mon", "Tues", "Wed"];
 const LEAD_OPTIONS = [5, 10, 15, 30];
 
 function formatMovedDate(value: string | null): string | null {
@@ -37,16 +38,17 @@ function formatMovedDate(value: string | null): string | null {
   return new Date(value).toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
 }
 
-function TypeBadge({ type, day }: { type: string; day: string }) {
+function TypeBadge({ type, semester }: { type: string; semester: string }) {
   const isLab = type === "LAB";
+  const band = bandForSemester(semester);
   return (
     <span
       className={
         isLab
-          ? "inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold text-white print:text-foreground print:border print:border-foreground"
+          ? "on-band inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold print:border print:border-foreground"
           : "inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold border border-slate text-slate print:border-foreground print:text-foreground"
       }
-      style={isLab ? { backgroundImage: dayGradient(day) } : undefined}
+      style={isLab ? { backgroundColor: bandVar(band), color: "var(--band-1-text)" } : undefined}
     >
       {isLab ? "LAB" : "THEORY"}
     </span>
@@ -216,7 +218,7 @@ function StudentRoutineInner() {
       />
 
       {nextClass && (
-        <div className="print:hidden bg-primary rounded-2xl px-6 py-4 text-white flex items-center justify-between gap-4 flex-wrap">
+        <div className="print:hidden bg-primary rounded-lg px-6 py-4 text-white flex items-center justify-between gap-4 flex-wrap">
           <div>
             <p className="text-xs text-primary-foreground/70 font-semibold uppercase tracking-wide">Next Class</p>
             <p className="text-lg font-bold mt-0.5">
@@ -266,8 +268,7 @@ function StudentRoutineInner() {
                     <th
                       key={d}
                       scope="col"
-                      className="on-gradient print:bg-white print:text-foreground text-white px-4 py-3 text-left font-heading font-bold whitespace-nowrap"
-                      style={{ backgroundImage: dayGradient(d) }}
+                      className="bg-muted text-foreground px-4 py-3 text-left font-heading font-semibold whitespace-nowrap"
                     >
                       {d}
                     </th>
@@ -296,14 +297,14 @@ function StudentRoutineInner() {
                                     key={s.id}
                                     className={`rounded-lg border px-2.5 py-2 ${
                                       cancelled ? "border-cancelled/20 bg-cancelled/5" : "border-border bg-muted"
-                                    } ${cancelled ? "shadow-[inset_4px_0_0_0_var(--cancelled)]" : moved ? "shadow-[inset_4px_0_0_0_var(--moved)]" : daySpineClass(day)}`}
+                                    } ${cancelled ? "shadow-[inset_4px_0_0_0_var(--cancelled)]" : moved ? "shadow-[inset_4px_0_0_0_var(--moved)]" : bandEdgeClass(bandForSemester(s.batch.semester))}`}
                                   >
                                     <div className="flex items-start justify-between gap-1">
                                       <div className="flex items-center gap-1.5 flex-wrap">
-                                        <span className={`font-semibold font-heading text-foreground ${cancelled ? "line-through text-slate" : ""}`}>
+                                        <span className={`font-semibold font-data text-foreground ${cancelled ? "line-through text-slate" : ""}`}>
                                           {s.course.code}
                                         </span>
-                                        <TypeBadge type={s.course.type} day={day} />
+                                        <TypeBadge type={s.course.type} semester={s.batch.semester} />
                                         {cancelled && (
                                           <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-cancelled/10 text-cancelled">
                                             Cancelled

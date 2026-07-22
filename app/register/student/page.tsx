@@ -219,7 +219,7 @@ export default function RegisterStudentPage() {
               <Message type="success">E-mail verified. You can sign in now — no approval needed.</Message>
               <Link
                 href="/login/student"
-                className="block text-center w-full bg-primary hover:opacity-90 text-primary-foreground font-semibold px-6 py-2.5 rounded-lg text-sm transition-colors shadow-sm"
+                className="block text-center w-full bg-primary hover:opacity-90 text-primary-foreground font-semibold px-6 py-2.5 rounded-lg text-sm transition-colors"
               >
                 Go to sign in
               </Link>

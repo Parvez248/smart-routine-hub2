@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, IBM_Plex_Sans_Condensed, Geist_Mono, Space_Grotesk } from "next/font/google";
+import { Inter, IBM_Plex_Sans_Condensed, Geist_Mono, Source_Serif_4 } from "next/font/google";
 import { SessionProvider } from "next-auth/react";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "@/app/components/ThemeProvider";
@@ -21,8 +21,8 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const spaceGrotesk = Space_Grotesk({
-  variable: "--font-space-grotesk",
+const sourceSerif = Source_Serif_4({
+  variable: "--font-source-serif",
   weight: ["600", "700"],
   subsets: ["latin"],
 });
@@ -37,8 +37,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#1e4e8c" },
-    { media: "(prefers-color-scheme: dark)", color: "#0f151c" },
+    { media: "(prefers-color-scheme: light)", color: "#123c63" },
+    { media: "(prefers-color-scheme: dark)", color: "#12151a" },
   ],
 };
 
@@ -51,7 +51,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${inter.variable} ${plexCondensed.variable} ${geistMono.variable} ${spaceGrotesk.variable} h-full antialiased`}
+      className={`${inter.variable} ${plexCondensed.variable} ${geistMono.variable} ${sourceSerif.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>

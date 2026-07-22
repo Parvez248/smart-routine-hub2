@@ -51,7 +51,7 @@ export default function VerifyPage() {
               <Message type="success">E-mail verified.</Message>
               <Link
                 href="/"
-                className="block text-center w-full bg-primary hover:opacity-90 text-primary-foreground font-semibold px-6 py-2.5 rounded-lg text-sm transition-colors shadow-sm"
+                className="block text-center w-full bg-primary hover:opacity-90 text-primary-foreground font-semibold px-6 py-2.5 rounded-lg text-sm transition-colors"
               >
                 Go to homepage
               </Link>

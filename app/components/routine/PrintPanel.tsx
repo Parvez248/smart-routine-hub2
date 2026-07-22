@@ -2,7 +2,19 @@
 
 import { Printer } from "lucide-react";
 
-export function PrintButton({ className = "" }: { className?: string }) {
+export function PrintButton({ className = "", compact = false }: { className?: string; compact?: boolean }) {
+  if (compact) {
+    return (
+      <button
+        type="button"
+        onClick={() => window.print()}
+        aria-label="Print"
+        className={`print:hidden inline-flex items-center justify-center size-8 rounded-md border border-border text-slate hover:text-foreground hover:bg-muted transition-colors focus-visible:outline-none ${className}`}
+      >
+        <Printer className="size-4" aria-hidden="true" />
+      </button>
+    );
+  }
   return (
     <button
       type="button"

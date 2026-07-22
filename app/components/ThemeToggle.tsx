@@ -16,7 +16,7 @@ const OPTIONS = [
   { value: "system", label: "System", icon: Monitor },
 ] as const;
 
-export function ThemeToggle() {
+export function ThemeToggle({ onBand = false }: { onBand?: boolean }) {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
@@ -29,7 +29,11 @@ export function ThemeToggle() {
     <DropdownMenu>
       <DropdownMenuTrigger
         aria-label="Change theme"
-        className="inline-flex items-center justify-center size-8 rounded-md text-slate hover:text-foreground hover:bg-muted transition-colors focus-visible:outline-none"
+        className={
+          onBand
+            ? "inline-flex items-center justify-center size-8 rounded-md text-white/70 hover:text-white hover:bg-white/10 transition-colors focus-visible:outline-none"
+            : "inline-flex items-center justify-center size-8 rounded-md text-slate hover:text-foreground hover:bg-muted transition-colors focus-visible:outline-none"
+        }
       >
         {mounted ? <ActiveIcon className="size-4" /> : <Monitor className="size-4" />}
       </DropdownMenuTrigger>

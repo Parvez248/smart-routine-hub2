@@ -9,7 +9,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-heading: var(--font-source-serif);
   --font-data: var(--font-plex-condensed);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -59,53 +59,40 @@
   --color-cancelled: var(--cancelled);
   --color-pending: var(--pending);
 
-  /* Vivid redesign (Step 25) — day colours + brand gradient, all token-driven. */
-  --color-day-sat: var(--day-sat-from);
-  --color-day-sun: var(--day-sun-from);
-  --color-day-mon: var(--day-mon-from);
-  --color-day-tues: var(--day-tues-from);
-  --color-day-wed: var(--day-wed-from);
-  --color-brand-from: var(--brand-from);
-  --color-brand-to: var(--brand-to);
-
-  /* Headings pick up Space Grotesk everywhere font-heading is already used
-     (shadcn CardTitle, DialogTitle, …) without touching those components. */
-  --font-heading: var(--font-space-grotesk);
-
-  /* Controls (buttons, inputs, dropdowns) sit at the 10px step; cards get a
-     fixed 16px regardless of the base radius, per the vivid redesign spec. */
-  --radius-2xl: 1rem;
+  /* "Depth of seniority" (Step 26) — one hue ramp for batch seniority, all token-driven. */
+  --color-band-1: var(--band-1);
+  --color-band-2: var(--band-2);
+  --color-band-3: var(--band-3);
+  --color-band-4: var(--band-4);
+  --color-band-x: var(--band-x);
 }
 
 :root {
-  /* Design tokens — vivid "vibrant timetable" identity (Step 25). Status colours
-     (confirmed/moved/cancelled/pending) are for status only, never decoration. */
+  /* Design tokens — "depth of seniority" (Step 26). Status colours (confirmed/
+     moved/cancelled/pending) are for status only, never decoration. --primary
+     carries the one accent colour: primary actions, active nav, focus ring. */
   --ink: #16202b;
   --slate: #5a6675;
   --line: #e2e6eb;
   --surface: #ffffff;
-  --canvas: #f7f8fc;
-  --confirmed: #10b981;
-  --moved: #f59e0b;
-  --cancelled: #f43f5e;
-  --pending: #8b5cf6;
+  --canvas: #f4f5f7;
+  --confirmed: #15803d;
+  --moved: #b45309;
+  --cancelled: #be123c;
+  --pending: #6d28d9;
 
-  /* Day colours — the backbone of the whole design. Each day owns a gradient
-     pair (from → to); never hard-code these hexes in a page, read the tokens. */
-  --day-sat-from: #7c3aed;
-  --day-sat-to: #a855f7;
-  --day-sun-from: #0891b2;
-  --day-sun-to: #22d3ee;
-  --day-mon-from: #d97706;
-  --day-mon-to: #fbbf24;
-  --day-tues-from: #e11d48;
-  --day-tues-to: #fb7185;
-  --day-wed-from: #059669;
-  --day-wed-to: #34d399;
-
-  /* One brand gradient, used for the logo, primary buttons, active nav, hero cards. */
-  --brand-from: #6366f1;
-  --brand-to: #d946ef;
+  /* Batch depth ramp — one hue, four depths. Most senior = deepest. Never
+     hard-code these hexes in a page; read them through lib/ui/bandColors.ts. */
+  --band-1: #123c63;
+  --band-2: #1f5e8c;
+  --band-3: #3e86b5;
+  --band-4: #7fb3d3;
+  --band-x: #64748b;
+  --band-1-text: #ffffff;
+  --band-2-text: #ffffff;
+  --band-3-text: #ffffff;
+  --band-4-text: var(--ink);
+  --band-x-text: #ffffff;
 
   --background: var(--canvas);
   --foreground: var(--ink);
@@ -113,7 +100,7 @@
   --card-foreground: var(--ink);
   --popover: var(--surface);
   --popover-foreground: var(--ink);
-  --primary: #6366f1;
+  --primary: #c2410c;
   --primary-foreground: #ffffff;
   --secondary: var(--surface);
   --secondary-foreground: var(--ink);
@@ -131,7 +118,7 @@
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
+  --radius: 0.5rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -143,32 +130,29 @@
 }
 
 .dark {
-  /* Derived (not inverted) dark palette — same vivid identity, re-tuned for dark
-     surfaces: page/card/border per spec, day colours shifted to their lighter
-     ends, gradients slightly desaturated so they don't glow. */
+  /* Derived (not inverted) dark palette. Surfaces get lighter as they come
+     forward; the ramp shifts lighter and its lightness order reverses (band 1
+     becomes the lightest-but-deepest readable blue); accent brightens. */
   --ink: #e6ecf2;
   --slate: #93a1b0;
   --line: #262c3a;
-  --surface: #171b26;
-  --canvas: #0e1017;
-  --confirmed: #34d399;
-  --moved: #fbbf24;
+  --surface: #1a1f26;
+  --canvas: #12151a;
+  --confirmed: #22c55e;
+  --moved: #f59e0b;
   --cancelled: #fb7185;
   --pending: #a78bfa;
 
-  --day-sat-from: #a855f7;
-  --day-sat-to: #c084fc;
-  --day-sun-from: #22d3ee;
-  --day-sun-to: #67e8f9;
-  --day-mon-from: #fbbf24;
-  --day-mon-to: #fde047;
-  --day-tues-from: #fb7185;
-  --day-tues-to: #fda4af;
-  --day-wed-from: #34d399;
-  --day-wed-to: #6ee7b7;
-
-  --brand-from: #818cf8;
-  --brand-to: #e879f9;
+  --band-1: #4a8fc4;
+  --band-2: #3d77a8;
+  --band-3: #2f5f8a;
+  --band-4: #23496b;
+  --band-x: #94a3b8;
+  --band-1-text: #ffffff;
+  --band-2-text: #ffffff;
+  --band-3-text: #ffffff;
+  --band-4-text: var(--ink);
+  --band-x-text: #12151a;
 
   --background: var(--canvas);
   --foreground: var(--ink);
@@ -176,8 +160,8 @@
   --card-foreground: var(--ink);
   --popover: var(--surface);
   --popover-foreground: var(--ink);
-  --primary: #818cf8;
-  --primary-foreground: #0e1017;
+  --primary: #f97316;
+  --primary-foreground: #12151a;
   --secondary: var(--surface);
   --secondary-foreground: var(--ink);
   --muted: #1b202c;
@@ -185,7 +169,7 @@
   --accent: #1b202c;
   --accent-foreground: var(--ink);
   --destructive: var(--cancelled);
-  --destructive-foreground: #0e1017;
+  --destructive-foreground: #12151a;
   --border: var(--line);
   --input: var(--line);
   --ring: var(--primary);
@@ -197,8 +181,8 @@
   --sidebar: var(--surface);
   --sidebar-foreground: var(--ink);
   --sidebar-primary: var(--primary);
-  --sidebar-primary-foreground: #0f151c;
-  --sidebar-accent: #1b232d;
+  --sidebar-primary-foreground: #12151a;
+  --sidebar-accent: #1b202c;
   --sidebar-accent-foreground: var(--ink);
   --sidebar-border: var(--line);
   --sidebar-ring: var(--primary);
@@ -265,7 +249,7 @@
     --card-foreground: #16202b;
     --popover: #ffffff;
     --popover-foreground: #16202b;
-    --primary: #1e4e8c;
+    --primary: #16202b;
     --primary-foreground: #ffffff;
     --secondary: #ffffff;
     --secondary-foreground: #16202b;
@@ -284,11 +268,16 @@
     --moved: #16202b;
     --cancelled: #16202b;
     --pending: #16202b;
+    --band-1: #16202b;
+    --band-2: #16202b;
+    --band-3: #16202b;
+    --band-4: #16202b;
+    --band-x: #16202b;
   }
 
-  /* Gradients (day headers, hero stat cards, brand text/buttons) never print —
-     the vivid palette stays on-screen only; printed pages stay black-and-white
-     with the same text labels as the screen ([Cancelled], [Moved → …]). */
+  /* No band fills, no gradients, no coloured surfaces in print — a thin black
+     rule for the left edge, and the same text labels as the screen
+     ([Cancelled], [Moved → …]), with table headers repeated per page. */
   * {
     box-shadow: none !important;
     background-image: none !important;
@@ -298,11 +287,11 @@
     print-color-adjust: exact;
   }
 
-  .on-gradient,
-  .on-gradient *,
-  .text-brand-gradient {
+  .on-band,
+  .on-band * {
     color: var(--ink) !important;
     -webkit-text-fill-color: var(--ink) !important;
+    background-color: transparent !important;
   }
 
   a {
@@ -331,25 +320,4 @@
 
 .print-header {
   display: none;
-}
-
-/* Vivid redesign (Step 25) — brand gradient + tinted shadow helpers. One gradient
-   direction (135°) everywhere so the whole app feels related; body text and table
-   rows never sit on a gradient, only accents (buttons, hero cards, headers, logo). */
-.bg-brand-gradient {
-  background-image: linear-gradient(135deg, var(--brand-from), var(--brand-to));
-}
-
-.text-brand-gradient {
-  background-image: linear-gradient(135deg, var(--brand-from), var(--brand-to));
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-  -webkit-text-fill-color: transparent;
-}
-
-.shadow-tinted {
-  box-shadow:
-    0 1px 2px color-mix(in srgb, var(--brand-from) 10%, transparent),
-    0 6px 16px color-mix(in srgb, var(--brand-from) 10%, transparent);
 }

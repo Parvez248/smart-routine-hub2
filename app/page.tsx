@@ -9,21 +9,21 @@ const ROLES = [
     icon: "🛠️",
     title: "Administration",
     description: "Manage courses, rooms, routine versions, and approvals.",
-    accent: "bg-primary/10 text-primary",
+    accent: "bg-band-1/10 text-band-1",
   },
   {
     href: "/login/teacher",
     icon: "🧑‍🏫",
     title: "Teacher",
     description: "View your classes and reschedule when needed.",
-    accent: "bg-moved/10 text-moved",
+    accent: "bg-band-2/10 text-band-2",
   },
   {
     href: "/login/student",
     icon: "🎓",
     title: "Student",
     description: "View your routine, notices, and class reminders.",
-    accent: "bg-confirmed/10 text-confirmed",
+    accent: "bg-band-3/10 text-band-3",
   },
 ];
 
@@ -34,7 +34,7 @@ export default function Home() {
         <p className="text-xs font-semibold text-primary uppercase tracking-wide mb-3">
           Hamdard University Bangladesh &middot; Dept. of CSE
         </p>
-        <h1 className="font-heading text-3xl font-bold text-brand-gradient">Routine Management System</h1>
+        <h1 className="font-heading text-3xl font-bold text-foreground">Routine Management System</h1>
         <p className="text-sm text-slate mt-3 leading-relaxed max-w-lg mx-auto">
           A class routine system for the department — build, publish, and manage the academic
           schedule in one place.
@@ -45,9 +45,9 @@ export default function Home() {
             <Link
               key={r.href}
               href={r.href}
-              className="bg-card rounded-2xl border border-border shadow-sm hover:border-primary/40 hover:shadow-md transition-all p-6 text-left flex flex-col gap-2"
+              className="bg-card rounded-lg border border-border hover:border-primary/40 transition-colors p-6 text-left flex flex-col gap-2"
             >
-              <span className={`inline-flex items-center justify-center w-10 h-10 rounded-xl text-xl ${r.accent}`}>
+              <span className={`inline-flex items-center justify-center w-10 h-10 rounded-lg text-xl ${r.accent}`}>
                 {r.icon}
               </span>
               <span className="font-semibold text-foreground mt-1">{r.title}</span>

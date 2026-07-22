@@ -14,14 +14,14 @@ export default function AdminNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="flex items-center gap-1 text-xs font-medium whitespace-nowrap">
+    <nav className="hidden sm:flex items-center gap-1 text-xs font-medium whitespace-nowrap">
       {LINKS.map((link) => (
         <Link
           key={link.href}
           href={link.href}
           className={`px-2.5 py-1.5 rounded-full transition-colors ${
             pathname === link.href
-              ? "bg-brand-gradient text-white shadow-tinted"
+              ? "bg-primary text-primary-foreground"
               : "text-slate hover:text-foreground"
           }`}
         >

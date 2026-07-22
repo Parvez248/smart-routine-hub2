@@ -1,13 +1,13 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import { PageHeader } from "@/app/components/ui/PageHeader";
-import { Card, CardHeader } from "@/app/components/ui/Card";
 import { Loading } from "@/app/components/ui/Loading";
 import { useRoutineFilters } from "@/app/components/routine/useRoutineFilters";
-import { RoutineFilterBar } from "@/app/components/routine/RoutineFilterBar";
 import { RoutineList } from "@/app/components/routine/RoutineList";
-import { PrintButton, PrintHeader } from "@/app/components/routine/PrintPanel";
+import { RoutineTimeRail } from "@/app/components/routine/RoutineTimeRail";
+import { RoutineMasthead } from "@/app/components/routine/RoutineMasthead";
+import { FilterCard } from "@/app/components/routine/FilterCard";
+import { ViewToggle, type RoutineView } from "@/app/components/routine/ViewToggle";
 import type { FilterableSession } from "@/app/components/routine/types";
 
 type RoutineSession = FilterableSession & { id: number };
@@ -15,6 +15,11 @@ type RoutineSession = FilterableSession & { id: number };
 function TeacherRoutineInner() {
   const [sessions, setSessions] = useState<RoutineSession[]>([]);
   const [loading, setLoadingState] = useState(true);
+  const [view, setView] = useState<RoutineView>("rail");
+
+  useEffect(() => {
+    document.title = "Full Routine · Routine Management System";
+  }, []);
 
   useEffect(() => {
     fetch("/api/teacher/routine")
@@ -28,26 +33,24 @@ function TeacherRoutineInner() {
 
   return (
     <>
-      <PageHeader
-        title="Full Department Routine"
-        description="Every published class across all batches — read-only. This is not just your own classes."
-      />
+      <RoutineMasthead filterSummary={filterState.chips.map((c) => c.label).join(", ")} />
 
-      <Card>
-        <CardHeader title="Routine" action={<PrintButton />} />
+      <FilterCard state={filterState} totalCount={totalCount} />
 
-        <PrintHeader subtitle="Full Department Routine" filterSummary={filterState.chips.map((c) => c.label).join(", ")} />
+      <div className="print:hidden flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">
+          Every published class across all batches — read-only. This is not just your own classes.
+        </p>
+        <ViewToggle value={view} onChange={setView} />
+      </div>
 
-        <div className="px-6 py-4 border-b border-border print:hidden">
-          <RoutineFilterBar state={filterState} />
+      {view === "rail" ? (
+        <RoutineTimeRail sessions={filtered} loading={loading} onClearFilters={clearAll} />
+      ) : (
+        <div className="bg-card border border-border rounded-lg overflow-hidden">
+          <RoutineList sessions={filtered} loading={loading} onClearFilters={clearAll} />
         </div>
-
-        <div className="px-6 py-3 text-xs text-slate print:hidden">
-          Showing <span className="font-data">{filtered.length}</span> of <span className="font-data">{totalCount}</span> classes
-        </div>
-
-        <RoutineList sessions={filtered} loading={loading} onClearFilters={clearAll} />
-      </Card>
+      )}
     </>
   );
 }

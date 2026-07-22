@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useSession, signOut } from "next-auth/react";
-import { ThemeToggle } from "@/app/components/ThemeToggle";
+import { AppHeaderBand } from "@/app/components/AppHeaderBand";
+import TeacherMobileNav from "./TeacherMobileNav";
 
 const LINKS = [
   { href: "/teacher/classes", label: "My Classes" },
@@ -16,51 +16,36 @@ const LINKS = [
 ];
 
 export default function TeacherLayout({ children }: { children: React.ReactNode }) {
-  const { data: session } = useSession();
   const pathname = usePathname();
 
   return (
     <div className="min-h-screen bg-canvas">
-      <header className="bg-surface border-b border-border sticky top-0 z-10 print:hidden">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
-          <Link href="/teacher/classes" className="font-heading text-lg font-bold text-brand-gradient shrink-0">
-            SmartRoutineHub
-          </Link>
-          <div className="flex items-center gap-4 shrink-0">
-            {session?.user && (
-              <span className="text-xs text-slate hidden sm:inline">
-                {session.user.name ?? session.user.email}
-              </span>
-            )}
-            <ThemeToggle />
-            <button
-              onClick={() => signOut({ callbackUrl: "/login" })}
-              className="text-xs font-semibold text-slate hover:text-foreground transition-colors"
-            >
-              Sign out
-            </button>
+      <header className="sticky top-0 z-10 print:hidden">
+        <AppHeaderBand roleLabel="Teacher" maxWidthClassName="max-w-5xl" />
+        <div className="bg-surface border-b border-border">
+          <div className="max-w-5xl mx-auto px-6 py-3 overflow-x-auto">
+            <nav className="hidden sm:flex items-center gap-1 text-xs font-medium">
+              {LINKS.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`px-2.5 py-1.5 rounded-full transition-colors whitespace-nowrap ${
+                    pathname === link.href
+                      ? "bg-primary text-primary-foreground"
+                      : "text-slate hover:text-foreground"
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
           </div>
-        </div>
-        <div className="max-w-5xl mx-auto px-6 pb-3">
-          <nav className="flex items-center gap-1 text-xs font-medium">
-            {LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`px-2.5 py-1.5 rounded-full transition-colors ${
-                  pathname === link.href
-                    ? "bg-brand-gradient text-white shadow-tinted"
-                    : "text-slate hover:text-foreground"
-                }`}
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-6 py-8 space-y-8">{children}</main>
+      <main className="max-w-5xl mx-auto px-6 py-8 pb-24 sm:pb-8 space-y-8">{children}</main>
+
+      <TeacherMobileNav />
     </div>
   );
 }
