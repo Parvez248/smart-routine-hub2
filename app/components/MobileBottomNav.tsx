@@ -20,7 +20,7 @@ export function MobileBottomNav({ items, more }: { items: BottomNavItem[]; more?
   return (
     <>
       <nav
-        className="sm:hidden fixed bottom-0 inset-x-0 z-20 bg-surface border-t border-border print:hidden"
+        className="sm:hidden fixed bottom-0 inset-x-0 z-30 bg-surface border-t border-border print:hidden"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         <div className="grid" style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
@@ -57,7 +57,7 @@ export function MobileBottomNav({ items, more }: { items: BottomNavItem[]; more?
       </nav>
 
       {hasMore && moreOpen && (
-        <div className="sm:hidden fixed inset-0 z-30 flex flex-col justify-end" role="dialog" aria-modal="true" aria-label="More navigation links">
+        <div className="sm:hidden fixed inset-0 z-60 flex flex-col justify-end" role="dialog" aria-modal="true" aria-label="More navigation links">
           <div className="absolute inset-0 bg-black/30" onClick={() => setMoreOpen(false)} />
           <div className="relative bg-card rounded-t-lg border-t border-border shadow-md" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
             <div className="flex items-center justify-between px-5 py-3 border-b border-border">

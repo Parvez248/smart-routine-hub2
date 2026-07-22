@@ -1,8 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { useRoutineFilters, Option } from "./useRoutineFilters";
 
 type FiltersState = ReturnType<typeof useRoutineFilters>;
@@ -39,34 +45,45 @@ function XIcon({ className = "h-3 w-3" }: { className?: string }) {
   );
 }
 
+// Portalled (via DropdownMenu) so the panel is never clipped by an ancestor's
+// overflow-hidden, and flips above the trigger automatically near the bottom
+// of the viewport. Checkbox items stay open on select (closeOnClick defaults
+// to false), so multi-select behaves exactly as before.
 function MultiSelectDropdown({
-  label, options, selected, onToggle, disabled,
+  label, options, selected, onToggle, disabled, searchable = false,
 }: {
-  label: string; options: Option[]; selected: string[]; onToggle: (v: string) => void; disabled?: boolean;
+  label: string; options: Option[]; selected: string[]; onToggle: (v: string) => void; disabled?: boolean; searchable?: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function onDocClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", onDocClick);
-    return () => document.removeEventListener("mousedown", onDocClick);
-  }, []);
+  const [query, setQuery] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
 
   const selectedLabels = options.filter((o) => selected.includes(o.value));
   const summary =
     selectedLabels.length === 0 ? `All ${label}` : selectedLabels.length === 1 ? selectedLabels[0].label : `${selectedLabels.length} selected`;
 
+  const visibleOptions =
+    searchable && query.trim()
+      ? options.filter((o) => o.label.toLowerCase().includes(query.trim().toLowerCase()))
+      : options;
+
   return (
-    <div className="relative" ref={ref}>
-      <button
-        type="button"
+    <DropdownMenu
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (!next) {
+          setQuery("");
+        } else if (searchable) {
+          // The menu auto-focuses its first item on open; steal focus back to
+          // the search box on the next frame so typing works immediately.
+          requestAnimationFrame(() => searchRef.current?.focus());
+        }
+      }}
+    >
+      <DropdownMenuTrigger
         disabled={disabled}
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        onClick={() => setOpen((o) => !o)}
+        aria-label={`Filter by ${label}`}
         className={`h-8 border rounded-lg px-3 text-xs font-semibold flex items-center gap-1.5 transition-colors whitespace-nowrap ${
           disabled
             ? "border-border/60 bg-muted/40 text-muted-foreground/50 cursor-not-allowed"
@@ -75,27 +92,45 @@ function MultiSelectDropdown({
       >
         <span className="text-slate font-normal">{label}:</span> {summary}
         <ChevronIcon />
-      </button>
-      {open && !disabled && (
-        <div className="absolute z-20 mt-1 w-60 max-h-64 overflow-y-auto bg-popover text-popover-foreground border border-border rounded-lg shadow-md ring-1 ring-foreground/10 py-1">
-          {options.length === 0 ? (
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="start"
+        collisionPadding={8}
+        className="max-sm:w-(--anchor-width) w-64 max-w-[calc(100vw-2rem)] p-0"
+      >
+        {searchable && (
+          <div className="p-1.5 border-b border-border sticky top-0 bg-popover">
+            <input
+              ref={searchRef}
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key !== "Escape") e.stopPropagation();
+              }}
+              placeholder={`Search ${label.toLowerCase()}…`}
+              className="w-full h-7 px-2 text-xs rounded border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+            />
+          </div>
+        )}
+        <div className="max-h-[320px] overflow-y-auto py-1">
+          {visibleOptions.length === 0 ? (
             <p className="px-3 py-2 text-xs text-muted-foreground">No options</p>
           ) : (
-            options.map((opt) => (
-              <label key={opt.value} className="flex items-center gap-2 px-3 py-1.5 text-xs text-foreground hover:bg-accent cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={selected.includes(opt.value)}
-                  onChange={() => onToggle(opt.value)}
-                  className="rounded-[4px] border-input text-primary focus:ring-ring"
-                />
+            visibleOptions.map((opt) => (
+              <DropdownMenuCheckboxItem
+                key={opt.value}
+                checked={selected.includes(opt.value)}
+                onCheckedChange={() => onToggle(opt.value)}
+                className="text-xs"
+              >
                 {opt.label}
-              </label>
+              </DropdownMenuCheckboxItem>
             ))
           )}
         </div>
-      )}
-    </div>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -126,9 +161,9 @@ function FilterControls({ state }: { state: FiltersState }) {
         onToggle={(v) => toggleMulti("days", v)}
         disabled={filters.today}
       />
-      <MultiSelectDropdown label="Teacher" options={options.teachers} selected={filters.teachers} onToggle={(v) => toggleMulti("teachers", v)} />
+      <MultiSelectDropdown label="Teacher" options={options.teachers} selected={filters.teachers} onToggle={(v) => toggleMulti("teachers", v)} searchable />
       <MultiSelectDropdown label="Room" options={options.rooms} selected={filters.rooms} onToggle={(v) => toggleMulti("rooms", v)} />
-      <MultiSelectDropdown label="Course" options={options.courses} selected={filters.courses} onToggle={(v) => toggleMulti("courses", v)} />
+      <MultiSelectDropdown label="Course" options={options.courses} selected={filters.courses} onToggle={(v) => toggleMulti("courses", v)} searchable />
       <MultiSelectDropdown label="Slot" options={options.timeSlots} selected={filters.timeSlots} onToggle={(v) => toggleMulti("timeSlots", v)} />
     </div>
   );
@@ -189,7 +224,7 @@ export function RoutineFilterBar({ state }: { state: FiltersState }) {
       </div>
 
       {mobileOpen && (
-        <div className="sm:hidden fixed inset-0 z-30 flex flex-col justify-end">
+        <div className="sm:hidden fixed inset-0 z-60 flex flex-col justify-end">
           <div className="absolute inset-0 bg-black/30" onClick={() => setMobileOpen(false)} />
           <div className="relative bg-card rounded-t-lg shadow-lg max-h-[80vh] overflow-y-auto p-5 space-y-4">
             <div className="flex items-center justify-between">

@@ -50,7 +50,7 @@ function log(...args: unknown[]) {
 }
 
 async function main() {
-  log(`\n=== SmartRoutineHub routine import — ${APPLY ? "APPLY MODE (will write to the database)" : "DRY RUN (no changes will be made)"} ===`);
+  log(`\n=== Routine Management System routine import — ${APPLY ? "APPLY MODE (will write to the database)" : "DRY RUN (no changes will be made)"} ===`);
 
   const adapter = new PrismaMariaDb(buildAdapterConfig(process.env.DATABASE_URL!));
   const prisma = new PrismaClient({ adapter });

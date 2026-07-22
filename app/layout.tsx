@@ -3,6 +3,7 @@ import { Inter, IBM_Plex_Sans_Condensed, Geist_Mono, Source_Serif_4 } from "next
 import { SessionProvider } from "next-auth/react";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "@/app/components/ThemeProvider";
+import { APP_NAME, APP_SUBTITLE } from "@/lib/config/app";
 import "./globals.css";
 
 const inter = Inter({
@@ -29,10 +30,10 @@ const sourceSerif = Source_Serif_4({
 
 export const metadata: Metadata = {
   title: {
-    template: "%s · Routine Management System",
-    default: "Routine Management System",
+    template: `%s · ${APP_NAME}`,
+    default: APP_NAME,
   },
-  description: "Class routine management for Hamdard University Bangladesh, Dept. of CSE",
+  description: `Class routine management for ${APP_SUBTITLE}`,
 };
 
 export const viewport: Viewport = {

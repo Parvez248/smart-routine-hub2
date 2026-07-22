@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { APP_NAME, APP_SUBTITLE } from "@/lib/config/app";
 
 export const metadata: Metadata = { title: "Home" };
 
@@ -32,9 +33,9 @@ export default function Home() {
     <div className="flex flex-1 items-center justify-center bg-canvas px-4 py-16">
       <div className="w-full max-w-3xl text-center">
         <p className="text-xs font-semibold text-primary uppercase tracking-wide mb-3">
-          Hamdard University Bangladesh &middot; Dept. of CSE
+          {APP_SUBTITLE}
         </p>
-        <h1 className="font-heading text-3xl font-bold text-foreground">Routine Management System</h1>
+        <h1 className="font-heading text-3xl font-bold text-foreground">{APP_NAME}</h1>
         <p className="text-sm text-slate mt-3 leading-relaxed max-w-lg mx-auto">
           A class routine system for the department — build, publish, and manage the academic
           schedule in one place.

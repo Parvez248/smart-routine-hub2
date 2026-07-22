@@ -18,7 +18,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
 
   return (
     <div className="min-h-screen bg-canvas">
-      <header className="sticky top-0 z-10 print:hidden">
+      <header className="sticky top-0 z-20 print:hidden">
         <AppHeaderBand roleLabel="Student" maxWidthClassName="max-w-5xl" />
         <div className="bg-surface border-b border-border">
           <div className="max-w-5xl mx-auto px-6 py-3">

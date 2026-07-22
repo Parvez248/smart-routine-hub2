@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Card, CardHeader } from "@/app/components/ui/Card";
-import { AuthSplitPanel } from "@/app/components/AuthSplitPanel";
+import { AuthPageShell, AuthMasthead } from "@/app/components/AuthPageShell";
 
 export const metadata: Metadata = { title: "Sign In" };
 
@@ -13,9 +13,10 @@ const ROLES = [
 
 export default function LoginChooserPage() {
   return (
-    <AuthSplitPanel>
+    <AuthPageShell>
         <Card>
-          <CardHeader title="SmartRoutineHub" description="Choose how you'd like to sign in" accent />
+          <AuthMasthead />
+          <CardHeader title="Sign In" description="Choose how you'd like to sign in" accent />
 
           <div className="px-8 py-6 space-y-3">
             {ROLES.map((r) => (
@@ -38,6 +39,6 @@ export default function LoginChooserPage() {
             </Link>
           </p>
         </Card>
-    </AuthSplitPanel>
+    </AuthPageShell>
   );
 }

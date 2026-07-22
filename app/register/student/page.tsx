@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Card, CardHeader } from "@/app/components/ui/Card";
 import { Button } from "@/app/components/ui/Button";
 import { Message } from "@/app/components/ui/Message";
-import { AuthSplitPanel } from "@/app/components/AuthSplitPanel";
+import { AuthPageShell, AuthMasthead } from "@/app/components/AuthPageShell";
 
 type Batch = { id: number; name: string; semester: string };
 
@@ -90,9 +90,10 @@ export default function RegisterStudentPage() {
   }
 
   return (
-    <AuthSplitPanel>
+    <AuthPageShell>
         <Card>
-          <CardHeader title="SmartRoutineHub" description="Student registration" accent />
+          <AuthMasthead />
+          <CardHeader title="Student Registration" accent />
 
           {step === "form" && (
             <form onSubmit={handleRegister} className="px-8 py-6 space-y-4">
@@ -226,6 +227,6 @@ export default function RegisterStudentPage() {
             </div>
           )}
         </Card>
-    </AuthSplitPanel>
+    </AuthPageShell>
   );
 }

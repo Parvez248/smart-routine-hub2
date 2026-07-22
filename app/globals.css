@@ -4,7 +4,16 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* z-index scale (Step 27) — one documented ladder, used consistently instead of
+   ad-hoc values. Higher layers must always be able to cover lower ones:
+     20  sticky headers / sticky table heads
+     30  mobile bottom nav bar
+     50  dropdown / popover menus (shadcn default)
+     60  dialogs and full-screen sheets (mobile filter drawer, "More" sheet)
+     70  toasts / floating notifications (reminder banner) */
 @theme inline {
+  --z-60: 60;
+  --z-70: 70;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);

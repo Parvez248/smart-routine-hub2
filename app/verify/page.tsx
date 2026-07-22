@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Card, CardHeader } from "@/app/components/ui/Card";
 import { Button } from "@/app/components/ui/Button";
 import { Message } from "@/app/components/ui/Message";
-import { AuthSplitPanel } from "@/app/components/AuthSplitPanel";
+import { AuthPageShell, AuthMasthead } from "@/app/components/AuthPageShell";
 
 export default function VerifyPage() {
   const [email, setEmail] = useState("");
@@ -42,9 +42,10 @@ export default function VerifyPage() {
   }
 
   return (
-    <AuthSplitPanel>
+    <AuthPageShell>
         <Card>
-          <CardHeader title="SmartRoutineHub" description="Verify your e-mail" accent />
+          <AuthMasthead />
+          <CardHeader title="Verify Your E-mail" accent />
 
           {done ? (
             <div className="px-8 py-6 space-y-4">
@@ -95,6 +96,6 @@ export default function VerifyPage() {
             </form>
           )}
         </Card>
-    </AuthSplitPanel>
+    </AuthPageShell>
   );
 }

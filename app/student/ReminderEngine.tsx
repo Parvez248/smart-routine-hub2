@@ -81,7 +81,7 @@ export default function ReminderEngine() {
   if (banners.length === 0) return null;
 
   return (
-    <div className="fixed top-4 right-4 z-50 space-y-2 max-w-xs">
+    <div className="fixed top-4 right-4 z-70 space-y-2 max-w-xs">
       {banners.map((b) => (
         <div
           key={b.key}

@@ -8,7 +8,7 @@ import { Card, CardHeader } from "@/app/components/ui/Card";
 import { Button } from "@/app/components/ui/Button";
 import { Message } from "@/app/components/ui/Message";
 import { Input } from "@/components/ui/input";
-import { AuthSplitPanel } from "@/app/components/AuthSplitPanel";
+import { AuthPageShell, AuthMasthead } from "@/app/components/AuthPageShell";
 
 type Role = "ADMIN" | "TEACHER" | "STUDENT";
 
@@ -98,8 +98,9 @@ export default function RoleLoginForm({
   }
 
   return (
-    <AuthSplitPanel>
+    <AuthPageShell>
         <Card>
+          <AuthMasthead />
           <CardHeader
             title={
               <span className="flex items-center gap-2">
@@ -163,6 +164,6 @@ export default function RoleLoginForm({
             </p>
           </form>
         </Card>
-    </AuthSplitPanel>
+    </AuthPageShell>
   );
 }

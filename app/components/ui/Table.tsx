@@ -18,7 +18,7 @@ export function Table({
 }) {
   return (
     <ShadcnTable className="w-full text-sm">
-      <ShadcnTableHeader className="sticky top-0 z-10 bg-canvas">
+      <ShadcnTableHeader className="sticky top-0 z-20 bg-canvas">
         <ShadcnTableRow className="bg-canvas hover:bg-canvas border-border">
           {headers.map((h, i) => {
             const label = typeof h === "string" ? h : h.label;

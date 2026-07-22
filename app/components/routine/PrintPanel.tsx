@@ -1,6 +1,7 @@
 "use client";
 
 import { Printer } from "lucide-react";
+import { APP_NAME, APP_SUBTITLE } from "@/lib/config/app";
 
 export function PrintButton({ className = "", compact = false }: { className?: string; compact?: boolean }) {
   if (compact) {
@@ -31,7 +32,7 @@ export function PrintButton({ className = "", compact = false }: { className?: s
 export function PrintHeader({ subtitle, filterSummary }: { subtitle: string; filterSummary?: string }) {
   return (
     <div className="hidden print:block px-6 pt-6 pb-2">
-      <h1 className="text-base font-bold">Routine Management System — Hamdard University Bangladesh, Dept. of CSE</h1>
+      <h1 className="text-base font-bold">{APP_NAME} — {APP_SUBTITLE}</h1>
       <p className="text-sm mt-0.5">{subtitle}</p>
       <p className="text-xs mt-0.5">Filters: {filterSummary && filterSummary.length > 0 ? filterSummary : "None"}</p>
       <p className="text-xs mt-0.5">Printed: {new Date().toLocaleString()}</p>

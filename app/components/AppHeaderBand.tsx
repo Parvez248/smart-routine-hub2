@@ -2,6 +2,7 @@
 
 import { useSession, signOut } from "next-auth/react";
 import { ThemeToggle } from "@/app/components/ThemeToggle";
+import { APP_SUBTITLE } from "@/lib/config/app";
 
 // The persistent app-identity header — a flat --band-1 band (no gradient) with
 // a 1px accent rule along the bottom edge, per the "depth of seniority" spec.
@@ -21,7 +22,7 @@ export function AppHeaderBand({
         <div className="min-w-0">
           <p className="font-heading text-white text-xl sm:text-[26px] font-semibold leading-tight truncate">{name}</p>
           <p className="text-white/80 text-[13px] mt-0.5">
-            {roleLabel} · Dept. of CSE, Hamdard University Bangladesh
+            {roleLabel} · {APP_SUBTITLE}
           </p>
         </div>
         <div className="flex items-center gap-3 shrink-0">
