@@ -1,16 +1,16 @@
 "use client";
 
 import { Suspense, useEffect, useMemo, useState } from "react";
-import { PageHeader } from "@/app/components/ui/PageHeader";
-import { Card, CardHeader } from "@/app/components/ui/Card";
+import { Loading } from "@/app/components/ui/Loading";
 import { LinkButton } from "@/app/components/ui/Button";
 import { EmptyState } from "@/app/components/ui/EmptyState";
-import { Loading } from "@/app/components/ui/Loading";
 import { nextOccurrenceOf } from "@/lib/services/timeslot";
 import { useRoutineFilters } from "@/app/components/routine/useRoutineFilters";
-import { RoutineFilterBar } from "@/app/components/routine/RoutineFilterBar";
-import { PrintButton, PrintHeader } from "@/app/components/routine/PrintPanel";
-import { bandEdgeClass, bandForSemester, bandVar } from "@/lib/ui/bandColors";
+import { RoutineList } from "@/app/components/routine/RoutineList";
+import { RoutineTimeRail } from "@/app/components/routine/RoutineTimeRail";
+import { RoutineMasthead } from "@/app/components/routine/RoutineMasthead";
+import { FilterCard } from "@/app/components/routine/FilterCard";
+import { ViewToggle, type RoutineView } from "@/app/components/routine/ViewToggle";
 import type { FilterableSession } from "@/app/components/routine/types";
 
 type SessionCell = {
@@ -27,33 +27,9 @@ type SessionCell = {
 };
 
 type Batch = { id: number; name: string; semester: string };
-type TimeSlot = { id: number; label: string; sortOrder: number };
 type AlarmRow = { id: number; sessionId: number; leadMinutes: number; isActive: boolean };
 
-const DAY_ORDER = ["Sat", "Sun", "Mon", "Tues", "Wed"];
 const LEAD_OPTIONS = [5, 10, 15, 30];
-
-function formatMovedDate(value: string | null): string | null {
-  if (!value) return null;
-  return new Date(value).toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
-}
-
-function TypeBadge({ type, semester }: { type: string; semester: string }) {
-  const isLab = type === "LAB";
-  const band = bandForSemester(semester);
-  return (
-    <span
-      className={
-        isLab
-          ? "on-band inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold print:border print:border-foreground"
-          : "inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold border border-slate text-slate print:border-foreground print:text-foreground"
-      }
-      style={isLab ? { backgroundColor: bandVar(band), color: "var(--band-1-text)" } : undefined}
-    >
-      {isLab ? "LAB" : "THEORY"}
-    </span>
-  );
-}
 
 function formatCountdown(ms: number): string {
   const totalMinutes = Math.max(0, Math.floor(ms / 60000));
@@ -66,14 +42,75 @@ function formatCountdown(ms: number): string {
   return `${minutes}m ${totalSeconds % 60}s`;
 }
 
+// The reminder-bell affordance, plugged into the shared routine components'
+// renderActions slot so student keeps the exact same set/update/remove
+// reminder behaviour after unifying onto the shared routine document.
+function ReminderBell({
+  session, alarm, bellOpen, onToggle, leadMinutes, onLeadChange, submitting, onSave, onRemove,
+}: {
+  session: SessionCell;
+  alarm: AlarmRow | undefined;
+  bellOpen: boolean;
+  onToggle: () => void;
+  leadMinutes: number;
+  onLeadChange: (m: number) => void;
+  submitting: boolean;
+  onSave: () => void;
+  onRemove: () => void;
+}) {
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={onToggle}
+        className={`text-base leading-none ${alarm ? "opacity-100" : "opacity-40 hover:opacity-100"}`}
+        title={alarm ? "Reminder set" : "Set reminder"}
+        aria-label={alarm ? "Reminder set. Click to edit." : "Set reminder"}
+      >
+        {alarm ? "🔔" : "🔕"}
+      </button>
+      {bellOpen && (
+        <div className="absolute right-0 top-full mt-2 z-40 w-56 bg-popover text-popover-foreground border border-border rounded-md shadow-md ring-1 ring-foreground/10 p-3 space-y-2 text-left">
+          <div className="flex items-center gap-1 flex-wrap">
+            {LEAD_OPTIONS.map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => onLeadChange(m)}
+                className={`px-2 py-0.5 rounded-full text-[11px] font-semibold transition-colors ${
+                  leadMinutes === m
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground border border-border hover:bg-muted/70"
+                }`}
+              >
+                {m}m
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-3">
+            <LinkButton tone="primary" loading={submitting} onClick={onSave}>
+              {alarm ? "Update" : "Set reminder"}
+            </LinkButton>
+            {alarm && (
+              <LinkButton tone="danger" loading={submitting} onClick={onRemove}>
+                Remove
+              </LinkButton>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function StudentRoutineInner() {
   const [sessions, setSessions] = useState<SessionCell[]>([]);
   const [versionName, setVersionName] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoadingState] = useState(true);
+  const [view, setView] = useState<RoutineView>("rail");
 
   const [batches, setBatches] = useState<Batch[]>([]);
-  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
   const [selectedBatchId, setSelectedBatchId] = useState<string>("");
   const [myBatchId, setMyBatchId] = useState<string>("");
 
@@ -83,6 +120,10 @@ function StudentRoutineInner() {
   const [bellSubmitting, setBellSubmitting] = useState(false);
 
   const [now, setNow] = useState(new Date());
+
+  useEffect(() => {
+    document.title = "My Routine · Routine Management System";
+  }, []);
 
   async function loadRoutine(batchId?: string) {
     setLoadingState(true);
@@ -107,7 +148,6 @@ function StudentRoutineInner() {
 
   useEffect(() => {
     fetch("/api/public/batches").then((res) => res.json()).then((json) => { if (json.ok) setBatches(json.data); });
-    fetch("/api/reference").then((res) => res.json()).then((json) => { if (json.ok) setTimeSlots(json.data.timeSlots); });
     loadRoutine();
     loadAlarms();
   }, []);
@@ -125,9 +165,6 @@ function StudentRoutineInner() {
 
   const filterState = useRoutineFilters(sessions, { storageKey: "student" });
   const { filtered, totalCount, clearAll } = filterState;
-
-  const cellFor = (day: string, timeSlotId: number) =>
-    filtered.filter((s) => s.day === day && s.timeSlot.id === timeSlotId);
 
   const alarmBySessionId = useMemo(
     () => new Map(alarms.map((a) => [a.sessionId, a])),
@@ -195,27 +232,41 @@ function StudentRoutineInner() {
     }
   }
 
+  const renderActions = (s: SessionCell) => {
+    if (!viewingOwnBatch || s.status === "CANCELLED") return null;
+    return (
+      <ReminderBell
+        session={s}
+        alarm={alarmBySessionId.get(s.id)}
+        bellOpen={openBellFor === s.id}
+        onToggle={() => (openBellFor === s.id ? setOpenBellFor(null) : openBell(s))}
+        leadMinutes={bellLeadMinutes}
+        onLeadChange={setBellLeadMinutes}
+        submitting={bellSubmitting}
+        onSave={() => handleSaveReminder(s)}
+        onRemove={() => {
+          const alarm = alarmBySessionId.get(s.id);
+          if (alarm) handleRemoveReminder(alarm.id);
+        }}
+      />
+    );
+  };
+
   return (
     <>
-      <PageHeader
-        title="My Routine"
-        description={versionName ? `Published version: ${versionName}` : "No routine published yet."}
-        action={
-          <div className="flex items-center gap-2 print:hidden">
-            <label htmlFor="student-routine-batch" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Batch</label>
-            <select
-              id="student-routine-batch"
-              value={selectedBatchId}
-              onChange={(e) => handleBatchChange(e.target.value)}
-              className="border border-border bg-muted rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition"
-            >
-              {batches.map((b) => (
-                <option key={b.id} value={b.id}>{b.name} — {b.semester} sem</option>
-              ))}
-            </select>
-          </div>
-        }
-      />
+      <div className="print:hidden flex items-center justify-end gap-2">
+        <label htmlFor="student-routine-batch" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Batch</label>
+        <select
+          id="student-routine-batch"
+          value={selectedBatchId}
+          onChange={(e) => handleBatchChange(e.target.value)}
+          className="border border-border bg-muted rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition"
+        >
+          {batches.map((b) => (
+            <option key={b.id} value={b.id}>{b.name} — {b.semester} sem</option>
+          ))}
+        </select>
+      </div>
 
       {nextClass && (
         <div className="print:hidden bg-primary rounded-lg px-6 py-4 text-white flex items-center justify-between gap-4 flex-wrap">
@@ -235,159 +286,25 @@ function StudentRoutineInner() {
         </div>
       )}
 
-      <Card>
-        <CardHeader title="Weekly Routine" action={<PrintButton />} />
+      <RoutineMasthead versionName={versionName} filterSummary={filterState.chips.map((c) => c.label).join(", ")} />
 
-        <PrintHeader subtitle="My Routine" filterSummary={filterState.chips.map((c) => c.label).join(", ")} />
+      <FilterCard state={filterState} totalCount={totalCount} />
 
-        <div className="px-6 py-4 border-b border-border print:hidden">
-          <RoutineFilterBar state={filterState} />
-        </div>
+      <div className="print:hidden flex items-center justify-end">
+        <ViewToggle value={view} onChange={setView} />
+      </div>
 
-        <div className="px-6 py-3 text-xs text-slate print:hidden">
-          Showing {filtered.length} of {totalCount} classes
-        </div>
-
-        {loading ? (
-          <Loading />
-        ) : message ? (
+      {message ? (
+        <div className="glass rounded-lg overflow-hidden">
           <EmptyState icon="🗓️" message={message} />
-        ) : filtered.length === 0 ? (
-          <EmptyState icon="🔍" message="No classes match these filters." action={
-            <button type="button" onClick={clearAll} className="text-xs font-semibold text-primary hover:opacity-80">
-              Clear all filters
-            </button>
-          } />
-        ) : (
-          <div className="overflow-x-auto pb-6">
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr className="text-xs uppercase tracking-wide">
-                  <th scope="col" className="bg-muted text-slate px-4 py-3 text-left font-semibold whitespace-nowrap">Time Slot</th>
-                  {DAY_ORDER.map((d) => (
-                    <th
-                      key={d}
-                      scope="col"
-                      className="bg-muted text-foreground px-4 py-3 text-left font-heading font-semibold whitespace-nowrap"
-                    >
-                      {d}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {timeSlots.map((slot) => (
-                  <tr key={slot.id}>
-                    <td className="px-4 py-3 text-muted-foreground font-medium whitespace-nowrap align-top">{slot.label}</td>
-                    {DAY_ORDER.map((day) => {
-                      const cellSessions = cellFor(day, slot.id);
-                      return (
-                        <td key={day} className="px-4 py-3 align-top min-w-[140px]">
-                          {cellSessions.length === 0 ? (
-                            <span className="text-border">—</span>
-                          ) : (
-                            <div className="space-y-2">
-                              {cellSessions.map((s) => {
-                                const cancelled = s.status === "CANCELLED";
-                                const moved = !cancelled && Boolean(s.movedTo);
-                                const alarm = alarmBySessionId.get(s.id);
-                                const bellOpen = openBellFor === s.id;
-                                return (
-                                  <div
-                                    key={s.id}
-                                    className={`rounded-lg border px-2.5 py-2 ${
-                                      cancelled ? "border-cancelled/20 bg-cancelled/5" : "border-border bg-muted"
-                                    } ${cancelled ? "shadow-[inset_4px_0_0_0_var(--cancelled)]" : moved ? "shadow-[inset_4px_0_0_0_var(--moved)]" : bandEdgeClass(bandForSemester(s.batch.semester))}`}
-                                  >
-                                    <div className="flex items-start justify-between gap-1">
-                                      <div className="flex items-center gap-1.5 flex-wrap">
-                                        <span className={`font-semibold font-data text-foreground ${cancelled ? "line-through text-slate" : ""}`}>
-                                          {s.course.code}
-                                        </span>
-                                        <TypeBadge type={s.course.type} semester={s.batch.semester} />
-                                        {cancelled && (
-                                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-cancelled/10 text-cancelled">
-                                            Cancelled
-                                          </span>
-                                        )}
-                                      </div>
-                                      {viewingOwnBatch && !cancelled && (
-                                        <button
-                                          type="button"
-                                          onClick={() => (bellOpen ? setOpenBellFor(null) : openBell(s))}
-                                          className={`print:hidden text-sm leading-none shrink-0 ${alarm ? "opacity-100" : "opacity-40 hover:opacity-100"}`}
-                                          title={alarm ? "Reminder set" : "Set reminder"}
-                                          aria-label={alarm ? "Reminder set. Click to edit." : "Set reminder"}
-                                        >
-                                          {alarm ? "🔔" : "🔕"}
-                                        </button>
-                                      )}
-                                    </div>
-                                    <p className={`text-xs text-muted-foreground mt-1 ${cancelled ? "line-through text-muted-foreground/60" : ""}`}>
-                                      {s.teacher.initials} · Room {s.room.name}
-                                      {s.section ? ` · ${s.section}` : ""}
-                                    </p>
-                                    {!cancelled && s.movedTo && (
-                                      <p className="text-[11px] text-moved mt-1">
-                                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-moved/10 text-moved mr-1">
-                                          {s.movedTo.date ? `Moved on ${formatMovedDate(s.movedTo.date)}` : "Moved"}
-                                        </span>
-                                        to {s.movedTo.day}, {s.movedTo.timeSlot?.label}, Room {s.movedTo.room?.name}
-                                      </p>
-                                    )}
-
-                                    {bellOpen && (
-                                      <div className="print:hidden mt-2 pt-2 border-t border-border space-y-2">
-                                        <div className="flex items-center gap-1 flex-wrap">
-                                          {LEAD_OPTIONS.map((m) => (
-                                            <button
-                                              key={m}
-                                              onClick={() => setBellLeadMinutes(m)}
-                                              className={`px-2 py-0.5 rounded-full text-[11px] font-semibold transition-colors ${
-                                                bellLeadMinutes === m
-                                                  ? "bg-primary text-white"
-                                                  : "bg-surface text-muted-foreground border border-border hover:bg-muted"
-                                              }`}
-                                            >
-                                              {m}m
-                                            </button>
-                                          ))}
-                                        </div>
-                                        <div className="flex items-center gap-3">
-                                          <LinkButton
-                                            tone="primary"
-                                            loading={bellSubmitting}
-                                            onClick={() => handleSaveReminder(s)}
-                                          >
-                                            {alarm ? "Update" : "Set reminder"}
-                                          </LinkButton>
-                                          {alarm && (
-                                            <LinkButton
-                                              tone="danger"
-                                              loading={bellSubmitting}
-                                              onClick={() => handleRemoveReminder(alarm.id)}
-                                            >
-                                              Remove
-                                            </LinkButton>
-                                          )}
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
+        </div>
+      ) : view === "rail" ? (
+        <RoutineTimeRail sessions={filtered} loading={loading} onClearFilters={clearAll} renderActions={renderActions} />
+      ) : (
+        <div className="bg-card border border-border rounded-lg overflow-hidden">
+          <RoutineList sessions={filtered} loading={loading} onClearFilters={clearAll} renderActions={renderActions} />
+        </div>
+      )}
     </>
   );
 }

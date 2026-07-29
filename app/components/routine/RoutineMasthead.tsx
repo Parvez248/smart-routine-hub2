@@ -5,9 +5,10 @@ function formatEffectiveDate(value: string | null): string | null {
   return new Date(value).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
-// A printed-document masthead, left-aligned. Reads the version name and
-// effective date from the published version — never hard-coded — and doubles
-// as the printed header (the filters/printed-date line only shows in print).
+// A printed-document masthead. Reads the version name and effective date from
+// the published version — never hard-coded — and doubles as the printed
+// header (the filters/printed-date line only shows in print). Frosted glass
+// on screen; forced solid white in print (see .glass print override).
 export function RoutineMasthead({
   versionName,
   effectiveDate,
@@ -20,7 +21,7 @@ export function RoutineMasthead({
   const effective = formatEffectiveDate(effectiveDate ?? null);
 
   return (
-    <div className="flex items-start justify-between gap-4 flex-wrap border-b border-border pb-4">
+    <div className="glass print:border-0 print:shadow-none print:bg-transparent rounded-lg px-6 py-5 flex items-start justify-between gap-4 flex-wrap">
       <div>
         <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-medium">
           Hamdard University Bangladesh
@@ -34,10 +35,14 @@ export function RoutineMasthead({
         </p>
       </div>
       {(versionName || effective) && (
-        <div className="print:hidden shrink-0 flex items-start gap-2">
+        <div className="print:hidden shrink-0 flex items-center gap-2">
           <div className="text-right">
             {versionName && <p className="text-sm font-semibold text-foreground font-data">{versionName}</p>}
-            {effective && <p className="text-xs text-muted-foreground font-data mt-0.5">Effective from {effective}</p>}
+            {effective && (
+              <p className="inline-flex items-center mt-1 px-2.5 py-1 rounded-full text-xs text-muted-foreground font-data bg-muted/70">
+                Effective from {effective}
+              </p>
+            )}
           </div>
           <PrintButton compact />
         </div>

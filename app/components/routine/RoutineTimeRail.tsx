@@ -49,7 +49,7 @@ function Row<T extends FilterableSession>({ session: s, renderActions }: { sessi
 
 function DaySkeleton() {
   return (
-    <div className="bg-card border border-border rounded-lg overflow-hidden">
+    <div className="glass rounded-lg overflow-hidden">
       <div className="px-5 py-3 border-b border-border">
         <Skeleton className="h-5 w-32" />
       </div>
@@ -93,7 +93,7 @@ export function RoutineTimeRail<T extends FilterableSession>({
 
   if (loading) {
     return (
-      <div className="space-y-3">
+      <div className="space-y-4 p-4">
         {Array.from({ length: 3 }).map((_, i) => <DaySkeleton key={i} />)}
       </div>
     );
@@ -101,24 +101,26 @@ export function RoutineTimeRail<T extends FilterableSession>({
 
   if (sessions.length === 0) {
     return (
-      <EmptyState
-        icon="🔍"
-        message="No classes match these filters."
-        action={
-          onClearFilters ? (
-            <button type="button" onClick={onClearFilters} className="text-xs font-semibold text-primary hover:opacity-80">
-              Clear all filters
-            </button>
-          ) : undefined
-        }
-      />
+      <div className="glass rounded-lg overflow-hidden">
+        <EmptyState
+          icon="🔍"
+          message="No classes match these filters."
+          action={
+            onClearFilters ? (
+              <button type="button" onClick={onClearFilters} className="text-xs font-semibold text-primary hover:opacity-80">
+                Clear all filters
+              </button>
+            ) : undefined
+          }
+        />
+      </div>
     );
   }
 
   const days = [...byDay.keys()].filter((d) => (byDay.get(d) ?? []).length > 0);
 
   return (
-    <div className="space-y-3 p-4">
+    <div className="space-y-4 p-4">
       {days.map((day) => {
         const daySessions = [...(byDay.get(day) ?? [])].sort((a, b) => a.timeSlot.sortOrder - b.timeSlot.sortOrder);
         const collapsed = collapsedDays.has(day);
@@ -132,7 +134,7 @@ export function RoutineTimeRail<T extends FilterableSession>({
         const slots = [...bySlot.values()].sort((a, b) => a.sortOrder - b.sortOrder);
 
         return (
-          <div key={day} className="bg-card border border-border rounded-lg overflow-hidden">
+          <div key={day} className="glass rounded-lg overflow-hidden">
             <button
               type="button"
               onClick={() => toggleDay(day)}
@@ -145,7 +147,10 @@ export function RoutineTimeRail<T extends FilterableSession>({
                   {daySessions.length}
                 </span>
               </span>
-              <ChevronDown className={`size-4 text-slate transition-transform ${collapsed ? "" : "rotate-180"}`} aria-hidden="true" />
+              <ChevronDown
+                className={`size-4 text-slate transition-transform duration-150 ${collapsed ? "" : "rotate-180"}`}
+                aria-hidden="true"
+              />
             </button>
 
             {!collapsed && (

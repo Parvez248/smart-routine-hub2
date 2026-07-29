@@ -1,9 +1,10 @@
 "use client";
 
-import { Card } from "@/app/components/ui/Card";
 import { RoutineFilterBar } from "./RoutineFilterBar";
 import type { useRoutineFilters } from "./useRoutineFilters";
 
+// Frosted glass, sticky below the app header while scrolling a long routine.
+// z-40 — below any dropdown/popover menu (z-50), per the documented scale.
 export function FilterCard({
   state, totalCount,
 }: {
@@ -13,7 +14,7 @@ export function FilterCard({
   const { filtered, clearAll, activeCount } = state;
 
   return (
-    <Card className="print:hidden">
+    <div className="glass print:hidden sticky top-28 z-40 rounded-lg overflow-visible">
       <div className="border-b border-border px-6 py-4 flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h2 className="font-heading text-base font-semibold text-foreground">Filters</h2>
@@ -34,6 +35,6 @@ export function FilterCard({
       <div className="px-6 py-4">
         <RoutineFilterBar state={state} />
       </div>
-    </Card>
+    </div>
   );
 }
