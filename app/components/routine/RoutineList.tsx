@@ -5,7 +5,7 @@ import { Table } from "@/app/components/ui/Table";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { StatusBadge } from "@/app/components/ui/StatusBadge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TypePill, MovedNote, rowEdgeClass } from "./RowBadges";
+import { TypePill, MovedNote, rowEdgeClass, courseTitleIfDifferent } from "./RowBadges";
 import type { FilterableSession } from "./types";
 
 type SortKey = "day" | "slot" | "course" | "teacher" | "batch" | "room" | "status";
@@ -156,7 +156,9 @@ export function RoutineList<T extends FilterableSession>({
                   <span className={`font-semibold font-data ${cancelled ? "text-muted-foreground line-through" : "text-foreground"}`}>{s.course.code}</span>
                   <TypePill type={s.course.type} batch={s.batch} />
                 </div>
-                <div className="text-xs text-slate truncate max-w-[180px]" title={s.course.title}>{s.course.title}</div>
+                {courseTitleIfDifferent(s.course) && (
+                  <div className="text-xs text-slate truncate max-w-[180px]" title={s.course.title}>{courseTitleIfDifferent(s.course)}</div>
+                )}
                 {cancelled && <StatusBadge status="Cancelled" className="mt-1" />}
                 {moved && (
                   <>

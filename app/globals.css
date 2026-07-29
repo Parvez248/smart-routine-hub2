@@ -78,9 +78,9 @@
 }
 
 :root {
-  /* Design tokens — "depth of seniority" (Step 26). Status colours (confirmed/
-     moved/cancelled/pending) are for status only, never decoration. --primary
-     carries the one accent colour: primary actions, active nav, focus ring. */
+  /* Design tokens. Status colours (confirmed/moved/cancelled/pending) are for
+     status only, never decoration. --primary carries the one accent colour:
+     primary actions, active nav, focus ring. */
   --ink: #16202b;
   --slate: #5a6675;
   --line: #e2e6eb;
@@ -91,18 +91,26 @@
   --cancelled: #be123c;
   --pending: #6d28d9;
 
-  /* Batch depth ramp — one hue, four depths. Most senior = deepest. Never
-     hard-code these hexes in a page; read them through lib/ui/bandColors.ts. */
-  --band-1: #123c63;
-  --band-2: #1f5e8c;
-  --band-3: #3e86b5;
-  --band-4: #7fb3d3;
-  --band-x: #64748b;
+  /* Batch/year bands (Step 29) — one distinct hue per band, used as solid,
+     opaque bar fills with white text (≥4.5:1). Never hard-code these hexes in
+     a page; read them through lib/ui/bandColors.ts.
+       8th/7th  green   6th/5th  teal   4th/3rd  violet   2nd/1st  amber */
+  --band-1: #15803d;
+  --band-2: #0f766e;
+  --band-3: #6d28d9;
+  --band-4: #b45309;
+  --band-x: #475569;
   --band-1-text: #ffffff;
   --band-2-text: #ffffff;
   --band-3-text: #ffffff;
-  --band-4-text: var(--ink);
+  --band-4-text: #ffffff;
   --band-x-text: #ffffff;
+
+  /* Fixed-shade fills for cancelled/moved routine bars — always dark enough
+     for white text in both themes, independent of --cancelled/--moved (which
+     stay theme-tuned for their existing badge/text uses elsewhere). */
+  --bar-cancelled: #be123c;
+  --bar-moved: #b45309;
 
   --background: var(--canvas);
   --foreground: var(--ink);
@@ -141,8 +149,10 @@
 
 .dark {
   /* Derived (not inverted) dark palette. Surfaces get lighter as they come
-     forward; the ramp shifts lighter and its lightness order reverses (band 1
-     becomes the lightest-but-deepest readable blue); accent brightens. */
+     forward; accent brightens. Band fills stay the same saturated, WCAG-safe
+     shade as light mode — a solid green/teal/violet/amber bar already reads
+     clearly against the dark canvas without needing to lighten further, and
+     lightening them would break the white-text contrast they depend on. */
   --ink: #e6ecf2;
   --slate: #93a1b0;
   --line: #262c3a;
@@ -153,16 +163,19 @@
   --cancelled: #fb7185;
   --pending: #a78bfa;
 
-  --band-1: #4a8fc4;
-  --band-2: #3d77a8;
-  --band-3: #2f5f8a;
-  --band-4: #23496b;
-  --band-x: #94a3b8;
+  --band-1: #15803d;
+  --band-2: #0f766e;
+  --band-3: #6d28d9;
+  --band-4: #b45309;
+  --band-x: #475569;
   --band-1-text: #ffffff;
   --band-2-text: #ffffff;
   --band-3-text: #ffffff;
-  --band-4-text: var(--ink);
-  --band-x-text: #12151a;
+  --band-4-text: #ffffff;
+  --band-x-text: #ffffff;
+
+  --bar-cancelled: #be123c;
+  --bar-moved: #b45309;
 
   --background: var(--canvas);
   --foreground: var(--ink);
@@ -283,6 +296,8 @@
     --band-3: #16202b;
     --band-4: #16202b;
     --band-x: #16202b;
+    --bar-cancelled: #16202b;
+    --bar-moved: #16202b;
   }
 
   /* No band fills, no gradients, no coloured surfaces in print — a thin black

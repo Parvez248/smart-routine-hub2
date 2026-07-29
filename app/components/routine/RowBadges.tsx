@@ -3,6 +3,7 @@ import type { FilterableSession } from "./types";
 
 // Every row keeps a band-coloured left edge (batch seniority) — status always
 // wins over band colour, so a cancelled/moved class stays visible regardless.
+// Used by the table view; the routine bars (RoutineTimeRail) fill solid instead.
 export function rowEdgeClass(batch: { semester: string }, cancelled: boolean, moved: boolean): string {
   if (cancelled) return "shadow-[inset_4px_0_0_0_var(--cancelled)]";
   if (moved) return "shadow-[inset_4px_0_0_0_var(--moved)]";
@@ -10,10 +11,27 @@ export function rowEdgeClass(batch: { semester: string }, cancelled: boolean, mo
 }
 
 // LAB is filled in the batch's band colour; THEORY is outlined. Shared between
-// the table view and the time rail so both read consistently.
-export function TypePill({ type, batch }: { type: string; batch: { semester: string } }) {
+// the table view and the time rail so both read consistently. `onBar` switches
+// to a translucent-white treatment for when the pill sits on an already
+// solid-coloured bar (band-colour-on-band-colour would be unreadable).
+export function TypePill({ type, batch, onBar = false }: { type: string; batch: { semester: string }; onBar?: boolean }) {
   const isLab = type === "LAB";
   const band = bandForBatch(batch);
+
+  if (onBar) {
+    return (
+      <span
+        className={
+          isLab
+            ? "inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-white/25 text-white print:bg-transparent print:border print:border-foreground print:text-foreground"
+            : "inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold border border-white/60 text-white print:border-foreground print:text-foreground"
+        }
+      >
+        {isLab ? "LAB" : "THEORY"}
+      </span>
+    );
+  }
+
   return (
     <span
       className={
@@ -43,16 +61,36 @@ export function MovedNote({ movedTo }: { movedTo: FilterableSession["movedTo"] }
   );
 }
 
+// The stored section value is already like "Sec 2" — only prefix "Sec" once,
+// never double it into "Sec Sec 2".
+export function formatSection(section: string | null | undefined): string | null {
+  if (!section) return null;
+  const trimmed = section.trim();
+  if (!trimmed) return null;
+  return /^sec\b/i.test(trimmed) ? trimmed : `Sec ${trimmed}`;
+}
+
 /** Outlined band-coloured pill for a batch, e.g. "23rd / 8th" or "26th / 5th · Sec 2". */
 export function BatchPill({ batch, section }: { batch: { name: string; semester: string }; section?: string | null }) {
   const band = bandForBatch(batch);
+  const sectionLabel = formatSection(section);
   return (
     <span
       className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold border font-data print:border-foreground print:text-foreground"
       style={{ borderColor: bandVar(band), color: bandVar(band) }}
     >
       {batch.name} / {batch.semester}
-      {section ? ` · Sec ${section}` : ""}
+      {sectionLabel ? ` · ${sectionLabel}` : ""}
     </span>
   );
+}
+
+// Course titles are often equal to the code in this data set (no separate
+// title was ever provided). Only show a title line when it adds information.
+export function courseTitleIfDifferent(course: { code: string; title: string }): string | null {
+  const title = course.title?.trim();
+  const code = course.code?.trim();
+  if (!title) return null;
+  if (title.toLowerCase() === (code ?? "").toLowerCase()) return null;
+  return title;
 }

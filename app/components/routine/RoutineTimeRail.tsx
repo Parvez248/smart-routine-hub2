@@ -1,48 +1,50 @@
 "use client";
 
-import { Fragment, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { StatusBadge } from "@/app/components/ui/StatusBadge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TypePill, BatchPill, MovedNote, rowEdgeClass } from "./RowBadges";
+import { bandForBatch, bandVar } from "@/lib/ui/bandColors";
+import { TypePill, BatchPill, MovedNote, courseTitleIfDifferent } from "./RowBadges";
 import type { FilterableSession } from "./types";
 
 const DAY_ORDER = ["Sat", "Sun", "Mon", "Tues", "Wed"];
 const DAY_NAME: Record<string, string> = { Sat: "Saturday", Sun: "Sunday", Mon: "Monday", Tues: "Tuesday", Wed: "Wednesday" };
 
-function Row<T extends FilterableSession>({ session: s, renderActions }: { session: T; renderActions?: (s: T) => React.ReactNode }) {
+// A full-width, solidly-filled bar in the batch's band colour (status colour
+// overrides band colour when cancelled/moved) with white text — the page's
+// signature element. `.on-band` neutralises the fill/text for print, where
+// bars must stay black-and-white with the same [Cancelled]/[Moved → …] labels.
+function Bar<T extends FilterableSession>({ session: s, renderActions }: { session: T; renderActions?: (s: T) => React.ReactNode }) {
   const cancelled = s.status === "CANCELLED";
   const moved = !cancelled && Boolean(s.movedTo);
-  const isLab = s.course.type === "LAB";
+  const band = bandForBatch(s.batch);
+  const fill = cancelled ? "var(--bar-cancelled)" : moved ? "var(--bar-moved)" : bandVar(band);
+  const title = courseTitleIfDifferent(s.course);
 
   return (
     <div
-      className={`group bg-card border border-border rounded-md px-3.5 ${isLab ? "py-4" : "py-2.5"} ${rowEdgeClass(s.batch, cancelled, moved)} ${
-        cancelled ? "opacity-70" : ""
-      }`}
+      className="on-band rounded-lg px-4 py-2.5 flex items-start justify-between gap-3 print:border print:border-foreground"
+      style={{ backgroundColor: fill }}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className={`font-semibold font-data text-sm ${cancelled ? "text-muted-foreground line-through" : "text-foreground"}`}>
-              {s.course.code}
-            </span>
-            <TypePill type={s.course.type} batch={s.batch} />
-            {cancelled && <StatusBadge status="Cancelled" />}
-            {moved && <StatusBadge status="Moved" />}
-          </div>
-          <p className="text-xs text-slate truncate mt-0.5" title={s.course.title}>{s.course.title}</p>
-          <p className="text-xs text-muted-foreground mt-1 font-data">
-            {s.teacher.initials} · Room {s.room.name}
-          </p>
-          {moved && <MovedNote movedTo={s.movedTo} />}
-          <div className="mt-1.5">
-            <BatchPill batch={s.batch} section={s.section} />
-          </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-white text-sm">
+          <span className="font-data tabular font-semibold whitespace-nowrap">{s.timeSlot.label}</span>
+          <span className="text-white/60">·</span>
+          <span className={`font-data font-bold ${cancelled ? "line-through" : ""}`}>{s.course.code}</span>
+          <span className="text-white/60">·</span>
+          <span className="font-data">{s.teacher.initials}</span>
+          <span className="text-white/60">·</span>
+          <span className="font-data">Room {s.room.name}</span>
+          <TypePill type={s.course.type} batch={s.batch} onBar />
+          {cancelled && <StatusBadge status="Cancelled" />}
+          {moved && <StatusBadge status="Moved" />}
         </div>
-        {renderActions && <div className="print:hidden shrink-0">{renderActions(s)}</div>}
+        {title && <p className="text-xs text-white/80 mt-0.5 truncate">{title}</p>}
+        {moved && <MovedNote movedTo={s.movedTo} />}
       </div>
+      {renderActions && <div className="print:hidden shrink-0">{renderActions(s)}</div>}
     </div>
   );
 }
@@ -122,16 +124,23 @@ export function RoutineTimeRail<T extends FilterableSession>({
   return (
     <div className="space-y-4 p-4">
       {days.map((day) => {
-        const daySessions = [...(byDay.get(day) ?? [])].sort((a, b) => a.timeSlot.sortOrder - b.timeSlot.sortOrder);
+        const daySessions = [...(byDay.get(day) ?? [])];
         const collapsed = collapsedDays.has(day);
 
-        const bySlot = new Map<string, { label: string; sortOrder: number; sessions: T[] }>();
+        // Group by batch (+ section) within the day — a batch chip, then that
+        // batch's bars sorted by time slot, sitting on a white card.
+        const byBatch = new Map<string, { batch: T["batch"]; section: T["section"]; sortKey: number; sessions: T[] }>();
         for (const s of daySessions) {
-          const key = s.timeSlot.label;
-          if (!bySlot.has(key)) bySlot.set(key, { label: s.timeSlot.label, sortOrder: s.timeSlot.sortOrder, sessions: [] });
-          bySlot.get(key)!.sessions.push(s);
+          const key = `${s.batch.name}|${s.batch.semester}|${s.section ?? ""}`;
+          if (!byBatch.has(key)) {
+            const n = parseInt(s.batch.semester.match(/\d+/)?.[0] ?? "0", 10);
+            byBatch.set(key, { batch: s.batch, section: s.section, sortKey: n, sessions: [] });
+          }
+          byBatch.get(key)!.sessions.push(s);
         }
-        const slots = [...bySlot.values()].sort((a, b) => a.sortOrder - b.sortOrder);
+        const batchGroups = [...byBatch.values()]
+          .map((g) => ({ ...g, sessions: g.sessions.sort((a, b) => a.timeSlot.sortOrder - b.timeSlot.sortOrder) }))
+          .sort((a, b) => b.sortKey - a.sortKey || a.batch.name.localeCompare(b.batch.name));
 
         return (
           <div key={day} className="glass rounded-lg overflow-hidden">
@@ -154,21 +163,17 @@ export function RoutineTimeRail<T extends FilterableSession>({
             </button>
 
             {!collapsed && (
-              <div className="border-t border-border px-5 py-4">
-                <div className="grid grid-cols-[56px_1fr] gap-x-3">
-                  {slots.map((slot) => (
-                    <Fragment key={slot.label}>
-                      <div className="text-right pt-2.5">
-                        <span className="text-[11px] font-data tabular text-muted-foreground whitespace-nowrap">{slot.label}</span>
-                      </div>
-                      <div className="border-l border-border pl-4 py-2 space-y-2">
-                        {slot.sessions.map((s) => (
-                          <Row key={s.id} session={s} renderActions={renderActions} />
-                        ))}
-                      </div>
-                    </Fragment>
-                  ))}
-                </div>
+              <div className="border-t border-border px-5 py-4 space-y-4">
+                {batchGroups.map((group, i) => (
+                  <div key={i}>
+                    <BatchPill batch={group.batch} section={group.section} />
+                    <div className="mt-2 bg-card border border-border rounded-lg p-3 space-y-2">
+                      {group.sessions.map((s) => (
+                        <Bar key={s.id} session={s} renderActions={renderActions} />
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
