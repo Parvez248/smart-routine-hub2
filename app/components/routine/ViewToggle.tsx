@@ -1,12 +1,23 @@
 "use client";
 
-import { Rows3, Table2 } from "lucide-react";
+import { LayoutGrid, Rows3, Table2 } from "lucide-react";
 
-export type RoutineView = "rail" | "table";
+export type RoutineView = "grid" | "rail" | "table";
 
 export function ViewToggle({ value, onChange }: { value: RoutineView; onChange: (v: RoutineView) => void }) {
   return (
     <div className="print:hidden inline-flex items-center rounded-md border border-border p-0.5 bg-muted/40">
+      <button
+        type="button"
+        onClick={() => onChange("grid")}
+        aria-pressed={value === "grid"}
+        className={`hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-semibold transition-colors ${
+          value === "grid" ? "bg-card text-foreground" : "text-muted-foreground hover:text-foreground"
+        }`}
+      >
+        <LayoutGrid className="size-3.5" aria-hidden="true" />
+        Grid
+      </button>
       <button
         type="button"
         onClick={() => onChange("rail")}
@@ -16,7 +27,7 @@ export function ViewToggle({ value, onChange }: { value: RoutineView; onChange: 
         }`}
       >
         <Rows3 className="size-3.5" aria-hidden="true" />
-        Time Rail
+        List
       </button>
       <button
         type="button"

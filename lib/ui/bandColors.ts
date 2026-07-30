@@ -45,9 +45,9 @@ export function bandTextVar(band: Band): string {
   return `var(${BAND_TEXT_VAR[band]})`;
 }
 
-/** A ~8%-over-surface tint of the band, for quiet backgrounds (e.g. outlined pill hover). */
-export function bandTint(band: Band): string {
-  return `color-mix(in srgb, ${bandVar(band)} 8%, var(--surface))`;
+/** A faint over-surface tint of the band, for quiet backgrounds (e.g. outlined pill hover, empty grid cells). */
+export function bandTint(band: Band, percent = 8): string {
+  return `color-mix(in srgb, ${bandVar(band)} ${percent}%, var(--surface))`;
 }
 
 /** Tailwind arbitrary-value class for a 4px left-edge/spine border in the band's colour. */

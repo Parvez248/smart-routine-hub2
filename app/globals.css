@@ -351,6 +351,23 @@
     box-shadow: none !important;
     border-color: #e2e6eb !important;
   }
+
+  /* Desktop timetable grid (Step 30) — drop the scroll container and sticky
+     Day/Year columns so the table simply flows across pages, header row
+     repeating via the generic thead rule above; empty cells lose their band
+     tint (band fills never print, per the rule above). */
+  .grid-scroll-area {
+    overflow: visible !important;
+    max-height: none !important;
+  }
+
+  .grid-sticky {
+    position: static !important;
+  }
+
+  .grid-empty-cell {
+    background-color: #ffffff !important;
+  }
 }
 
 .print-header {

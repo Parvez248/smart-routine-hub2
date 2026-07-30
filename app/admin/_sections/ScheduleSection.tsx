@@ -8,9 +8,11 @@ import { Message } from "@/app/components/ui/Message";
 import { useRoutineFilters } from "@/app/components/routine/useRoutineFilters";
 import { RoutineList } from "@/app/components/routine/RoutineList";
 import { RoutineTimeRail } from "@/app/components/routine/RoutineTimeRail";
+import { RoutineGrid } from "@/app/components/routine/RoutineGrid";
 import { RoutineMasthead } from "@/app/components/routine/RoutineMasthead";
 import { FilterCard } from "@/app/components/routine/FilterCard";
 import { ViewToggle, type RoutineView } from "@/app/components/routine/ViewToggle";
+import { useIsDesktop } from "@/app/components/routine/useIsDesktop";
 
 type Course   = { id: number; code: string; title: string; type: string };
 type Teacher  = { id: number; initials: string; name: string };
@@ -93,7 +95,9 @@ export default function ScheduleSection() {
 
   const [versions, setVersions] = useState<Version[]>([]);
   const [selectedVersionId, setSelectedVersionId] = useState<string>("");
-  const [view, setView] = useState<RoutineView>("rail");
+  const [view, setView] = useState<RoutineView>("grid");
+  const isDesktop = useIsDesktop();
+  const effectiveView: RoutineView = view === "table" ? "table" : isDesktop ? view : "rail";
 
   async function loadRef() {
     const res = await fetch("/api/reference");
@@ -476,7 +480,9 @@ export default function ScheduleSection() {
           );
         };
 
-        return view === "rail" ? (
+        return effectiveView === "grid" ? (
+          <RoutineGrid sessions={filtered} loading={sessionsLoading} onClearFilters={clearAll} />
+        ) : effectiveView === "rail" ? (
           <RoutineTimeRail sessions={filtered} loading={sessionsLoading} onClearFilters={clearAll} renderActions={renderActions} />
         ) : (
           <div className="bg-card border border-border rounded-lg overflow-hidden">

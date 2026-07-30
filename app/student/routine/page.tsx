@@ -8,9 +8,11 @@ import { nextOccurrenceOf } from "@/lib/services/timeslot";
 import { useRoutineFilters } from "@/app/components/routine/useRoutineFilters";
 import { RoutineList } from "@/app/components/routine/RoutineList";
 import { RoutineTimeRail } from "@/app/components/routine/RoutineTimeRail";
+import { RoutineGrid } from "@/app/components/routine/RoutineGrid";
 import { RoutineMasthead } from "@/app/components/routine/RoutineMasthead";
 import { FilterCard } from "@/app/components/routine/FilterCard";
 import { ViewToggle, type RoutineView } from "@/app/components/routine/ViewToggle";
+import { useIsDesktop } from "@/app/components/routine/useIsDesktop";
 import type { FilterableSession } from "@/app/components/routine/types";
 
 type SessionCell = {
@@ -108,7 +110,9 @@ function StudentRoutineInner() {
   const [versionName, setVersionName] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoadingState] = useState(true);
-  const [view, setView] = useState<RoutineView>("rail");
+  const [view, setView] = useState<RoutineView>("grid");
+  const isDesktop = useIsDesktop();
+  const effectiveView: RoutineView = view === "table" ? "table" : isDesktop ? view : "rail";
 
   const [batches, setBatches] = useState<Batch[]>([]);
   const [selectedBatchId, setSelectedBatchId] = useState<string>("");
@@ -298,7 +302,9 @@ function StudentRoutineInner() {
         <div className="glass rounded-lg overflow-hidden">
           <EmptyState icon="🗓️" message={message} />
         </div>
-      ) : view === "rail" ? (
+      ) : effectiveView === "grid" ? (
+        <RoutineGrid sessions={filtered} loading={loading} onClearFilters={clearAll} />
+      ) : effectiveView === "rail" ? (
         <RoutineTimeRail sessions={filtered} loading={loading} onClearFilters={clearAll} renderActions={renderActions} />
       ) : (
         <div className="bg-card border border-border rounded-lg overflow-hidden">

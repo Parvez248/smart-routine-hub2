@@ -5,9 +5,11 @@ import { Loading } from "@/app/components/ui/Loading";
 import { useRoutineFilters } from "@/app/components/routine/useRoutineFilters";
 import { RoutineList } from "@/app/components/routine/RoutineList";
 import { RoutineTimeRail } from "@/app/components/routine/RoutineTimeRail";
+import { RoutineGrid } from "@/app/components/routine/RoutineGrid";
 import { RoutineMasthead } from "@/app/components/routine/RoutineMasthead";
 import { FilterCard } from "@/app/components/routine/FilterCard";
 import { ViewToggle, type RoutineView } from "@/app/components/routine/ViewToggle";
+import { useIsDesktop } from "@/app/components/routine/useIsDesktop";
 import type { FilterableSession } from "@/app/components/routine/types";
 
 type RoutineSession = FilterableSession & { id: number };
@@ -15,7 +17,9 @@ type RoutineSession = FilterableSession & { id: number };
 function TeacherRoutineInner() {
   const [sessions, setSessions] = useState<RoutineSession[]>([]);
   const [loading, setLoadingState] = useState(true);
-  const [view, setView] = useState<RoutineView>("rail");
+  const [view, setView] = useState<RoutineView>("grid");
+  const isDesktop = useIsDesktop();
+  const effectiveView: RoutineView = view === "table" ? "table" : isDesktop ? view : "rail";
 
   useEffect(() => {
     document.title = "Full Routine · Routine Management System";
@@ -44,7 +48,9 @@ function TeacherRoutineInner() {
         <ViewToggle value={view} onChange={setView} />
       </div>
 
-      {view === "rail" ? (
+      {effectiveView === "grid" ? (
+        <RoutineGrid sessions={filtered} loading={loading} onClearFilters={clearAll} />
+      ) : effectiveView === "rail" ? (
         <RoutineTimeRail sessions={filtered} loading={loading} onClearFilters={clearAll} />
       ) : (
         <div className="bg-card border border-border rounded-lg overflow-hidden">
