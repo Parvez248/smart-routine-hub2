@@ -6,6 +6,7 @@ import { AppHeaderBand } from "@/app/components/AppHeaderBand";
 import TeacherMobileNav from "./TeacherMobileNav";
 
 const LINKS = [
+  { href: "/teacher/dashboard", label: "Dashboard" },
   { href: "/teacher/classes", label: "My Classes" },
   { href: "/teacher/routine", label: "Full Routine" },
   { href: "/teacher/rescheduled", label: "Rescheduled Classes" },

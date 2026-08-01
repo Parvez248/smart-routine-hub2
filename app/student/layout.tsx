@@ -7,6 +7,7 @@ import { AppHeaderBand } from "@/app/components/AppHeaderBand";
 import StudentMobileNav from "./StudentMobileNav";
 
 const LINKS = [
+  { href: "/student/dashboard", label: "Dashboard" },
   { href: "/student/routine", label: "My Routine" },
   { href: "/student/rescheduled", label: "Rescheduled Classes" },
   { href: "/student/notices", label: "Notices" },

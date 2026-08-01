@@ -1,6 +1,6 @@
 "use client";
 
-import { GraduationCap, CalendarDays, Inbox, Bell, RefreshCw, DoorOpen, KeyRound } from "lucide-react";
+import { LayoutDashboard, GraduationCap, CalendarDays, Inbox, Bell, RefreshCw, DoorOpen, KeyRound } from "lucide-react";
 import { MobileBottomNav } from "@/app/components/MobileBottomNav";
 
 const ITEMS = [
@@ -11,6 +11,7 @@ const ITEMS = [
 ];
 
 const MORE = [
+  { href: "/teacher/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/teacher/rescheduled", label: "Rescheduled Classes", icon: RefreshCw },
   { href: "/teacher/free-rooms", label: "Free Rooms", icon: DoorOpen },
   { href: "/teacher/change-password", label: "Change Password", icon: KeyRound },
