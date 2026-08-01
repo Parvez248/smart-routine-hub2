@@ -1,22 +1,27 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { CalendarClock, DoorOpen } from "lucide-react";
 import { PageHeader } from "@/app/components/ui/PageHeader";
 import { Button, LinkButton } from "@/app/components/ui/Button";
 import { Message } from "@/app/components/ui/Message";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { Loading } from "@/app/components/ui/Loading";
 import { StatusBadge } from "@/app/components/ui/StatusBadge";
-import { TypePill } from "@/app/components/routine/RowBadges";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { TypePill, courseTitleIfDifferent } from "@/app/components/routine/RowBadges";
 import { bandEdgeClass, bandForBatch } from "@/lib/ui/bandColors";
 import { nextOccurrences, formatDateOnly, isClassDay, isOnOrAfterToday, parseDateOnly, today } from "@/lib/services/dates";
+
+const DAY_ORDER = ["Sat", "Sun", "Mon", "Tues", "Wed"];
+const DAY_NAME: Record<string, string> = { Sat: "Saturday", Sun: "Sunday", Mon: "Monday", Tues: "Tuesday", Wed: "Wednesday" };
 
 type ClassSession = {
   id: number;
   day: string;
   section: string | null;
   status: string;
-  course: { id: number; code: string; type: string };
+  course: { id: number; code: string; title: string; type: string };
   room: { id: number; name: string; capacity: number };
   batch: { id: number; name: string; semester: string; studentCount: number };
   timeSlot: { id: number; label: string; sortOrder: number };
@@ -52,7 +57,6 @@ export default function TeacherClassesPage() {
   const [ref, setRef] = useState<RefData | null>(null);
   const [pendingSessionIds, setPendingSessionIds] = useState<Set<number>>(new Set());
 
-  const [reschedulingId, setReschedulingId] = useState<number | null>(null);
   const [reschedulingClass, setReschedulingClass] = useState<ClassSession | null>(null);
   const [occurrences, setOccurrences] = useState<Date[]>([]);
   const [form, setForm] = useState<RescheduleForm>(emptyForm);
@@ -87,7 +91,6 @@ export default function TeacherClassesPage() {
   useEffect(() => { loadClasses(); loadRef(); loadPendingRequests(); }, []);
 
   function startReschedule(c: ClassSession) {
-    setReschedulingId(c.id);
     setReschedulingClass(c);
     const occ = nextOccurrences(c.day, OCCURRENCE_COUNT);
     setOccurrences(occ);
@@ -104,7 +107,6 @@ export default function TeacherClassesPage() {
   }
 
   function cancelReschedule() {
-    setReschedulingId(null);
     setReschedulingClass(null);
     setForm(emptyForm);
     setFreeRooms(null);
@@ -155,7 +157,7 @@ export default function TeacherClassesPage() {
 
   async function handleReschedule(e: React.FormEvent) {
     e.preventDefault();
-    if (!reschedulingId) return;
+    if (!reschedulingClass) return;
     setSubmitting(true);
     setStatus(null);
     try {
@@ -163,7 +165,7 @@ export default function TeacherClassesPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          sessionId: reschedulingId,
+          sessionId: reschedulingClass.id,
           originalDate: form.originalDate,
           newDate: form.newDate,
           newTimeSlotId: Number(form.newTimeSlotId),
@@ -189,11 +191,18 @@ export default function TeacherClassesPage() {
   const minDate = formatDateOnly(today());
   const batchStudentCount = reschedulingClass?.batch.studentCount ?? 0;
 
+  const byDay = new Map<string, ClassSession[]>();
+  for (const c of classes) {
+    if (!byDay.has(c.day)) byDay.set(c.day, []);
+    byDay.get(c.day)!.push(c);
+  }
+  const days = DAY_ORDER.filter((d) => (byDay.get(d) ?? []).length > 0);
+
   return (
     <>
       <PageHeader
         title="My Classes"
-        description="Classes from the published routine. Reschedule requests need admin approval before the class moves."
+        description="Your classes in the published routine. Reschedule requests need admin approval before the class moves."
         action={
           <span className="text-xs bg-primary/10 text-primary font-semibold px-3 py-1 rounded-full font-data">
             {classes.length} classes
@@ -206,175 +215,197 @@ export default function TeacherClassesPage() {
       {loading ? (
         <Loading />
       ) : classes.length === 0 ? (
-        <EmptyState icon="📅" message="No classes assigned to you in the published routine." />
+        <EmptyState icon="📅" message="You have no classes yet." />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {classes.map((c) => {
-            if (reschedulingId === c.id) {
-              return (
-                <div key={c.id} className="sm:col-span-2 lg:col-span-3 bg-card border border-border rounded-lg overflow-hidden">
-                  <div className="px-5 py-3 border-b border-border bg-primary/5">
-                    <h3 className="font-heading text-sm font-semibold text-foreground">
-                      Reschedule {c.course.code} · {c.day}, {c.timeSlot.label}
-                    </h3>
-                  </div>
-                  <form onSubmit={handleReschedule} className="p-5 space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
-                      <div className="flex flex-col gap-1">
-                        <label htmlFor="reschedule-original-date" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                          Which class date?
-                        </label>
-                        <select
-                          id="reschedule-original-date"
-                          required
-                          value={form.originalDate}
-                          onChange={(e) => setForm((f) => ({ ...f, originalDate: e.target.value }))}
-                          className="border border-border bg-surface rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                        >
-                          {occurrences.map((d) => (
-                            <option key={formatDateOnly(d)} value={formatDateOnly(d)}>
-                              {formatOccurrence(d)}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div className="flex flex-col gap-1">
-                        <label htmlFor="reschedule-new-date" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">New Date</label>
-                        <input
-                          id="reschedule-new-date"
-                          type="date"
-                          required
-                          min={minDate}
-                          value={form.newDate}
-                          onChange={(e) => handleNewDateChange(e.target.value)}
-                          className="border border-border bg-surface rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                        />
-                      </div>
-
-                      <div className="flex flex-col gap-1">
-                        <label htmlFor="reschedule-new-slot" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">New Time Slot</label>
-                        <select
-                          id="reschedule-new-slot"
-                          required
-                          value={form.newTimeSlotId}
-                          onChange={(e) => handleNewTimeSlotChange(e.target.value)}
-                          className="border border-border bg-surface rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                        >
-                          <option value="">Select slot</option>
-                          {ref?.timeSlots.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
-                        </select>
-                      </div>
-
-                      <div className="flex flex-col gap-1">
-                        <label htmlFor="reschedule-reason" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                          Reason <span className="text-muted-foreground/60 normal-case font-normal">(optional)</span>
-                        </label>
-                        <input
-                          id="reschedule-reason"
-                          type="text"
-                          value={form.reason}
-                          onChange={(e) => setForm((f) => ({ ...f, reason: e.target.value }))}
-                          placeholder="e.g. Conflict with seminar"
-                          className="border border-border bg-surface rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                        />
-                      </div>
-                    </div>
-
-                    {dateError && <Message type="error">{dateError}</Message>}
-
-                    <div>
-                      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                        Free rooms for that date &amp; slot
-                      </label>
-                      <div className="mt-2">
-                        {!form.newDate || !form.newTimeSlotId || dateError ? (
-                          <p className="text-xs text-slate">Pick a new date and time slot to see free rooms.</p>
-                        ) : freeRoomsLoading ? (
-                          <p className="text-xs text-slate">Searching…</p>
-                        ) : freeRooms && freeRooms.length === 0 ? (
-                          <p className="text-xs text-cancelled">No rooms are free at this date &amp; time.</p>
-                        ) : (
-                          <div className="flex flex-wrap gap-2">
-                            {freeRooms?.map((r) => {
-                              const tooSmall = r.capacity < batchStudentCount;
-                              const selected = form.newRoomId === String(r.id);
-                              return (
-                                <button
-                                  type="button"
-                                  key={r.id}
-                                  disabled={tooSmall}
-                                  onClick={() => setForm((f) => ({ ...f, newRoomId: String(r.id) }))}
-                                  className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${
-                                    tooSmall
-                                      ? "border-border bg-muted text-muted-foreground/60 cursor-not-allowed"
-                                      : selected
-                                      ? "border-primary bg-primary text-primary-foreground"
-                                      : "border-confirmed/20 bg-confirmed/10 text-confirmed hover:bg-confirmed/15"
-                                  }`}
-                                  title={tooSmall ? `Too small for batch (${batchStudentCount} students)` : undefined}
-                                >
-                                  Room {r.name} (cap {r.capacity})
-                                </button>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex justify-end gap-4">
-                      <LinkButton type="button" tone="neutral" onClick={cancelReschedule}>
-                        Cancel
-                      </LinkButton>
-                      <Button type="submit" loading={submitting} disabled={!form.newRoomId}>
-                        {submitting ? "Saving…" : "Confirm Reschedule"}
-                      </Button>
-                    </div>
-                  </form>
-                </div>
-              );
-            }
-
-            const cancelled = c.status === "CANCELLED";
-            const band = bandForBatch(c.batch);
-
+        <div className="space-y-8">
+          {days.map((day) => {
+            const dayClasses = (byDay.get(day) ?? []).sort((a, b) => a.timeSlot.sortOrder - b.timeSlot.sortOrder);
             return (
-              <div
-                key={c.id}
-                className={`bg-card border border-border rounded-lg overflow-hidden ${bandEdgeClass(band)} ${cancelled ? "opacity-60" : ""}`}
-              >
-                <div className="p-4">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className={`font-semibold text-base ${cancelled ? "text-muted-foreground line-through" : "text-foreground"}`}>
-                      {c.course.code}
-                    </span>
-                    <TypePill type={c.course.type} batch={c.batch} />
-                  </div>
+              <div key={day}>
+                <div className="flex items-center gap-2 mb-3">
+                  <h2 className="font-heading text-base font-semibold text-foreground">{DAY_NAME[day] ?? day}</h2>
+                  <span className="text-[11px] font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded-full font-data">
+                    {dayClasses.length}
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {dayClasses.map((c) => {
+                    const cancelled = c.status === "CANCELLED";
+                    const band = bandForBatch(c.batch);
+                    const title = courseTitleIfDifferent(c.course);
 
-                  <dl className="grid grid-cols-2 gap-x-3 gap-y-2 mt-3 text-xs">
-                    <DetailItem label="Day" value={c.day} />
-                    <DetailItem label="Time" value={c.timeSlot.label} />
-                    <DetailItem label="Room" value={c.room.name} />
-                    <DetailItem label="Batch" value={`${c.batch.name}${c.section ? ` · ${c.section}` : ""}`} />
-                  </dl>
+                    return (
+                      <div
+                        key={c.id}
+                        className={`bg-card border border-border rounded-lg overflow-hidden ${bandEdgeClass(band)} ${cancelled ? "opacity-60" : ""}`}
+                      >
+                        <div className="p-4">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className={`font-semibold text-base ${cancelled ? "text-muted-foreground line-through" : "text-foreground"}`}>
+                              {c.course.code}
+                            </span>
+                            <TypePill type={c.course.type} batch={c.batch} />
+                          </div>
+                          {title && <p className="text-xs text-slate mt-0.5 truncate">{title}</p>}
 
-                  <div className="mt-3.5 flex items-center justify-between gap-2">
-                    <StatusBadge status={cancelled ? "Cancelled" : "Active"} />
-                    {pendingSessionIds.has(c.id) ? (
-                      <span className="text-xs font-semibold text-pending">Pending approval</span>
-                    ) : (
-                      <LinkButton tone="primary" onClick={() => startReschedule(c)}>
-                        Reschedule
-                      </LinkButton>
-                    )}
-                  </div>
+                          <dl className="grid grid-cols-2 gap-x-3 gap-y-2 mt-3 text-xs">
+                            <DetailItem label="Time" value={c.timeSlot.label} />
+                            <DetailItem label="Room" value={c.room.name} />
+                            <DetailItem label="Batch" value={`${c.batch.name}${c.section ? ` · ${c.section}` : ""}`} />
+                          </dl>
+
+                          <div className="mt-3.5 flex items-center justify-between gap-2">
+                            <StatusBadge status={cancelled ? "Cancelled" : "Active"} />
+                            {pendingSessionIds.has(c.id) ? (
+                              <span className="text-xs font-semibold text-pending">Pending approval</span>
+                            ) : (
+                              <LinkButton tone="primary" onClick={() => startReschedule(c)}>
+                                Reschedule
+                              </LinkButton>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             );
           })}
         </div>
       )}
+
+      <Dialog open={Boolean(reschedulingClass)} onOpenChange={(open) => { if (!open) cancelReschedule(); }}>
+        <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CalendarClock className="size-4 text-primary" aria-hidden="true" />
+              Reschedule {reschedulingClass?.course.code} · {reschedulingClass?.day}, {reschedulingClass?.timeSlot.label}
+            </DialogTitle>
+            <DialogDescription>
+              Pick a new date and time slot. The admin must approve this before the class actually moves.
+            </DialogDescription>
+          </DialogHeader>
+
+          {reschedulingClass && (
+            <form onSubmit={handleReschedule} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="reschedule-original-date" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                    Which class date?
+                  </label>
+                  <select
+                    id="reschedule-original-date"
+                    required
+                    value={form.originalDate}
+                    onChange={(e) => setForm((f) => ({ ...f, originalDate: e.target.value }))}
+                    className="border border-border bg-surface rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  >
+                    {occurrences.map((d) => (
+                      <option key={formatDateOnly(d)} value={formatDateOnly(d)}>
+                        {formatOccurrence(d)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="reschedule-new-date" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">New Date</label>
+                  <input
+                    id="reschedule-new-date"
+                    type="date"
+                    required
+                    min={minDate}
+                    value={form.newDate}
+                    onChange={(e) => handleNewDateChange(e.target.value)}
+                    className="border border-border bg-surface rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="reschedule-new-slot" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">New Time Slot</label>
+                  <select
+                    id="reschedule-new-slot"
+                    required
+                    value={form.newTimeSlotId}
+                    onChange={(e) => handleNewTimeSlotChange(e.target.value)}
+                    className="border border-border bg-surface rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  >
+                    <option value="">Select slot</option>
+                    {ref?.timeSlots.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="reschedule-reason" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                    Reason <span className="text-muted-foreground/60 normal-case font-normal">(optional)</span>
+                  </label>
+                  <input
+                    id="reschedule-reason"
+                    type="text"
+                    value={form.reason}
+                    onChange={(e) => setForm((f) => ({ ...f, reason: e.target.value }))}
+                    placeholder="e.g. Conflict with seminar"
+                    className="border border-border bg-surface rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </div>
+              </div>
+
+              {dateError && <Message type="error">{dateError}</Message>}
+
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  Free rooms for that date &amp; slot
+                </label>
+                <div className="mt-2">
+                  {!form.newDate || !form.newTimeSlotId || dateError ? (
+                    <p className="text-xs text-slate">Pick a new date and time slot to see free rooms.</p>
+                  ) : freeRoomsLoading ? (
+                    <p className="text-xs text-slate">Searching…</p>
+                  ) : freeRooms && freeRooms.length === 0 ? (
+                    <p className="text-xs text-cancelled">No rooms are free at this date &amp; time.</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {freeRooms?.map((r) => {
+                        const tooSmall = r.capacity < batchStudentCount;
+                        const selected = form.newRoomId === String(r.id);
+                        return (
+                          <button
+                            type="button"
+                            key={r.id}
+                            disabled={tooSmall}
+                            onClick={() => setForm((f) => ({ ...f, newRoomId: String(r.id) }))}
+                            className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${
+                              tooSmall
+                                ? "border-border bg-muted text-muted-foreground/60 cursor-not-allowed"
+                                : selected
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "border-confirmed/20 bg-confirmed/10 text-confirmed hover:bg-confirmed/15"
+                            }`}
+                            title={tooSmall ? `Too small for batch (${batchStudentCount} students)` : undefined}
+                          >
+                            <DoorOpen className="size-3.5" aria-hidden="true" />
+                            Room {r.name} (cap {r.capacity})
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-4 pt-2">
+                <LinkButton type="button" tone="neutral" onClick={cancelReschedule}>
+                  Cancel
+                </LinkButton>
+                <Button type="submit" loading={submitting} disabled={!form.newRoomId}>
+                  {submitting ? "Saving…" : "Confirm Reschedule"}
+                </Button>
+              </div>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

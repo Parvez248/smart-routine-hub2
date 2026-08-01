@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { PageHeader } from "@/app/components/ui/PageHeader";
-import { Card, CardHeader } from "@/app/components/ui/Card";
 import { EmptyState } from "@/app/components/ui/EmptyState";
-import { Loading } from "@/app/components/ui/Loading";
+import { Skeleton } from "@/components/ui/skeleton";
+import { SectionCard } from "@/app/components/dashboard/SectionCard";
 
 type Notice = { id: number; title: string; body: string; audience: string; createdAt: string };
 
@@ -35,11 +35,11 @@ export default function TeacherNoticesPage() {
     <>
       <PageHeader title="Notices" description="Announcements from the department." />
 
-      <Card>
-        <CardHeader title={<>Notices <span className="ml-2 text-sm font-normal text-slate">{notices.length}</span></>} />
-
+      <SectionCard title={<>Notices <span className="ml-2 text-sm font-normal text-slate">{notices.length}</span></>}>
         {loading ? (
-          <Loading />
+          <div className="p-4 space-y-2">
+            {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}
+          </div>
         ) : notices.length === 0 ? (
           <EmptyState icon="📣" message="No notices yet." />
         ) : (
@@ -51,12 +51,12 @@ export default function TeacherNoticesPage() {
                   <AudienceBadge audience={n.audience} />
                 </div>
                 <p className="text-sm text-muted-foreground mt-1.5 whitespace-pre-wrap">{n.body}</p>
-                <p className="text-xs text-slate mt-2">{new Date(n.createdAt).toLocaleString()}</p>
+                <p className="text-xs text-slate mt-2 font-data tabular">{new Date(n.createdAt).toLocaleString()}</p>
               </div>
             ))}
           </div>
         )}
-      </Card>
+      </SectionCard>
     </>
   );
 }

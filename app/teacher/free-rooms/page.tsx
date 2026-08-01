@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { DoorOpen } from "lucide-react";
 import { PageHeader } from "@/app/components/ui/PageHeader";
 import { Card, CardHeader } from "@/app/components/ui/Card";
 import { Button } from "@/app/components/ui/Button";
+import { EmptyState } from "@/app/components/ui/EmptyState";
 import { formatDateOnly, today, parseDateOnly, isClassDay, isOnOrAfterToday } from "@/lib/services/dates";
 
 type Room = { id: number; name: string; capacity: number };
@@ -58,7 +60,7 @@ export default function TeacherFreeRoomsPage() {
 
   return (
     <>
-      <PageHeader title="Free Room Finder" description="Pick a date and time slot to see which rooms are available." />
+      <PageHeader title="Free Rooms" description="Pick a date and time slot to see which rooms are available." />
 
       <Card>
         <CardHeader title="Search" accent />
@@ -95,21 +97,28 @@ export default function TeacherFreeRoomsPage() {
 
         {error && <p className="px-6 pb-4 text-sm text-cancelled">{error}</p>}
 
-        {rooms && (
-          <div className="px-6 pb-6">
-            {rooms.length === 0 ? (
-              <p className="text-sm text-slate">No rooms are free at this date &amp; time.</p>
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {rooms.map((r) => (
-                  <span key={r.id} className="text-xs font-semibold font-data bg-confirmed/10 text-confirmed px-3 py-1.5 rounded-full">
-                    Room {r.name} (cap {r.capacity})
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+        <div className="px-6 pb-6">
+          {rooms === null ? (
+            <EmptyState icon="🔍" message="Pick a date and time slot to see free rooms." />
+          ) : rooms.length === 0 ? (
+            <EmptyState icon="🚪" message="No free rooms for this slot." />
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              {rooms.map((r) => (
+                <div
+                  key={r.id}
+                  className="flex items-center gap-2.5 bg-confirmed/5 border border-confirmed/20 rounded-lg px-3.5 py-2.5"
+                >
+                  <DoorOpen className="size-4 text-confirmed shrink-0" aria-hidden="true" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-foreground font-data truncate">Room {r.name}</p>
+                    <p className="text-xs text-muted-foreground font-data tabular">cap {r.capacity}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </Card>
     </>
   );

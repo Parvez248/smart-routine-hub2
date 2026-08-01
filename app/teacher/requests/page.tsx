@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/app/components/ui/PageHeader";
 import { Card, CardHeader } from "@/app/components/ui/Card";
 import { LinkButton } from "@/app/components/ui/Button";
@@ -78,6 +78,16 @@ export default function TeacherRequestsPage() {
     }
   }
 
+  // Presentation-only ordering: pending requests need attention first, then
+  // most-recently-created within each status — the fetch/API order is untouched.
+  const sorted = useMemo(() => {
+    return [...requests].sort((a, b) => {
+      if (a.status === "PENDING" && b.status !== "PENDING") return -1;
+      if (a.status !== "PENDING" && b.status === "PENDING") return 1;
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+  }, [requests]);
+
   return (
     <>
       <PageHeader title="My Requests" description="Your reschedule requests and their approval status." />
@@ -89,24 +99,25 @@ export default function TeacherRequestsPage() {
 
         {loading ? (
           <Loading />
-        ) : requests.length === 0 ? (
-          <EmptyState icon="🔄" message="You haven't submitted any reschedule requests yet." />
+        ) : sorted.length === 0 ? (
+          <EmptyState icon="🔄" message="You have not requested any reschedules." />
         ) : (
-          <Table headers={["Class", "From", "To", "Reason", "Status", "Admin Note", ""]}>
-            {requests.map((r) => (
+          <Table headers={["Class", "From", "To", "Reason", "Status", "Decided", "Admin Note", ""]}>
+            {sorted.map((r) => (
               <tr key={r.id} className="hover:bg-muted/40 transition-colors align-top">
                 <td className="px-5 py-3.5">
-                  <span className="font-semibold text-foreground">{r.course?.code}</span>
+                  <span className="font-semibold text-foreground font-data">{r.course?.code}</span>
                   <div className="text-xs text-slate">{r.batch?.name}{r.section ? ` (${r.section})` : ""}</div>
                 </td>
-                <td className="px-5 py-3.5 text-xs text-muted-foreground whitespace-nowrap">
+                <td className="px-5 py-3.5 text-xs text-muted-foreground font-data whitespace-nowrap">
                   {formatDate(r.originalDate) ?? r.oldDay} {r.oldTimeSlot?.label}<br />Room {r.oldRoom?.name}
                 </td>
-                <td className="px-5 py-3.5 text-xs text-foreground font-medium whitespace-nowrap">
+                <td className="px-5 py-3.5 text-xs text-foreground font-medium font-data whitespace-nowrap">
                   {formatDate(r.newDate) ?? r.newDay} {r.newTimeSlot?.label}<br />Room {r.newRoom?.name}
                 </td>
                 <td className="px-5 py-3.5 text-xs text-muted-foreground max-w-[160px]">{r.reason ?? "—"}</td>
                 <td className="px-5 py-3.5"><StatusBadge status={STATUS_LABEL[r.status] ?? "Pending"} /></td>
+                <td className="px-5 py-3.5 text-xs text-muted-foreground font-data whitespace-nowrap">{formatDate(r.reviewedAt) ?? "—"}</td>
                 <td className="px-5 py-3.5 text-xs text-muted-foreground max-w-[160px]">{r.adminNote ?? "—"}</td>
                 <td className="px-5 py-3.5 text-right whitespace-nowrap">
                   {r.status === "PENDING" && (
