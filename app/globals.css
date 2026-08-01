@@ -112,6 +112,12 @@
   --bar-cancelled: #be123c;
   --bar-moved: #b45309;
 
+  /* WelcomeBanner gradient (Step 35) — the one deliberate gradient in the app,
+     scoped to that single component. Not part of the "no gradients" band/status
+     system above. */
+  --banner-from: #2fa062;
+  --banner-to: #3fa9c9;
+
   --background: var(--canvas);
   --foreground: var(--ink);
   --card: var(--surface);
@@ -176,6 +182,10 @@
 
   --bar-cancelled: #be123c;
   --bar-moved: #b45309;
+
+  /* Same gradient, slightly dimmer so it doesn't glow against the dark canvas. */
+  --banner-from: #268052;
+  --banner-to: #358fa8;
 
   --background: var(--canvas);
   --foreground: var(--ink);

@@ -36,10 +36,11 @@ function ActionButton({ label, href, onClick, icon: Icon, tone = "translucent" }
   );
 }
 
-// The dashboard hero — a solid accent-colour card (no gradient; Step 26 settled
-// on flat colour, never revived), name + role/context line, and up to a few
-// action buttons. `.on-band` keeps it print-safe like every other coloured
-// surface in the app, even though this one isn't a routine "band".
+// The dashboard hero — green→cyan gradient (Step 35; the one deliberate
+// exception to the app's "no gradients" rule, scoped to this component only),
+// name + role/context line, and up to a few action buttons. `.on-band` keeps
+// it print-safe like every other coloured surface in the app, even though
+// this one isn't a routine "band".
 export function WelcomeBanner({
   name,
   subtitle,
@@ -52,7 +53,7 @@ export function WelcomeBanner({
   return (
     <div
       className="on-band print:hidden rounded-lg px-6 py-6 sm:py-7 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
-      style={{ backgroundColor: "var(--primary)" }}
+      style={{ background: "linear-gradient(135deg, var(--banner-from) 0%, var(--banner-to) 100%)" }}
     >
       <div className="min-w-0">
         <p className="text-white/75 text-xs font-semibold uppercase tracking-wide">Welcome back,</p>
