@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useMemo } from "react";
+import { Pencil, Trash2, Plus } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,7 +17,7 @@ const YEAR_COL_WIDTH = 168;
 const BREAK_COL_WIDTH = 28;
 const SLOT_COL_WIDTH = 132;
 
-type SlotColumn = { sortOrder: number; label: string };
+type SlotColumn<T> = { sortOrder: number; label: string; timeSlot: T };
 type Cell<T> = { session: T; span: 1 | 2 } | { session: T; span: 0 } | null;
 
 type Row<T> = {
@@ -25,6 +26,16 @@ type Row<T> = {
   section: string | null;
   sortKey: number;
   sessions: T[];
+};
+
+export type AddSessionContext<T extends FilterableSession> = {
+  day: string;
+  batch: T["batch"];
+  section: string | null;
+  // Present when the click came from one specific empty grid cell (that
+  // column's slot); absent from the rail's per-group "Add class" button,
+  // which isn't tied to any one slot — the admin picks it in the dialog.
+  timeSlot?: T["timeSlot"];
 };
 
 // A LAB class occupying two adjacent time slots is stored as two ordinary
@@ -48,7 +59,7 @@ function sameClass<T extends FilterableSession>(a: T, b: T): boolean {
   return true;
 }
 
-function buildCells<T extends FilterableSession>(sessions: T[], slots: SlotColumn[], breakAfterIndex: number): Cell<T>[] {
+function buildCells<T extends FilterableSession>(sessions: T[], slots: SlotColumn<T["timeSlot"]>[], breakAfterIndex: number): Cell<T>[] {
   const cells: Cell<T>[] = new Array(slots.length).fill(null);
   for (const s of sessions) {
     const idx = slots.findIndex((c) => c.sortOrder === s.timeSlot.sortOrder);
@@ -67,13 +78,38 @@ function buildCells<T extends FilterableSession>(sessions: T[], slots: SlotColum
   return cells;
 }
 
-function GridCell<T extends FilterableSession>({ cell, band, span }: { cell: Cell<T>; band: Band; span: number }) {
+function GridCell<T extends FilterableSession>({
+  cell, band, span, day, batch, section, column, editable, onEditSession, onDeleteSession, onAddSession,
+}: {
+  cell: Cell<T>;
+  band: Band;
+  span: number;
+  day: string;
+  batch: T["batch"];
+  section: string | null;
+  column: SlotColumn<T["timeSlot"]>;
+  editable: boolean;
+  onEditSession?: (session: T) => void;
+  onDeleteSession?: (session: T) => void;
+  onAddSession?: (ctx: AddSessionContext<T>) => void;
+}) {
   if (!cell) {
     return (
       <td
-        className="grid-empty-cell border border-border p-0"
+        className="grid-empty-cell group/cell relative border border-border p-0"
         style={{ width: SLOT_COL_WIDTH, backgroundColor: bandTint(band, 6) }}
-      />
+      >
+        {editable && onAddSession && (
+          <button
+            type="button"
+            onClick={() => onAddSession({ day, batch, section, timeSlot: column.timeSlot })}
+            className="print:hidden absolute inset-0 flex items-center justify-center opacity-0 group-hover/cell:opacity-100 focus-visible:opacity-100 text-muted-foreground hover:text-primary transition-opacity"
+            aria-label="Add class"
+          >
+            <Plus className="size-4" aria-hidden="true" />
+          </button>
+        )}
+      </td>
     );
   }
 
@@ -85,38 +121,65 @@ function GridCell<T extends FilterableSession>({ cell, band, span }: { cell: Cel
 
   return (
     <td colSpan={span} className="border border-border p-1 align-top" style={{ width: SLOT_COL_WIDTH * span }}>
-      <Tooltip>
-        <TooltipTrigger
-          render={
-            <button
-              type="button"
-              className="on-band w-full h-full min-h-14 rounded-md px-2 py-1.5 flex flex-col justify-center gap-0.5 text-left cursor-default print:border print:border-foreground"
-              style={{ backgroundColor: fill }}
-            />
-          }
-        >
-          <span className={`font-data font-semibold text-[11px] leading-tight tabular truncate text-white ${cancelled ? "line-through" : ""}`}>
-            {s.course.code}
-          </span>
-          <span className="text-[10px] leading-tight tabular text-white/85 truncate">
-            {s.teacher.initials} · R{s.room.name}
-          </span>
-          {cancelled && <span className="text-[9px] font-bold uppercase tracking-wide text-white/90 truncate">Cancelled</span>}
-          {moved && <span className="text-[9px] font-bold uppercase tracking-wide text-white/90 truncate">Moved</span>}
-        </TooltipTrigger>
-        <TooltipContent>
-          <p className="font-semibold">{s.teacher.name}</p>
-          <p>{s.course.code}{title ? ` — ${title}` : ""}</p>
-          <p>Room {s.room.name}</p>
-          {moved && s.movedTo && (
-            <p className="mt-1 text-muted-foreground">
-              Moved to {s.movedTo.date ? `${formatMovedDate(s.movedTo.date)}, ` : ""}
-              {s.movedTo.day}, {s.movedTo.timeSlot?.label}, Room {s.movedTo.room?.name}
-            </p>
-          )}
-          {cancelled && <p className="mt-1 text-muted-foreground">Cancelled</p>}
-        </TooltipContent>
-      </Tooltip>
+      <div className="relative group/cell">
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <button
+                type="button"
+                className="on-band w-full h-full min-h-14 rounded-md px-2 py-1.5 flex flex-col justify-center gap-0.5 text-left cursor-default print:border print:border-foreground"
+                style={{ backgroundColor: fill }}
+              />
+            }
+          >
+            <span className={`font-data font-semibold text-[11px] leading-tight tabular truncate text-white ${cancelled ? "line-through" : ""}`}>
+              {s.course.code}
+            </span>
+            <span className="text-[10px] leading-tight tabular text-white/85 truncate">
+              {s.teacher.initials} · R{s.room.name}
+            </span>
+            {cancelled && <span className="text-[9px] font-bold uppercase tracking-wide text-white/90 truncate">Cancelled</span>}
+            {moved && <span className="text-[9px] font-bold uppercase tracking-wide text-white/90 truncate">Moved</span>}
+          </TooltipTrigger>
+          <TooltipContent>
+            <p className="font-semibold">{s.teacher.name}</p>
+            <p>{s.course.code}{title ? ` — ${title}` : ""}</p>
+            <p>Room {s.room.name}</p>
+            {moved && s.movedTo && (
+              <p className="mt-1 text-muted-foreground">
+                Moved to {s.movedTo.date ? `${formatMovedDate(s.movedTo.date)}, ` : ""}
+                {s.movedTo.day}, {s.movedTo.timeSlot?.label}, Room {s.movedTo.room?.name}
+              </p>
+            )}
+            {cancelled && <p className="mt-1 text-muted-foreground">Cancelled</p>}
+          </TooltipContent>
+        </Tooltip>
+
+        {editable && (
+          <div className="print:hidden absolute top-1 right-1 z-10 flex items-center gap-1 opacity-0 group-hover/cell:opacity-100 focus-within:opacity-100 transition-opacity">
+            {onEditSession && (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onEditSession(s); }}
+                className="p-1 rounded bg-white/25 hover:bg-white/40 text-white"
+                aria-label={`Edit ${s.course.code}`}
+              >
+                <Pencil className="size-3" aria-hidden="true" />
+              </button>
+            )}
+            {onDeleteSession && (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onDeleteSession(s); }}
+                className="p-1 rounded bg-white/25 hover:bg-white/40 text-white"
+                aria-label={`Delete ${s.course.code}`}
+              >
+                <Trash2 className="size-3" aria-hidden="true" />
+              </button>
+            )}
+          </div>
+        )}
+      </div>
     </td>
   );
 }
@@ -133,16 +196,24 @@ function GridSkeleton() {
 }
 
 export function RoutineGrid<T extends FilterableSession>({
-  sessions, onClearFilters, loading = false,
+  sessions, onClearFilters, loading = false, editable = false, onEditSession, onDeleteSession, onAddSession,
 }: {
   sessions: T[];
   onClearFilters?: () => void;
   loading?: boolean;
+  editable?: boolean;
+  onEditSession?: (session: T) => void;
+  onDeleteSession?: (session: T) => void;
+  onAddSession?: (ctx: AddSessionContext<T>) => void;
 }) {
-  const slotColumns = useMemo<SlotColumn[]>(() => {
-    const map = new Map<number, string>();
-    for (const s of sessions) map.set(s.timeSlot.sortOrder, s.timeSlot.label);
-    return [...map.entries()].sort((a, b) => a[0] - b[0]).map(([sortOrder, label]) => ({ sortOrder, label }));
+  const slotColumns = useMemo<SlotColumn<T["timeSlot"]>[]>(() => {
+    const map = new Map<number, SlotColumn<T["timeSlot"]>>();
+    for (const s of sessions) {
+      if (!map.has(s.timeSlot.sortOrder)) {
+        map.set(s.timeSlot.sortOrder, { sortOrder: s.timeSlot.sortOrder, label: s.timeSlot.label, timeSlot: s.timeSlot });
+      }
+    }
+    return [...map.values()].sort((a, b) => a.sortOrder - b.sortOrder);
   }, [sessions]);
 
   const breakAfterIndex = slotColumns.length >= 5 ? 3 : -1;
@@ -278,7 +349,22 @@ export function RoutineGrid<T extends FilterableSession>({
                         }
                         const cell = cells[i];
                         if (cell && cell.span === 0) continue;
-                        out.push(<GridCell key={slotColumns[i].sortOrder} cell={cell} band={band} span={cell?.span ?? 1} />);
+                        out.push(
+                          <GridCell
+                            key={slotColumns[i].sortOrder}
+                            cell={cell}
+                            band={band}
+                            span={cell?.span ?? 1}
+                            day={row.day}
+                            batch={row.batch}
+                            section={row.section}
+                            column={slotColumns[i]}
+                            editable={editable}
+                            onEditSession={onEditSession}
+                            onDeleteSession={onDeleteSession}
+                            onAddSession={onAddSession}
+                          />
+                        );
                       }
                       return out;
                     })()}

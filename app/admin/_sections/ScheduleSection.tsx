@@ -8,11 +8,12 @@ import { Message } from "@/app/components/ui/Message";
 import { useRoutineFilters } from "@/app/components/routine/useRoutineFilters";
 import { RoutineList } from "@/app/components/routine/RoutineList";
 import { RoutineTimeRail } from "@/app/components/routine/RoutineTimeRail";
-import { RoutineGrid } from "@/app/components/routine/RoutineGrid";
+import { RoutineGrid, type AddSessionContext } from "@/app/components/routine/RoutineGrid";
 import { RoutineMasthead } from "@/app/components/routine/RoutineMasthead";
 import { FilterCard } from "@/app/components/routine/FilterCard";
 import { ViewToggle, type RoutineView } from "@/app/components/routine/ViewToggle";
 import { useIsDesktop } from "@/app/components/routine/useIsDesktop";
+import { SessionDialog, type SessionFormValues } from "@/app/components/routine/SessionDialog";
 
 type Course   = { id: number; code: string; title: string; type: string };
 type Teacher  = { id: number; initials: string; name: string };
@@ -98,6 +99,11 @@ export default function ScheduleSection() {
   const [view, setView] = useState<RoutineView>("grid");
   const isDesktop = useIsDesktop();
   const effectiveView: RoutineView = view === "table" ? "table" : isDesktop ? view : "rail";
+
+  // Inline edit dialog (Step 36) — a second, on-grid way to add/edit/delete a
+  // class, independent of the form above. Reuses the exact same endpoints.
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogInitial, setDialogInitial] = useState<SessionFormValues | null>(null);
 
   async function loadRef() {
     const res = await fetch("/api/reference");
@@ -202,6 +208,38 @@ export default function ScheduleSection() {
     if (editingId === id) cancelEdit();
     await loadSessions(selectedVersionId);
     setDeleteId(null);
+  }
+
+  function openInlineEdit(s: SessionRow) {
+    setDialogInitial({
+      id: s.id,
+      day: s.day,
+      timeSlotId: String(s.timeSlot.id),
+      batchId: String(s.batch.id),
+      section: s.section ?? "",
+      courseId: String(s.course.id),
+      teacherId: String(s.teacher.id),
+      roomId: String(s.room.id),
+    });
+    setDialogOpen(true);
+  }
+
+  function openInlineAdd(ctx: AddSessionContext<SessionRow>) {
+    setDialogInitial({
+      day: ctx.day,
+      timeSlotId: ctx.timeSlot ? String(ctx.timeSlot.id) : "",
+      batchId: String(ctx.batch.id),
+      section: ctx.section ?? "",
+      courseId: "",
+      teacherId: "",
+      roomId: "",
+    });
+    setDialogOpen(true);
+  }
+
+  async function handleInlineDelete(s: SessionRow) {
+    if (!confirm(`Delete ${s.course.code} (${s.day}, ${s.timeSlot.label})?`)) return;
+    await handleDelete(s.id);
   }
 
   async function handleToggleStatus(s: SessionRow) {
@@ -481,15 +519,39 @@ export default function ScheduleSection() {
         };
 
         return effectiveView === "grid" ? (
-          <RoutineGrid sessions={filtered} loading={sessionsLoading} onClearFilters={clearAll} />
+          <RoutineGrid
+            sessions={filtered}
+            loading={sessionsLoading}
+            onClearFilters={clearAll}
+            editable
+            onEditSession={openInlineEdit}
+            onDeleteSession={handleInlineDelete}
+            onAddSession={openInlineAdd}
+          />
         ) : effectiveView === "rail" ? (
-          <RoutineTimeRail sessions={filtered} loading={sessionsLoading} onClearFilters={clearAll} renderActions={renderActions} />
+          <RoutineTimeRail
+            sessions={filtered}
+            loading={sessionsLoading}
+            onClearFilters={clearAll}
+            editable
+            onEditSession={openInlineEdit}
+            onDeleteSession={handleInlineDelete}
+            onAddSession={openInlineAdd}
+          />
         ) : (
           <div className="bg-card border border-border rounded-lg overflow-hidden">
             <RoutineList sessions={filtered} loading={sessionsLoading} onClearFilters={clearAll} renderActions={renderActions} />
           </div>
         );
       })()}
+
+      <SessionDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        versionId={selectedVersionId ? Number(selectedVersionId) : null}
+        initial={dialogInitial}
+        onSaved={() => loadSessions(selectedVersionId)}
+      />
     </>
   );
 }

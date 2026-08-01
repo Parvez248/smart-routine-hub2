@@ -1,13 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Pencil, Trash2, Plus } from "lucide-react";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { StatusBadge } from "@/app/components/ui/StatusBadge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { bandForBatch, bandVar } from "@/lib/ui/bandColors";
 import { TypePill, BatchPill, MovedNote, courseTitleIfDifferent } from "./RowBadges";
 import type { FilterableSession } from "./types";
+import type { AddSessionContext } from "./RoutineGrid";
 
 const DAY_ORDER = ["Sat", "Sun", "Mon", "Tues", "Wed"];
 const DAY_NAME: Record<string, string> = { Sat: "Saturday", Sun: "Sunday", Mon: "Monday", Tues: "Tuesday", Wed: "Wednesday" };
@@ -16,7 +17,15 @@ const DAY_NAME: Record<string, string> = { Sat: "Saturday", Sun: "Sunday", Mon: 
 // overrides band colour when cancelled/moved) with white text — the page's
 // signature element. `.on-band` neutralises the fill/text for print, where
 // bars must stay black-and-white with the same [Cancelled]/[Moved → …] labels.
-function Bar<T extends FilterableSession>({ session: s, renderActions }: { session: T; renderActions?: (s: T) => React.ReactNode }) {
+function Bar<T extends FilterableSession>({
+  session: s, renderActions, editable, onEditSession, onDeleteSession,
+}: {
+  session: T;
+  renderActions?: (s: T) => React.ReactNode;
+  editable?: boolean;
+  onEditSession?: (session: T) => void;
+  onDeleteSession?: (session: T) => void;
+}) {
   const cancelled = s.status === "CANCELLED";
   const moved = !cancelled && Boolean(s.movedTo);
   const band = bandForBatch(s.batch);
@@ -45,6 +54,30 @@ function Bar<T extends FilterableSession>({ session: s, renderActions }: { sessi
         {moved && <MovedNote movedTo={s.movedTo} />}
       </div>
       {renderActions && <div className="print:hidden shrink-0">{renderActions(s)}</div>}
+      {editable && (
+        <div className="print:hidden shrink-0 flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover/bar:opacity-100 sm:focus-within:opacity-100 transition-opacity">
+          {onEditSession && (
+            <button
+              type="button"
+              onClick={() => onEditSession(s)}
+              className="p-1.5 rounded bg-white/25 hover:bg-white/40 text-white"
+              aria-label={`Edit ${s.course.code}`}
+            >
+              <Pencil className="size-3.5" aria-hidden="true" />
+            </button>
+          )}
+          {onDeleteSession && (
+            <button
+              type="button"
+              onClick={() => onDeleteSession(s)}
+              className="p-1.5 rounded bg-white/25 hover:bg-white/40 text-white"
+              aria-label={`Delete ${s.course.code}`}
+            >
+              <Trash2 className="size-3.5" aria-hidden="true" />
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -66,11 +99,16 @@ function DaySkeleton() {
 
 export function RoutineTimeRail<T extends FilterableSession>({
   sessions, renderActions, onClearFilters, loading = false,
+  editable = false, onEditSession, onDeleteSession, onAddSession,
 }: {
   sessions: T[];
   renderActions?: (s: T) => React.ReactNode;
   onClearFilters?: () => void;
   loading?: boolean;
+  editable?: boolean;
+  onEditSession?: (session: T) => void;
+  onDeleteSession?: (session: T) => void;
+  onAddSession?: (ctx: AddSessionContext<T>) => void;
 }) {
   const [collapsedDays, setCollapsedDays] = useState<Set<string>>(new Set());
 
@@ -166,10 +204,24 @@ export function RoutineTimeRail<T extends FilterableSession>({
               <div className="border-t border-border px-5 py-4 space-y-4">
                 {batchGroups.map((group, i) => (
                   <div key={i}>
-                    <BatchPill batch={group.batch} section={group.section} />
+                    <div className="flex items-center justify-between gap-2">
+                      <BatchPill batch={group.batch} section={group.section} />
+                      {editable && onAddSession && (
+                        <button
+                          type="button"
+                          onClick={() => onAddSession({ day, batch: group.batch, section: group.section })}
+                          className="print:hidden inline-flex items-center gap-1 text-xs font-semibold text-primary hover:opacity-80"
+                        >
+                          <Plus className="size-3.5" aria-hidden="true" />
+                          Add class
+                        </button>
+                      )}
+                    </div>
                     <div className="mt-2 bg-card border border-border rounded-lg p-3 space-y-2">
                       {group.sessions.map((s) => (
-                        <Bar key={s.id} session={s} renderActions={renderActions} />
+                        <div key={s.id} className="group/bar">
+                          <Bar session={s} renderActions={renderActions} editable={editable} onEditSession={onEditSession} onDeleteSession={onDeleteSession} />
+                        </div>
                       ))}
                     </div>
                   </div>
