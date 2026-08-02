@@ -7,6 +7,7 @@ import { StatusBadge } from "@/app/components/ui/StatusBadge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { bandForBatch, bandVar } from "@/lib/ui/bandColors";
 import { TypePill, BatchPill, MovedNote, courseTitleIfDifferent } from "./RowBadges";
+import { mergeLabPairs, combineSlotLabels } from "./labMerge";
 import type { FilterableSession } from "./types";
 import type { AddSessionContext } from "./RoutineGrid";
 
@@ -18,19 +19,23 @@ const DAY_NAME: Record<string, string> = { Sat: "Saturday", Sun: "Sunday", Mon: 
 // signature element. `.on-band` neutralises the fill/text for print, where
 // bars must stay black-and-white with the same [Cancelled]/[Moved → …] labels.
 function Bar<T extends FilterableSession>({
-  session: s, renderActions, editable, onEditSession, onDeleteSession,
+  session: s, pair, renderActions, editable, onEditSession, onDeleteSession,
 }: {
   session: T;
+  pair?: T;
   renderActions?: (s: T) => React.ReactNode;
   editable?: boolean;
-  onEditSession?: (session: T) => void;
-  onDeleteSession?: (session: T) => void;
+  onEditSession?: (session: T, pair?: T) => void;
+  onDeleteSession?: (session: T, pair?: T) => void;
 }) {
   const cancelled = s.status === "CANCELLED";
   const moved = !cancelled && Boolean(s.movedTo);
   const band = bandForBatch(s.batch);
   const fill = cancelled ? "var(--bar-cancelled)" : moved ? "var(--bar-moved)" : bandVar(band);
   const title = courseTitleIfDifferent(s.course);
+  // A merged lab covers two consecutive periods — show the combined range
+  // ("11:30 – 01:30 pm") instead of two separate bars.
+  const timeLabel = pair ? combineSlotLabels(s.timeSlot.label, pair.timeSlot.label) : s.timeSlot.label;
 
   return (
     <div
@@ -39,7 +44,7 @@ function Bar<T extends FilterableSession>({
     >
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-white text-sm">
-          <span className="font-data tabular font-semibold whitespace-nowrap">{s.timeSlot.label}</span>
+          <span className="font-data tabular font-semibold whitespace-nowrap">{timeLabel}</span>
           <span className="text-white/60">·</span>
           <span className={`font-data font-bold ${cancelled ? "line-through" : ""}`}>{s.course.code}</span>
           <span className="text-white/60">·</span>
@@ -59,7 +64,7 @@ function Bar<T extends FilterableSession>({
           {onEditSession && (
             <button
               type="button"
-              onClick={() => onEditSession(s)}
+              onClick={() => onEditSession(s, pair)}
               className="p-1.5 rounded bg-white/25 hover:bg-white/40 text-white"
               aria-label={`Edit ${s.course.code}`}
             >
@@ -69,7 +74,7 @@ function Bar<T extends FilterableSession>({
           {onDeleteSession && (
             <button
               type="button"
-              onClick={() => onDeleteSession(s)}
+              onClick={() => onDeleteSession(s, pair)}
               className="p-1.5 rounded bg-white/25 hover:bg-white/40 text-white"
               aria-label={`Delete ${s.course.code}`}
             >
@@ -106,8 +111,8 @@ export function RoutineTimeRail<T extends FilterableSession>({
   onClearFilters?: () => void;
   loading?: boolean;
   editable?: boolean;
-  onEditSession?: (session: T) => void;
-  onDeleteSession?: (session: T) => void;
+  onEditSession?: (session: T, pair?: T) => void;
+  onDeleteSession?: (session: T, pair?: T) => void;
   onAddSession?: (ctx: AddSessionContext<T>) => void;
 }) {
   const [collapsedDays, setCollapsedDays] = useState<Set<string>>(new Set());
@@ -218,9 +223,16 @@ export function RoutineTimeRail<T extends FilterableSession>({
                       )}
                     </div>
                     <div className="mt-2 bg-card border border-border rounded-lg p-3 space-y-2">
-                      {group.sessions.map((s) => (
-                        <div key={s.id} className="group/bar">
-                          <Bar session={s} renderActions={renderActions} editable={editable} onEditSession={onEditSession} onDeleteSession={onDeleteSession} />
+                      {mergeLabPairs(group.sessions).map((entry) => (
+                        <div key={entry.session.id} className="group/bar">
+                          <Bar
+                            session={entry.session}
+                            pair={entry.pair}
+                            renderActions={renderActions}
+                            editable={editable}
+                            onEditSession={onEditSession}
+                            onDeleteSession={onDeleteSession}
+                          />
                         </div>
                       ))}
                     </div>

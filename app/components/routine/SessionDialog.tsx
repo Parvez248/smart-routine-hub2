@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { DoorOpen } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button, LinkButton } from "@/app/components/ui/Button";
 import { Message } from "@/app/components/ui/Message";
+import { LAB_PAIR_START_SORT_ORDERS, isLabPairStart, combineSlotLabels } from "./labMerge";
 
 type RefCourse = { id: number; code: string; type: string };
 type RefTeacher = { id: number; initials: string; name: string };
@@ -23,6 +24,9 @@ type RefData = {
 
 export type SessionFormValues = {
   id?: number;
+  // Second period's session id — present only when editing an existing
+  // two-period lab (Step 37). Absent for theory classes and new labs.
+  pairId?: number;
   day: string;
   timeSlotId: string;
   batchId: string;
@@ -31,6 +35,8 @@ export type SessionFormValues = {
   teacherId: string;
   roomId: string;
 };
+
+type ApiResult = { ok: boolean; data?: { id: number }; error?: string };
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -44,10 +50,42 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 const selectClass =
   "w-full border border-border bg-surface rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring";
 
+async function createSession(body: unknown): Promise<ApiResult> {
+  const res = await fetch("/api/sessions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  return res.json();
+}
+async function patchSession(id: number, body: unknown): Promise<ApiResult> {
+  const res = await fetch(`/api/sessions/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  return res.json();
+}
+async function deleteSession(id: number): Promise<ApiResult> {
+  const res = await fetch(`/api/sessions?id=${id}`, { method: "DELETE" });
+  return res.json();
+}
+
+function bodyFor(form: SessionFormValues, timeSlotId: number, versionId: number) {
+  return {
+    day: form.day,
+    timeSlotId,
+    batchId: Number(form.batchId),
+    section: form.section.trim() || null,
+    courseId: Number(form.courseId),
+    teacherId: Number(form.teacherId),
+    roomId: Number(form.roomId),
+    versionId,
+  };
+}
+
 // Shared create/edit dialog for admin inline editing on the Full Routine view
 // (Step 36). Reuses the existing session endpoints exactly — POST /api/sessions
 // to create, PATCH /api/sessions/[id] to edit — so conflict/capacity/version
 // checks never diverge from the admin Schedule tab's own form.
+//
+// Step 37: a LAB course occupies two consecutive periods, stored as two
+// Session rows. When the chosen course is a lab, the "time slot" field
+// becomes a "starting slot" picker limited to 1/3/5 (never crossing the
+// break), and save/delete always keep both rows in lockstep — see the
+// handleSubmit cases below for the four course-type × had-pair transitions.
 export function SessionDialog({
   open,
   onOpenChange,
@@ -63,6 +101,7 @@ export function SessionDialog({
 }) {
   const [ref, setRef] = useState<RefData | null>(null);
   const [form, setForm] = useState<SessionFormValues | null>(null);
+  const [original, setOriginal] = useState<SessionFormValues | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [freeRooms, setFreeRooms] = useState<RefRoom[] | null>(null);
@@ -79,6 +118,7 @@ export function SessionDialog({
   useEffect(() => {
     if (open && initial) {
       setForm(initial);
+      setOriginal(initial);
       setError(null);
     }
     if (!open) {
@@ -86,58 +126,171 @@ export function SessionDialog({
     }
   }, [open, initial]);
 
+  const selectedCourse = useMemo(
+    () => ref?.courses.find((c) => String(c.id) === form?.courseId),
+    [ref, form?.courseId]
+  );
+  const isLabSelected = selectedCourse?.type === "LAB";
+
+  const labStartOptions = useMemo(() => {
+    if (!ref) return [];
+    return LAB_PAIR_START_SORT_ORDERS.map((startSort) => {
+      const slotA = ref.timeSlots.find((t) => t.sortOrder === startSort);
+      const slotB = ref.timeSlots.find((t) => t.sortOrder === startSort + 1);
+      if (!slotA || !slotB) return null;
+      return { id: slotA.id, label: combineSlotLabels(slotA.label, slotB.label) };
+    }).filter((x): x is { id: number; label: string } => x !== null);
+  }, [ref]);
+
   useEffect(() => {
-    if (!open || !form?.day || !form.timeSlotId || !versionId) {
+    if (!open || !form?.day || !form.timeSlotId || !versionId || !ref) {
+      setFreeRooms(null);
+      return;
+    }
+    const slotA = ref.timeSlots.find((t) => String(t.id) === form.timeSlotId);
+    if (!slotA) {
       setFreeRooms(null);
       return;
     }
     setFreeRoomsLoading(true);
-    fetch(`/api/admin/free-rooms?day=${form.day}&timeSlotId=${form.timeSlotId}&versionId=${versionId}`)
-      .then((r) => r.json())
-      .then((json) => { if (json.ok) setFreeRooms(json.data); })
-      .finally(() => setFreeRoomsLoading(false));
-    // Re-runs whenever day/slot change so the hint always matches the current
-    // selection; the room field itself is a free choice, not constrained to this list.
+    if (isLabSelected) {
+      const slotB = ref.timeSlots.find((t) => t.sortOrder === slotA.sortOrder + 1);
+      if (!slotB) {
+        setFreeRooms(null);
+        setFreeRoomsLoading(false);
+        return;
+      }
+      Promise.all([
+        fetch(`/api/admin/free-rooms?day=${form.day}&timeSlotId=${slotA.id}&versionId=${versionId}`).then((r) => r.json()),
+        fetch(`/api/admin/free-rooms?day=${form.day}&timeSlotId=${slotB.id}&versionId=${versionId}`).then((r) => r.json()),
+      ])
+        .then(([ja, jb]) => {
+          if (ja.ok && jb.ok) {
+            const idsB = new Set((jb.data as RefRoom[]).map((r) => r.id));
+            setFreeRooms((ja.data as RefRoom[]).filter((r) => idsB.has(r.id)));
+          }
+        })
+        .finally(() => setFreeRoomsLoading(false));
+    } else {
+      fetch(`/api/admin/free-rooms?day=${form.day}&timeSlotId=${form.timeSlotId}&versionId=${versionId}`)
+        .then((r) => r.json())
+        .then((json) => { if (json.ok) setFreeRooms(json.data); })
+        .finally(() => setFreeRoomsLoading(false));
+    }
+    // Re-runs whenever day/slot/course change so the hint always matches the
+    // current selection; the room field itself is a free choice.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, form?.day, form?.timeSlotId, versionId]);
+  }, [open, form?.day, form?.timeSlotId, isLabSelected, versionId, ref]);
 
   if (!form) return null;
   const isEdit = Boolean(form.id);
 
   function setField<K extends keyof SessionFormValues>(key: K, value: SessionFormValues[K]) {
-    setForm((f) => (f ? { ...f, [key]: value } : f));
+    setForm((f) => {
+      if (!f) return f;
+      const next = { ...f, [key]: value };
+      if (key === "courseId") {
+        const course = ref?.courses.find((c) => String(c.id) === value);
+        if (course?.type === "LAB") {
+          const slot = ref?.timeSlots.find((t) => String(t.id) === next.timeSlotId);
+          if (!slot || !isLabPairStart(slot.sortOrder)) next.timeSlotId = "";
+        }
+      }
+      return next;
+    });
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!versionId || !form) return;
+    if (!versionId || !form || !ref) return;
     setSubmitting(true);
     setError(null);
     try {
-      const body = {
-        day: form.day,
-        timeSlotId: Number(form.timeSlotId),
-        batchId: Number(form.batchId),
-        section: form.section.trim() || null,
-        courseId: Number(form.courseId),
-        teacherId: Number(form.teacherId),
-        roomId: Number(form.roomId),
-        versionId,
-      };
-      const url = isEdit ? `/api/sessions/${form.id}` : "/api/sessions";
-      const method = isEdit ? "PATCH" : "POST";
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      const json = await res.json();
-      if (json.ok) {
-        onSaved();
-        onOpenChange(false);
-      } else {
-        setError(json.error ?? "Failed to save.");
+      const slotA = ref.timeSlots.find((t) => String(t.id) === form.timeSlotId);
+      if (!slotA) {
+        setError("Please choose a time slot.");
+        return;
       }
+      const slotB = isLabSelected ? ref.timeSlots.find((t) => t.sortOrder === slotA.sortOrder + 1) : undefined;
+      if (isLabSelected && !slotB) {
+        setError("This lab's second period could not be found.");
+        return;
+      }
+
+      const hadPair = Boolean(form.pairId);
+
+      async function revertPrimary() {
+        if (original && form?.id) {
+          const origSlot = ref!.timeSlots.find((t) => String(t.id) === original.timeSlotId);
+          if (origSlot) await patchSession(form.id, bodyFor(original, origSlot.id, versionId!));
+        }
+      }
+
+      if (!isEdit) {
+        // CREATE
+        const first = await createSession(bodyFor(form, slotA.id, versionId));
+        if (!first.ok) {
+          setError(first.error ?? "Failed to save.");
+          return;
+        }
+        if (isLabSelected && slotB) {
+          const second = await createSession(bodyFor(form, slotB.id, versionId));
+          if (!second.ok) {
+            await deleteSession(first.data!.id);
+            setError(`${second.error ?? "Failed to save the second period."} The class was not added.`);
+            return;
+          }
+        }
+      } else if (isLabSelected && hadPair) {
+        // Still a two-period lab — move/update both rows together.
+        const firstRes = await patchSession(form.id!, bodyFor(form, slotA.id, versionId));
+        if (!firstRes.ok) {
+          setError(firstRes.error ?? "Failed to save.");
+          return;
+        }
+        const secondRes = await patchSession(form.pairId!, bodyFor(form, slotB!.id, versionId));
+        if (!secondRes.ok) {
+          await revertPrimary();
+          setError(`${secondRes.error ?? "Failed to save the second period."} The change was rolled back.`);
+          return;
+        }
+      } else if (isLabSelected && !hadPair) {
+        // Upgrading a single-period class into a two-period lab.
+        const firstRes = await patchSession(form.id!, bodyFor(form, slotA.id, versionId));
+        if (!firstRes.ok) {
+          setError(firstRes.error ?? "Failed to save.");
+          return;
+        }
+        const secondRes = await createSession(bodyFor(form, slotB!.id, versionId));
+        if (!secondRes.ok) {
+          await revertPrimary();
+          setError(`${secondRes.error ?? "Failed to save the second period."} The change was rolled back.`);
+          return;
+        }
+      } else if (!isLabSelected && hadPair) {
+        // Downgrading a lab into a single-period class — drop the second row.
+        const firstRes = await patchSession(form.id!, bodyFor(form, slotA.id, versionId));
+        if (!firstRes.ok) {
+          setError(firstRes.error ?? "Failed to save.");
+          return;
+        }
+        const delRes = await deleteSession(form.pairId!);
+        if (!delRes.ok) {
+          await revertPrimary();
+          setError("Failed to remove the class's second period. The change was rolled back.");
+          return;
+        }
+      } else {
+        // Ordinary single-period edit.
+        const res = await patchSession(form.id!, bodyFor(form, slotA.id, versionId));
+        if (!res.ok) {
+          setError(res.error ?? "Failed to save.");
+          return;
+        }
+      }
+
+      onSaved();
+      onOpenChange(false);
     } catch {
       setError("Network error. Please try again.");
     } finally {
@@ -164,11 +317,18 @@ export function SessionDialog({
                 {ref?.days.map((d) => <option key={d} value={d}>{d}</option>)}
               </select>
             </Field>
-            <Field label="Time Slot">
-              <select required value={form.timeSlotId} onChange={(e) => setField("timeSlotId", e.target.value)} className={selectClass}>
-                <option value="">Select slot</option>
-                {ref?.timeSlots.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
-              </select>
+            <Field label={isLabSelected ? "Starting Slot" : "Time Slot"}>
+              {isLabSelected ? (
+                <select required value={form.timeSlotId} onChange={(e) => setField("timeSlotId", e.target.value)} className={selectClass}>
+                  <option value="">Select starting slot</option>
+                  {labStartOptions.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
+                </select>
+              ) : (
+                <select required value={form.timeSlotId} onChange={(e) => setField("timeSlotId", e.target.value)} className={selectClass}>
+                  <option value="">Select slot</option>
+                  {ref?.timeSlots.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
+                </select>
+              )}
             </Field>
             <Field label="Batch">
               <select required value={form.batchId} onChange={(e) => setField("batchId", e.target.value)} className={selectClass}>
@@ -186,6 +346,12 @@ export function SessionDialog({
               />
             </Field>
           </div>
+
+          {isLabSelected && (
+            <p className="text-xs text-slate -mt-2">
+              This is a lab — it will occupy both periods of the slot above.
+            </p>
+          )}
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <Field label="Course">
@@ -220,7 +386,7 @@ export function SessionDialog({
           {form.day && form.timeSlotId && (
             <div>
               <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                Free rooms for {form.day}, this slot
+                Free rooms for {form.day}, {isLabSelected ? "both periods" : "this slot"}
               </label>
               <div className="mt-2">
                 {freeRoomsLoading ? (

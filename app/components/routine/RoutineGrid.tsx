@@ -7,6 +7,7 @@ import { EmptyState } from "@/app/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
 import { bandForBatch, bandTint, bandVar, type Band } from "@/lib/ui/bandColors";
 import { BatchPill, courseTitleIfDifferent, formatMovedDate } from "./RowBadges";
+import { isSameLabPair, isMergeableAdjacent } from "./labMerge";
 import type { FilterableSession } from "./types";
 
 const DAY_ORDER = ["Sat", "Sun", "Mon", "Tues", "Wed"];
@@ -18,7 +19,7 @@ const BREAK_COL_WIDTH = 28;
 const SLOT_COL_WIDTH = 132;
 
 type SlotColumn<T> = { sortOrder: number; label: string; timeSlot: T };
-type Cell<T> = { session: T; span: 1 | 2 } | { session: T; span: 0 } | null;
+type Cell<T> = { session: T; span: 1 | 2; pair?: T } | { session: T; span: 0 } | null;
 
 type Row<T> = {
   day: string;
@@ -38,40 +39,19 @@ export type AddSessionContext<T extends FilterableSession> = {
   timeSlot?: T["timeSlot"];
 };
 
-// A LAB class occupying two adjacent time slots is stored as two ordinary
-// Session rows (the schema has one timeSlotId per row — see lib/services);
-// this only recognises that pattern for display and merges the two cells
-// into one wide one. It never merges across the BREAK column.
-function sameClass<T extends FilterableSession>(a: T, b: T): boolean {
-  if (a.course.type !== "LAB" || b.course.type !== "LAB") return false;
-  if (a.course.code !== b.course.code) return false;
-  if (a.teacher.initials !== b.teacher.initials) return false;
-  if (a.room.name !== b.room.name) return false;
-  if (a.status !== b.status) return false;
-  const am = a.movedTo;
-  const bm = b.movedTo;
-  if (Boolean(am) !== Boolean(bm)) return false;
-  if (am && bm) {
-    if (am.day !== bm.day || am.date !== bm.date) return false;
-    if ((am.timeSlot?.label ?? null) !== (bm.timeSlot?.label ?? null)) return false;
-    if ((am.room?.name ?? null) !== (bm.room?.name ?? null)) return false;
-  }
-  return true;
-}
-
-function buildCells<T extends FilterableSession>(sessions: T[], slots: SlotColumn<T["timeSlot"]>[], breakAfterIndex: number): Cell<T>[] {
+function buildCells<T extends FilterableSession>(sessions: T[], slots: SlotColumn<T["timeSlot"]>[]): Cell<T>[] {
   const cells: Cell<T>[] = new Array(slots.length).fill(null);
   for (const s of sessions) {
     const idx = slots.findIndex((c) => c.sortOrder === s.timeSlot.sortOrder);
     if (idx !== -1 && !cells[idx]) cells[idx] = { session: s, span: 1 };
   }
   for (let i = 0; i < slots.length - 1; i++) {
-    if (i === breakAfterIndex) continue;
     const a = cells[i];
     const b = cells[i + 1];
     if (!a || !b || a.span !== 1 || b.span !== 1) continue;
-    if (sameClass(a.session, b.session)) {
-      cells[i] = { session: a.session, span: 2 };
+    if (!isMergeableAdjacent(slots[i].sortOrder, slots[i + 1].sortOrder)) continue;
+    if (isSameLabPair(a.session, b.session)) {
+      cells[i] = { session: a.session, span: 2, pair: b.session };
       cells[i + 1] = { session: a.session, span: 0 };
     }
   }
@@ -89,8 +69,8 @@ function GridCell<T extends FilterableSession>({
   section: string | null;
   column: SlotColumn<T["timeSlot"]>;
   editable: boolean;
-  onEditSession?: (session: T) => void;
-  onDeleteSession?: (session: T) => void;
+  onEditSession?: (session: T, pair?: T) => void;
+  onDeleteSession?: (session: T, pair?: T) => void;
   onAddSession?: (ctx: AddSessionContext<T>) => void;
 }) {
   if (!cell) {
@@ -114,6 +94,7 @@ function GridCell<T extends FilterableSession>({
   }
 
   const s = cell.session;
+  const pair = cell.span === 2 ? cell.pair : undefined;
   const cancelled = s.status === "CANCELLED";
   const moved = !cancelled && Boolean(s.movedTo);
   const fill = cancelled ? "var(--bar-cancelled)" : moved ? "var(--bar-moved)" : bandVar(band);
@@ -132,8 +113,15 @@ function GridCell<T extends FilterableSession>({
               />
             }
           >
-            <span className={`font-data font-semibold text-[11px] leading-tight tabular truncate text-white ${cancelled ? "line-through" : ""}`}>
-              {s.course.code}
+            <span className="flex items-center gap-1">
+              <span className={`font-data font-semibold text-[11px] leading-tight tabular truncate text-white ${cancelled ? "line-through" : ""}`}>
+                {s.course.code}
+              </span>
+              {pair && (
+                <span className="shrink-0 text-[8px] font-bold uppercase tracking-wide text-white/90 bg-white/20 rounded px-1 leading-tight">
+                  Lab
+                </span>
+              )}
             </span>
             <span className="text-[10px] leading-tight tabular text-white/85 truncate">
               {s.teacher.initials} · R{s.room.name}
@@ -143,7 +131,7 @@ function GridCell<T extends FilterableSession>({
           </TooltipTrigger>
           <TooltipContent>
             <p className="font-semibold">{s.teacher.name}</p>
-            <p>{s.course.code}{title ? ` — ${title}` : ""}</p>
+            <p>{s.course.code}{title ? ` — ${title}` : ""}{pair ? " (2 periods)" : ""}</p>
             <p>Room {s.room.name}</p>
             {moved && s.movedTo && (
               <p className="mt-1 text-muted-foreground">
@@ -160,7 +148,7 @@ function GridCell<T extends FilterableSession>({
             {onEditSession && (
               <button
                 type="button"
-                onClick={(e) => { e.stopPropagation(); onEditSession(s); }}
+                onClick={(e) => { e.stopPropagation(); onEditSession(s, pair); }}
                 className="p-1 rounded bg-white/25 hover:bg-white/40 text-white"
                 aria-label={`Edit ${s.course.code}`}
               >
@@ -170,7 +158,7 @@ function GridCell<T extends FilterableSession>({
             {onDeleteSession && (
               <button
                 type="button"
-                onClick={(e) => { e.stopPropagation(); onDeleteSession(s); }}
+                onClick={(e) => { e.stopPropagation(); onDeleteSession(s, pair); }}
                 className="p-1 rounded bg-white/25 hover:bg-white/40 text-white"
                 aria-label={`Delete ${s.course.code}`}
               >
@@ -202,8 +190,8 @@ export function RoutineGrid<T extends FilterableSession>({
   onClearFilters?: () => void;
   loading?: boolean;
   editable?: boolean;
-  onEditSession?: (session: T) => void;
-  onDeleteSession?: (session: T) => void;
+  onEditSession?: (session: T, pair?: T) => void;
+  onDeleteSession?: (session: T, pair?: T) => void;
   onAddSession?: (ctx: AddSessionContext<T>) => void;
 }) {
   const slotColumns = useMemo<SlotColumn<T["timeSlot"]>[]>(() => {
@@ -216,7 +204,12 @@ export function RoutineGrid<T extends FilterableSession>({
     return [...map.values()].sort((a, b) => a.sortOrder - b.sortOrder);
   }, [sessions]);
 
-  const breakAfterIndex = slotColumns.length >= 5 ? 3 : -1;
+  const breakAfterIndex = useMemo(() => {
+    for (let i = 0; i < slotColumns.length - 1; i++) {
+      if (slotColumns[i].sortOrder === 4 && slotColumns[i + 1].sortOrder === 5) return i;
+    }
+    return slotColumns.length >= 5 ? 3 : -1;
+  }, [slotColumns]);
 
   const rows = useMemo(() => {
     const map = new Map<string, Row<T>>();
@@ -307,7 +300,7 @@ export function RoutineGrid<T extends FilterableSession>({
             <tbody>
               {rows.map((row, rIdx) => {
                 const band = bandForBatch(row.batch);
-                const cells = buildCells(row.sessions, slotColumns, breakAfterIndex);
+                const cells = buildCells(row.sessions, slotColumns);
                 const showDay = row.day !== lastDay;
                 if (showDay) lastDay = row.day;
                 const daySpan = dayRowSpans.get(row.day) ?? 1;

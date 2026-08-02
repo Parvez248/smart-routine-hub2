@@ -14,6 +14,7 @@ import { FilterCard } from "@/app/components/routine/FilterCard";
 import { ViewToggle, type RoutineView } from "@/app/components/routine/ViewToggle";
 import { useIsDesktop } from "@/app/components/routine/useIsDesktop";
 import { SessionDialog, type SessionFormValues } from "@/app/components/routine/SessionDialog";
+import { combineSlotLabels } from "@/app/components/routine/labMerge";
 
 type Course   = { id: number; code: string; title: string; type: string };
 type Teacher  = { id: number; initials: string; name: string };
@@ -210,9 +211,13 @@ export default function ScheduleSection() {
     setDeleteId(null);
   }
 
-  function openInlineEdit(s: SessionRow) {
+  // `s` is always the earlier-slot session of a merged lab pair (see
+  // RoutineGrid/RoutineTimeRail's merge logic), so it doubles as the
+  // "starting slot" the dialog expects.
+  function openInlineEdit(s: SessionRow, pair?: SessionRow) {
     setDialogInitial({
       id: s.id,
+      pairId: pair?.id,
       day: s.day,
       timeSlotId: String(s.timeSlot.id),
       batchId: String(s.batch.id),
@@ -237,9 +242,13 @@ export default function ScheduleSection() {
     setDialogOpen(true);
   }
 
-  async function handleInlineDelete(s: SessionRow) {
-    if (!confirm(`Delete ${s.course.code} (${s.day}, ${s.timeSlot.label})?`)) return;
+  async function handleInlineDelete(s: SessionRow, pair?: SessionRow) {
+    const label = pair
+      ? `Delete ${s.course.code} (${s.day}, ${combineSlotLabels(s.timeSlot.label, pair.timeSlot.label)})? This lab covers two periods — both will be removed.`
+      : `Delete ${s.course.code} (${s.day}, ${s.timeSlot.label})?`;
+    if (!confirm(label)) return;
     await handleDelete(s.id);
+    if (pair) await handleDelete(pair.id);
   }
 
   async function handleToggleStatus(s: SessionRow) {
