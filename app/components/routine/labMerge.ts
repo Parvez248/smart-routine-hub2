@@ -5,13 +5,6 @@ import type { FilterableSession } from "./types";
 // This is the one place that decides whether two rows are "the same lab" so
 // the grid, the rail, and the admin dialog never disagree with each other.
 
-/** Valid two-period pairings — never 4→5, which would cross the break. */
-export const LAB_PAIR_START_SORT_ORDERS = [1, 3, 5] as const;
-
-export function isLabPairStart(sortOrder: number): boolean {
-  return (LAB_PAIR_START_SORT_ORDERS as readonly number[]).includes(sortOrder);
-}
-
 export function isSameLabPair<T extends FilterableSession>(a: T, b: T): boolean {
   if (a.course.type !== "LAB" || b.course.type !== "LAB") return false;
   if (a.course.code !== b.course.code) return false;
@@ -33,6 +26,24 @@ export function isSameLabPair<T extends FilterableSession>(a: T, b: T): boolean 
 export function isMergeableAdjacent(sortOrderA: number, sortOrderB: number): boolean {
   if (sortOrderB !== sortOrderA + 1) return false;
   return !(sortOrderA === 4 && sortOrderB === 5);
+}
+
+/** The two periods a lab starting at `startSortOrder` would occupy. */
+export function labPair(startSortOrder: number): [number, number] {
+  return [startSortOrder, startSortOrder + 1];
+}
+
+/**
+ * A lab may start at any slot whose next slot exists and doesn't cross the
+ * break — i.e. every slot except the one right before the break (4) and the
+ * very last slot (no next slot to pair with). `allSortOrders` is the full set
+ * of slots actually in use, so a start is only offered when its pair partner
+ * really exists (Step 38 — previously this was wrongly hard-coded to 1/3/5).
+ */
+export function isValidLabStart(startSortOrder: number, allSortOrders: number[]): boolean {
+  const [, next] = labPair(startSortOrder);
+  if (!allSortOrders.includes(next)) return false;
+  return isMergeableAdjacent(startSortOrder, next);
 }
 
 export type MergedEntry<T> = { session: T; span: 1 | 2; pair?: T };

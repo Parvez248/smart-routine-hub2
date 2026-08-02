@@ -5,7 +5,7 @@ import { DoorOpen } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button, LinkButton } from "@/app/components/ui/Button";
 import { Message } from "@/app/components/ui/Message";
-import { LAB_PAIR_START_SORT_ORDERS, isLabPairStart, combineSlotLabels } from "./labMerge";
+import { isValidLabStart, combineSlotLabels } from "./labMerge";
 
 type RefCourse = { id: number; code: string; type: string };
 type RefTeacher = { id: number; initials: string; name: string };
@@ -81,10 +81,11 @@ function bodyFor(form: SessionFormValues, timeSlotId: number, versionId: number)
 // to create, PATCH /api/sessions/[id] to edit — so conflict/capacity/version
 // checks never diverge from the admin Schedule tab's own form.
 //
-// Step 37: a LAB course occupies two consecutive periods, stored as two
+// Step 37/38: a LAB course occupies two consecutive periods, stored as two
 // Session rows. When the chosen course is a lab, the "time slot" field
-// becomes a "starting slot" picker limited to 1/3/5 (never crossing the
-// break), and save/delete always keep both rows in lockstep — see the
+// becomes a "starting slot" picker offering every slot whose pair doesn't
+// cross the break (see labMerge.ts's isValidLabStart — not a hard-coded
+// list), and save/delete always keep both rows in lockstep — see the
 // handleSubmit cases below for the four course-type × had-pair transitions.
 export function SessionDialog({
   open,
@@ -134,12 +135,15 @@ export function SessionDialog({
 
   const labStartOptions = useMemo(() => {
     if (!ref) return [];
-    return LAB_PAIR_START_SORT_ORDERS.map((startSort) => {
-      const slotA = ref.timeSlots.find((t) => t.sortOrder === startSort);
-      const slotB = ref.timeSlots.find((t) => t.sortOrder === startSort + 1);
-      if (!slotA || !slotB) return null;
-      return { id: slotA.id, label: combineSlotLabels(slotA.label, slotB.label) };
-    }).filter((x): x is { id: number; label: string } => x !== null);
+    const allSortOrders = ref.timeSlots.map((t) => t.sortOrder);
+    return ref.timeSlots
+      .filter((slotA) => isValidLabStart(slotA.sortOrder, allSortOrders))
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .map((slotA) => {
+        const slotB = ref.timeSlots.find((t) => t.sortOrder === slotA.sortOrder + 1)!;
+        const endTime = slotB.label.split("–")[1]?.trim() ?? slotB.label;
+        return { id: slotA.id, label: `${slotA.label} (spans to ${endTime})` };
+      });
   }, [ref]);
 
   useEffect(() => {
@@ -191,9 +195,10 @@ export function SessionDialog({
       const next = { ...f, [key]: value };
       if (key === "courseId") {
         const course = ref?.courses.find((c) => String(c.id) === value);
-        if (course?.type === "LAB") {
-          const slot = ref?.timeSlots.find((t) => String(t.id) === next.timeSlotId);
-          if (!slot || !isLabPairStart(slot.sortOrder)) next.timeSlotId = "";
+        if (course?.type === "LAB" && ref) {
+          const allSortOrders = ref.timeSlots.map((t) => t.sortOrder);
+          const slot = ref.timeSlots.find((t) => String(t.id) === next.timeSlotId);
+          if (!slot || !isValidLabStart(slot.sortOrder, allSortOrders)) next.timeSlotId = "";
         }
       }
       return next;
