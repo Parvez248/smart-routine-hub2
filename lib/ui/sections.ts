@@ -26,3 +26,39 @@ export function sectionLabel(section: SectionValue): string | null {
   if (/^both$/i.test(trimmed)) return "Sec 1 & 2";
   return /^sec\b/i.test(trimmed) ? trimmed : `Sec ${trimmed}`;
 }
+
+// The subset of a session's fields Step 41's Combine action needs to judge
+// whether a Sec 1 row and a Sec 2 row are truly the same class — deliberately
+// narrower than the routine views' FilterableSession (which drops entity ids
+// in favour of display fields), so this stays usable anywhere a session has
+// resolved course/teacher/room/timeSlot relations, without widening that
+// shared type just for admin-only tooling.
+export type CombineCandidate = {
+  section: string | null;
+  status: string;
+  course: { id: number };
+  teacher: { id: number };
+  room: { id: number };
+  timeSlot: { id: number };
+  movedTo: unknown | null;
+};
+
+/**
+ * True when `a` and `b` are one Sec 1 row and one Sec 2 row for the exact
+ * same class — same course, teacher, room, and time slot, both active with
+ * no reschedule override — and can be safely merged into a single "Both"
+ * row (Step 41). Order of the two arguments doesn't matter. Deliberately
+ * strict: any difference (room, teacher, slot) means they're genuinely
+ * different classes and must not be offered for combining.
+ */
+export function canCombine(a: CombineCandidate, b: CombineCandidate): boolean {
+  const sections = [a.section, b.section].sort();
+  if (sections[0] !== "Sec 1" || sections[1] !== "Sec 2") return false;
+  if (a.status !== "ACTIVE" || b.status !== "ACTIVE") return false;
+  if (a.movedTo || b.movedTo) return false;
+  if (a.course.id !== b.course.id) return false;
+  if (a.teacher.id !== b.teacher.id) return false;
+  if (a.room.id !== b.room.id) return false;
+  if (a.timeSlot.id !== b.timeSlot.id) return false;
+  return true;
+}

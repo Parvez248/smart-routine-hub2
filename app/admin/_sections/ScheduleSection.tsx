@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import Link from "next/link";
 import { Card, CardHeader } from "@/app/components/ui/Card";
 import { Button, LinkButton } from "@/app/components/ui/Button";
@@ -8,13 +8,14 @@ import { Message } from "@/app/components/ui/Message";
 import { useRoutineFilters } from "@/app/components/routine/useRoutineFilters";
 import { RoutineList } from "@/app/components/routine/RoutineList";
 import { RoutineTimeRail } from "@/app/components/routine/RoutineTimeRail";
-import { RoutineGrid, type AddSessionContext } from "@/app/components/routine/RoutineGrid";
+import { RoutineGrid, type AddSessionContext, type CombineTarget } from "@/app/components/routine/RoutineGrid";
 import { RoutineMasthead } from "@/app/components/routine/RoutineMasthead";
 import { FilterCard } from "@/app/components/routine/FilterCard";
 import { ViewToggle, type RoutineView } from "@/app/components/routine/ViewToggle";
 import { useIsDesktop } from "@/app/components/routine/useIsDesktop";
 import { SessionDialog, type SessionFormValues } from "@/app/components/routine/SessionDialog";
-import { combineSlotLabels } from "@/app/components/routine/labMerge";
+import { combineSlotLabels, mergeLabPairs } from "@/app/components/routine/labMerge";
+import { canCombine, sectionLabel } from "@/lib/ui/sections";
 
 type Course   = { id: number; code: string; title: string; type: string };
 type Teacher  = { id: number; initials: string; name: string };
@@ -89,6 +90,7 @@ export default function ScheduleSection() {
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [statusActingId, setStatusActingId] = useState<number | null>(null);
+  const [combiningId, setCombiningId] = useState<number | null>(null);
 
   const [freeDay, setFreeDay] = useState("");
   const [freeSlotId, setFreeSlotId] = useState("");
@@ -251,6 +253,120 @@ export default function ScheduleSection() {
     if (pair) await handleDelete(pair.id);
   }
 
+  // Step 41 — merge an identical Sec 1 + Sec 2 pair into one "Both" class.
+  function sessionFields(s: SessionRow, section: string | null) {
+    return {
+      day: s.day,
+      timeSlotId: s.timeSlot.id,
+      batchId: s.batch.id,
+      section,
+      courseId: s.course.id,
+      teacherId: s.teacher.id,
+      roomId: s.room.id,
+      versionId: Number(selectedVersionId),
+    };
+  }
+
+  async function patchSessionApi(id: number, fields: ReturnType<typeof sessionFields>) {
+    const res = await fetch(`/api/sessions/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(fields),
+    });
+    const json = await res.json();
+    return { ok: res.ok && json.ok, error: json.error as string | undefined };
+  }
+
+  async function createSessionApi(fields: ReturnType<typeof sessionFields>) {
+    const res = await fetch("/api/sessions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(fields),
+    });
+    const json = await res.json();
+    return { ok: res.status === 201 && json.ok, error: json.error as string | undefined };
+  }
+
+  async function deleteSessionApi(id: number) {
+    const res = await fetch(`/api/sessions?id=${id}`, { method: "DELETE" });
+    return res.ok;
+  }
+
+  // One period's merge: delete the Sec 2 (partner) row, then promote the
+  // Sec 1 (anchor) row to "Both". Order matters — patching the anchor to
+  // Both while partner still exists would trip the existing room/teacher/
+  // batch conflict checks (correctly: the two rows really would overlap
+  // until partner is gone). If the patch fails after the delete already
+  // succeeded, the partner is recreated so the period isn't left one row
+  // short.
+  async function combinePeriod(anchor: SessionRow, partner: SessionRow): Promise<void> {
+    const deleted = await deleteSessionApi(partner.id);
+    if (!deleted) {
+      throw new Error(`Could not remove the ${sectionLabel(partner.section)} class (${partner.course.code}).`);
+    }
+    const patch = await patchSessionApi(anchor.id, sessionFields(anchor, "Both"));
+    if (patch.ok) return;
+
+    const restore = await createSessionApi(sessionFields(partner, partner.section));
+    if (!restore.ok) {
+      throw new Error(
+        `Combine failed for ${anchor.course.code} and the ${sectionLabel(partner.section)} class could not be restored automatically — please recreate it manually (${partner.day}, ${partner.timeSlot.label}, ${partner.teacher.initials}, Room ${partner.room.name}).`
+      );
+    }
+    throw new Error(patch.error ?? `Could not combine ${anchor.course.code} — restored the original two classes.`);
+  }
+
+  // Reverses one already-combined period — used to roll a lab pair back to
+  // its original two rows when a later period fails, so the pair stays in
+  // lockstep (both periods combined, or neither).
+  async function uncombinePeriod(anchor: SessionRow, partner: SessionRow): Promise<void> {
+    await patchSessionApi(anchor.id, sessionFields(anchor, anchor.section));
+    const restore = await createSessionApi(sessionFields(partner, partner.section));
+    if (!restore.ok) {
+      throw new Error(`Rollback incomplete for ${anchor.course.code} — please check the routine manually.`);
+    }
+  }
+
+  async function handleCombine(
+    anchor: SessionRow,
+    anchorPair: SessionRow | undefined,
+    partner: SessionRow,
+    partnerPair: SessionRow | undefined
+  ) {
+    const isLab = Boolean(anchorPair && partnerPair);
+    const confirmMsg = isLab
+      ? `Combine ${anchor.course.code} (${anchor.day}) into one class for both sections? Both periods of this lab will be merged.`
+      : `Combine ${anchor.course.code} (${anchor.day}, ${anchor.timeSlot.label}) into one class for both sections?`;
+    if (!confirm(confirmMsg)) return;
+
+    const periods: [SessionRow, SessionRow][] = isLab
+      ? [[anchor, partner], [anchorPair!, partnerPair!]]
+      : [[anchor, partner]];
+
+    setCombiningId(anchor.id);
+    setStatus(null);
+    const completed: [SessionRow, SessionRow][] = [];
+    try {
+      for (const [a, p] of periods) {
+        await combinePeriod(a, p);
+        completed.push([a, p]);
+      }
+      setStatus({ type: "success", msg: `Combined ${anchor.course.code} into one class for both sections.` });
+    } catch (err) {
+      for (const [a, p] of [...completed].reverse()) {
+        try {
+          await uncombinePeriod(a, p);
+        } catch (rollbackErr) {
+          console.error(rollbackErr);
+        }
+      }
+      setStatus({ type: "error", msg: err instanceof Error ? err.message : "Combine failed." });
+    } finally {
+      setCombiningId(null);
+      await loadSessions(selectedVersionId);
+    }
+  }
+
   async function handleToggleStatus(s: SessionRow) {
     const nextStatus = s.status === "CANCELLED" ? "ACTIVE" : "CANCELLED";
     setStatusActingId(s.id);
@@ -309,6 +425,40 @@ export default function ScheduleSection() {
       batchSections[s.batch.id] = set;
     }
   }
+
+  // Step 41 — Sec 1 sessions (or Sec 1 lab pairs) that have an identical
+  // Sec 2 counterpart in the same batch+day+slot, keyed by the Sec 1
+  // session's id. Reuses mergeLabPairs (same lab-pairing logic the grid
+  // and rail already use) so a two-period lab only offers Combine when
+  // both periods match across the two sections.
+  const combinablePairs = useMemo(() => {
+    const map = new Map<number, CombineTarget<SessionRow>>();
+    const groups = new Map<string, SessionRow[]>();
+    for (const s of sessions) {
+      if (s.section !== "Sec 1" && s.section !== "Sec 2") continue;
+      if (s.status !== "ACTIVE" || s.movedTo) continue;
+      const key = `${s.batch.id}|${s.day}`;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(s);
+    }
+    for (const groupSessions of groups.values()) {
+      const sec1 = groupSessions.filter((s) => s.section === "Sec 1");
+      const sec2 = groupSessions.filter((s) => s.section === "Sec 2");
+      if (sec1.length === 0 || sec2.length === 0) continue;
+      const sec1Entries = mergeLabPairs(sec1);
+      const sec2Entries = mergeLabPairs(sec2);
+      for (const e1 of sec1Entries) {
+        const e2 = sec2Entries.find(
+          (e) => e.session.timeSlot.sortOrder === e1.session.timeSlot.sortOrder && e.span === e1.span
+        );
+        if (!e2) continue;
+        if (!canCombine(e1.session, e2.session)) continue;
+        if (e1.span === 2 && (!e1.pair || !e2.pair || !canCombine(e1.pair, e2.pair))) continue;
+        map.set(e1.session.id, { partner: e2.session, partnerPair: e1.span === 2 ? e2.pair : undefined });
+      }
+    }
+    return map;
+  }, [sessions]);
 
   const selectedVersionName = versions.find((v) => String(v.id) === selectedVersionId)?.name ?? "—";
   const publishedVersion = versions.find((v) => v.isPublished) ?? null;
@@ -548,6 +698,9 @@ export default function ScheduleSection() {
             onEditSession={openInlineEdit}
             onDeleteSession={handleInlineDelete}
             onAddSession={openInlineAdd}
+            combinablePairs={combinablePairs}
+            onCombine={handleCombine}
+            combiningId={combiningId}
           />
         ) : effectiveView === "rail" ? (
           <RoutineTimeRail

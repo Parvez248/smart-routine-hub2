@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useMemo } from "react";
-import { Pencil, Trash2, Plus } from "lucide-react";
+import { Pencil, Trash2, Plus, Combine } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -29,6 +29,13 @@ export type AddSessionContext<T extends FilterableSession> = {
   // which isn't tied to any one slot — the admin picks it in the dialog.
   timeSlot?: T["timeSlot"];
 };
+
+// Step 41: the Sec 2 (+ its lab pair, if any) that a Sec 1 (or Sec 1's lab
+// pair) session can be merged with — keyed by the Sec 1 session's id. Built
+// by the caller (which has entity ids to compare with `canCombine`) and
+// handed to the grid purely as data, so the grid itself stays agnostic of
+// how eligibility is computed.
+export type CombineTarget<T> = { partner: T; partnerPair?: T };
 
 function buildCells<T extends FilterableSession>(sessions: T[], slots: SlotColumn<T["timeSlot"]>[]): Cell<T>[] {
   const cells: Cell<T>[] = new Array(slots.length).fill(null);
@@ -106,6 +113,7 @@ function buildGroupGrid<T extends FilterableSession>(
 
 function GridCell<T extends FilterableSession>({
   desc, band, day, batch, section, column, editable, onEditSession, onDeleteSession, onAddSession,
+  combine, onCombine, combining,
 }: {
   desc: CellDesc<T>;
   band: Band;
@@ -117,6 +125,9 @@ function GridCell<T extends FilterableSession>({
   onEditSession?: (session: T, pair?: T) => void;
   onDeleteSession?: (session: T, pair?: T) => void;
   onAddSession?: (ctx: AddSessionContext<T>) => void;
+  combine?: CombineTarget<T>;
+  onCombine?: (anchor: T, anchorPair: T | undefined, partner: T, partnerPair: T | undefined) => void;
+  combining?: boolean;
 }) {
   if (desc.kind === "empty") {
     return (
@@ -199,6 +210,19 @@ function GridCell<T extends FilterableSession>({
           </TooltipContent>
         </Tooltip>
 
+        {editable && combine && onCombine && (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onCombine(s, pair, combine.partner, combine.partnerPair); }}
+            disabled={combining}
+            className="print:hidden absolute top-1 left-1 z-10 p-1 rounded bg-white/25 hover:bg-white/40 text-white disabled:opacity-50"
+            aria-label={`Combine ${s.course.code} into one class for both sections`}
+            title="Combine both sections"
+          >
+            <Combine className="size-3" aria-hidden="true" />
+          </button>
+        )}
+
         {editable && (
           <div className="print:hidden absolute top-1 right-1 z-10 flex items-center gap-1 opacity-0 group-hover/cell:opacity-100 focus-within:opacity-100 transition-opacity">
             {onEditSession && (
@@ -241,6 +265,7 @@ function GridSkeleton() {
 
 export function RoutineGrid<T extends FilterableSession>({
   sessions, onClearFilters, loading = false, editable = false, onEditSession, onDeleteSession, onAddSession,
+  combinablePairs, onCombine, combiningId,
 }: {
   sessions: T[];
   onClearFilters?: () => void;
@@ -249,6 +274,12 @@ export function RoutineGrid<T extends FilterableSession>({
   onEditSession?: (session: T, pair?: T) => void;
   onDeleteSession?: (session: T, pair?: T) => void;
   onAddSession?: (ctx: AddSessionContext<T>) => void;
+  // Step 41 — combine a Sec 1 + Sec 2 pair into one "Both" class. Keyed by
+  // the Sec 1 session's id; see CombineTarget for why the grid doesn't
+  // compute eligibility itself.
+  combinablePairs?: Map<number, CombineTarget<T>>;
+  onCombine?: (anchor: T, anchorPair: T | undefined, partner: T, partnerPair: T | undefined) => void;
+  combiningId?: number | null;
 }) {
   const slotColumns = useMemo<SlotColumn<T["timeSlot"]>[]>(() => {
     const map = new Map<number, SlotColumn<T["timeSlot"]>>();
@@ -430,6 +461,7 @@ export function RoutineGrid<T extends FilterableSession>({
                         }
                         const desc = row.cells[i];
                         if (desc.kind === "skip") continue;
+                        const combine = desc.kind === "session" ? combinablePairs?.get(desc.session.id) : undefined;
                         out.push(
                           <GridCell
                             key={slotColumns[i].sortOrder}
@@ -443,6 +475,9 @@ export function RoutineGrid<T extends FilterableSession>({
                             onEditSession={onEditSession}
                             onDeleteSession={onDeleteSession}
                             onAddSession={onAddSession}
+                            combine={combine}
+                            onCombine={onCombine}
+                            combining={desc.kind === "session" && combiningId === desc.session.id}
                           />
                         );
                       }
