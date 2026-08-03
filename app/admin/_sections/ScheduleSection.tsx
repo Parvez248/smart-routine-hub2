@@ -298,6 +298,18 @@ export default function ScheduleSection() {
     days: new Set(sessions.map((s) => s.day)).size,
   };
 
+  // batchId → distinct Sec 1/Sec 2 values seen anywhere in the loaded routine
+  // — tells the dialog which batches are sectioned (Step 39), from data
+  // already fetched, no new query.
+  const batchSections: Record<number, string[]> = {};
+  for (const s of sessions) {
+    if (s.section === "Sec 1" || s.section === "Sec 2") {
+      const set = batchSections[s.batch.id] ?? [];
+      if (!set.includes(s.section)) set.push(s.section);
+      batchSections[s.batch.id] = set;
+    }
+  }
+
   const selectedVersionName = versions.find((v) => String(v.id) === selectedVersionId)?.name ?? "—";
   const publishedVersion = versions.find((v) => v.isPublished) ?? null;
 
@@ -560,6 +572,7 @@ export default function ScheduleSection() {
         versionId={selectedVersionId ? Number(selectedVersionId) : null}
         initial={dialogInitial}
         onSaved={() => loadSessions(selectedVersionId)}
+        batchSections={batchSections}
       />
     </>
   );

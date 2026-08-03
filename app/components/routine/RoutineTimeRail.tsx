@@ -52,6 +52,11 @@ function Bar<T extends FilterableSession>({
           <span className="text-white/60">·</span>
           <span className="font-data">Room {s.room.name}</span>
           <TypePill type={s.course.type} batch={s.batch} onBar />
+          {s.section === "Both" && (
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-white/25 text-white print:bg-transparent print:border print:border-foreground print:text-foreground">
+              Sec 1 &amp; 2
+            </span>
+          )}
           {cancelled && <StatusBadge status="Cancelled" />}
           {moved && <StatusBadge status="Moved" />}
         </div>

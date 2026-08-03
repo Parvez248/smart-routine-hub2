@@ -1,4 +1,5 @@
 import { bandEdgeClass, bandForBatch, bandVar } from "@/lib/ui/bandColors";
+import { sectionLabel } from "@/lib/ui/sections";
 import type { FilterableSession } from "./types";
 
 // Every row keeps a band-coloured left edge (batch seniority) — status always
@@ -61,26 +62,17 @@ export function MovedNote({ movedTo }: { movedTo: FilterableSession["movedTo"] }
   );
 }
 
-// The stored section value is already like "Sec 2" — only prefix "Sec" once,
-// never double it into "Sec Sec 2".
-export function formatSection(section: string | null | undefined): string | null {
-  if (!section) return null;
-  const trimmed = section.trim();
-  if (!trimmed) return null;
-  return /^sec\b/i.test(trimmed) ? trimmed : `Sec ${trimmed}`;
-}
-
-/** Outlined band-coloured pill for a batch, e.g. "23rd / 8th" or "26th / 5th · Sec 2". */
+/** Outlined band-coloured pill for a batch, e.g. "23rd / 8th", "26th / 5th · Sec 2", or "28th / 3rd · Sec 1 & 2" for a combined-section class. */
 export function BatchPill({ batch, section }: { batch: { name: string; semester: string }; section?: string | null }) {
   const band = bandForBatch(batch);
-  const sectionLabel = formatSection(section);
+  const label = sectionLabel(section);
   return (
     <span
       className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold border font-data print:border-foreground print:text-foreground"
       style={{ borderColor: bandVar(band), color: bandVar(band) }}
     >
       {batch.name} / {batch.semester}
-      {sectionLabel ? ` · ${sectionLabel}` : ""}
+      {label ? ` · ${label}` : ""}
     </span>
   );
 }

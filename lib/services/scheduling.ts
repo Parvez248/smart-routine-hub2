@@ -1,5 +1,6 @@
 import { getDb } from "@/lib/db";
 import { dateOnly, dayNameForDate, isOnOrAfterToday } from "@/lib/services/dates";
+import { sectionsIntersect, sectionLabel } from "@/lib/ui/sections";
 
 type ConflictInput = {
   day: string;
@@ -57,15 +58,19 @@ async function buildConflictReasons(
     conflicts.push(`${teacher?.initials ?? "This teacher"} already has a class at this day & time.`);
   }
 
+  // A "Both" class occupies its room/teacher/time once but covers both
+  // sections — it must conflict with a separate Sec 1/Sec 2 class for the
+  // same batch+slot (their covered sections overlap), but two sections
+  // running in parallel (Sec 1 vs Sec 2, in different rooms) do not.
   const batchConflict = matching.find((s) => {
     if (s.batchId !== batchId) return false;
-    const existSection = s.section?.trim() || null;
-    return existSection === normSection;
+    return sectionsIntersect(s.section, normSection);
   });
   if (batchConflict) {
     const batch = await db.batch.findUnique({ where: { id: batchId } });
+    const label = sectionLabel(normSection);
     conflicts.push(
-      `Batch ${batch?.name ?? batchId}${normSection ? ` (${normSection})` : ""} already has a class at this day & time.`
+      `Batch ${batch?.name ?? batchId}${label ? ` (${label})` : ""} already has a class at this day & time.`
     );
   }
 

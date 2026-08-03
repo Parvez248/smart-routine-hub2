@@ -93,12 +93,17 @@ export function SessionDialog({
   versionId,
   initial,
   onSaved,
+  batchSections,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   versionId: number | null;
   initial: SessionFormValues | null;
   onSaved: () => void;
+  // batchId → distinct Sec 1/Sec 2 values already in use for that batch, so
+  // the Section field knows whether to offer Sec 1 / Sec 2 / Both Sections
+  // (Step 39) or stay free-text for a batch with no sections.
+  batchSections: Record<number, string[]>;
 }) {
   const [ref, setRef] = useState<RefData | null>(null);
   const [form, setForm] = useState<SessionFormValues | null>(null);
@@ -132,6 +137,7 @@ export function SessionDialog({
     [ref, form?.courseId]
   );
   const isLabSelected = selectedCourse?.type === "LAB";
+  const hasSections = Boolean(form?.batchId && (batchSections[Number(form.batchId)]?.length ?? 0) > 0);
 
   const labStartOptions = useMemo(() => {
     if (!ref) return [];
@@ -199,6 +205,13 @@ export function SessionDialog({
           const allSortOrders = ref.timeSlots.map((t) => t.sortOrder);
           const slot = ref.timeSlots.find((t) => String(t.id) === next.timeSlotId);
           if (!slot || !isValidLabStart(slot.sortOrder, allSortOrders)) next.timeSlotId = "";
+        }
+      }
+      if (key === "batchId") {
+        const nowHasSections = (batchSections[Number(value)]?.length ?? 0) > 0;
+        const validSectionValues = ["Sec 1", "Sec 2", "Both"];
+        if (nowHasSections ? !validSectionValues.includes(next.section) : next.section !== "") {
+          next.section = "";
         }
       }
       return next;
@@ -341,20 +354,34 @@ export function SessionDialog({
                 {ref?.batches.map((b) => <option key={b.id} value={b.id}>{b.name} — {b.semester} sem</option>)}
               </select>
             </Field>
-            <Field label="Section (optional)">
-              <input
-                type="text"
-                value={form.section}
-                onChange={(e) => setField("section", e.target.value)}
-                placeholder="e.g. Sec 1"
-                className={selectClass}
-              />
+            <Field label={hasSections ? "Section" : "Section (optional)"}>
+              {hasSections ? (
+                <select required value={form.section} onChange={(e) => setField("section", e.target.value)} className={selectClass}>
+                  <option value="">Select section</option>
+                  <option value="Sec 1">Sec 1</option>
+                  <option value="Sec 2">Sec 2</option>
+                  <option value="Both">Both Sections</option>
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  value={form.section}
+                  onChange={(e) => setField("section", e.target.value)}
+                  placeholder="e.g. Sec 1"
+                  className={selectClass}
+                />
+              )}
             </Field>
           </div>
 
           {isLabSelected && (
             <p className="text-xs text-slate -mt-2">
               This is a lab — it will occupy both periods of the slot above.
+            </p>
+          )}
+          {form.section === "Both" && (
+            <p className="text-xs text-slate -mt-2">
+              This class is taught to both sections together — it will span both section rows.
             </p>
           )}
 

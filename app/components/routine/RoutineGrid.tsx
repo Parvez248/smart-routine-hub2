@@ -11,7 +11,6 @@ import { isSameLabPair, isMergeableAdjacent } from "./labMerge";
 import type { FilterableSession } from "./types";
 
 const DAY_ORDER = ["Sat", "Sun", "Mon", "Tues", "Wed"];
-const DAY_NAME: Record<string, string> = { Sat: "Saturday", Sun: "Sunday", Mon: "Monday", Tues: "Tuesday", Wed: "Wednesday" };
 
 const DAY_COL_WIDTH = 56;
 const YEAR_COL_WIDTH = 168;
@@ -20,14 +19,6 @@ const SLOT_COL_WIDTH = 132;
 
 type SlotColumn<T> = { sortOrder: number; label: string; timeSlot: T };
 type Cell<T> = { session: T; span: 1 | 2; pair?: T } | { session: T; span: 0 } | null;
-
-type Row<T> = {
-  day: string;
-  batch: T extends FilterableSession ? T["batch"] : never;
-  section: string | null;
-  sortKey: number;
-  sessions: T[];
-};
 
 export type AddSessionContext<T extends FilterableSession> = {
   day: string;
@@ -58,12 +49,66 @@ function buildCells<T extends FilterableSession>(sessions: T[], slots: SlotColum
   return cells;
 }
 
+// One physical table row: a batch's Sec 1 row, its Sec 2 row, or the single
+// row for a batch with no sections (or the Step 39 fallback — see below).
+type SectionRow<T> = { section: string | null; sessions: T[] };
+
+// A day+batch's classes, before deciding how many physical rows they need.
+// "Both"-section sessions (Step 39: one class taught to both sections at
+// once) never define a row of their own — they're layered across whichever
+// Sec 1/Sec 2 rows exist, spanning both when there are two.
+type BatchDayGroup<T> = {
+  day: string;
+  batch: T extends FilterableSession ? T["batch"] : never;
+  sortKey: number;
+  sectionRows: SectionRow<T>[]; // 1 or 2 entries
+  bothSessions: T[];
+};
+
+// Per-cell render instruction after laying a group's own-section sessions AND
+// its "Both" sessions onto the same day×slot grid — colSpan from the lab
+// merge above composes with rowSpan from Both spanning two section rows.
+type CellDesc<T> =
+  | { kind: "empty" }
+  | { kind: "skip" }
+  | { kind: "session"; session: T; colSpan: 1 | 2; rowSpan: 1 | 2; pair?: T; isBoth: boolean };
+
+function buildGroupGrid<T extends FilterableSession>(
+  group: BatchDayGroup<T>,
+  slots: SlotColumn<T["timeSlot"]>[]
+): CellDesc<T>[][] {
+  const numRows = group.sectionRows.length;
+  const grid: CellDesc<T>[][] = Array.from({ length: numRows }, () =>
+    Array.from({ length: slots.length }, () => ({ kind: "empty" }) as CellDesc<T>)
+  );
+
+  function place(sessionList: T[], rowIdx: number, isBoth: boolean, rowSpan: 1 | 2) {
+    const cells = buildCells(sessionList, slots);
+    for (let col = 0; col < slots.length; col++) {
+      const cell = cells[col];
+      if (!cell || cell.span === 0) continue;
+      grid[rowIdx][col] = { kind: "session", session: cell.session, colSpan: cell.span, rowSpan, pair: cell.span === 2 ? cell.pair : undefined, isBoth };
+      if (cell.span === 2) grid[rowIdx][col + 1] = { kind: "skip" };
+      if (rowSpan === 2 && rowIdx + 1 < numRows) {
+        grid[rowIdx + 1][col] = { kind: "skip" };
+        if (cell.span === 2) grid[rowIdx + 1][col + 1] = { kind: "skip" };
+      }
+    }
+  }
+
+  group.sectionRows.forEach((sr, i) => place(sr.sessions, i, false, 1));
+  if (group.bothSessions.length > 0) {
+    place(group.bothSessions, 0, true, numRows === 2 ? 2 : 1);
+  }
+
+  return grid;
+}
+
 function GridCell<T extends FilterableSession>({
-  cell, band, span, day, batch, section, column, editable, onEditSession, onDeleteSession, onAddSession,
+  desc, band, day, batch, section, column, editable, onEditSession, onDeleteSession, onAddSession,
 }: {
-  cell: Cell<T>;
+  desc: CellDesc<T>;
   band: Band;
-  span: number;
   day: string;
   batch: T["batch"];
   section: string | null;
@@ -73,7 +118,7 @@ function GridCell<T extends FilterableSession>({
   onDeleteSession?: (session: T, pair?: T) => void;
   onAddSession?: (ctx: AddSessionContext<T>) => void;
 }) {
-  if (!cell) {
+  if (desc.kind === "empty") {
     return (
       <td
         className="grid-empty-cell group/cell relative border border-border p-0"
@@ -93,16 +138,22 @@ function GridCell<T extends FilterableSession>({
     );
   }
 
-  const s = cell.session;
-  const pair = cell.span === 2 ? cell.pair : undefined;
+  if (desc.kind === "skip") return null; // never rendered — filtered out by the caller before reaching here
+
+  const { session: s, colSpan, rowSpan, pair, isBoth } = desc;
   const cancelled = s.status === "CANCELLED";
   const moved = !cancelled && Boolean(s.movedTo);
   const fill = cancelled ? "var(--bar-cancelled)" : moved ? "var(--bar-moved)" : bandVar(band);
   const title = courseTitleIfDifferent(s.course);
 
   return (
-    <td colSpan={span} className="border border-border p-1 align-top" style={{ width: SLOT_COL_WIDTH * span }}>
-      <div className="relative group/cell">
+    <td
+      colSpan={colSpan}
+      rowSpan={rowSpan}
+      className="border border-border p-1 align-top"
+      style={{ width: SLOT_COL_WIDTH * colSpan }}
+    >
+      <div className="relative group/cell h-full">
         <Tooltip>
           <TooltipTrigger
             render={
@@ -113,13 +164,18 @@ function GridCell<T extends FilterableSession>({
               />
             }
           >
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-1 flex-wrap">
               <span className={`font-data font-semibold text-[11px] leading-tight tabular truncate text-white ${cancelled ? "line-through" : ""}`}>
                 {s.course.code}
               </span>
               {pair && (
                 <span className="shrink-0 text-[8px] font-bold uppercase tracking-wide text-white/90 bg-white/20 rounded px-1 leading-tight">
                   Lab
+                </span>
+              )}
+              {isBoth && (
+                <span className="shrink-0 text-[8px] font-bold uppercase tracking-wide text-white/90 bg-white/20 rounded px-1 leading-tight">
+                  Sec 1 &amp; 2
                 </span>
               )}
             </span>
@@ -131,7 +187,7 @@ function GridCell<T extends FilterableSession>({
           </TooltipTrigger>
           <TooltipContent>
             <p className="font-semibold">{s.teacher.name}</p>
-            <p>{s.course.code}{title ? ` — ${title}` : ""}{pair ? " (2 periods)" : ""}</p>
+            <p>{s.course.code}{title ? ` — ${title}` : ""}{pair ? " (2 periods)" : ""}{isBoth ? " · Sec 1 & 2" : ""}</p>
             <p>Room {s.room.name}</p>
             {moved && s.movedTo && (
               <p className="mt-1 text-muted-foreground">
@@ -211,17 +267,34 @@ export function RoutineGrid<T extends FilterableSession>({
     return slotColumns.length >= 5 ? 3 : -1;
   }, [slotColumns]);
 
-  const rows = useMemo(() => {
-    const map = new Map<string, Row<T>>();
+  // Group by day+batch (no section) — sections are resolved into 1-2 rows below.
+  const groups = useMemo(() => {
+    const map = new Map<string, T[]>();
     for (const s of sessions) {
-      const key = `${s.day}|${s.batch.name}|${s.batch.semester}|${s.section ?? ""}`;
-      if (!map.has(key)) {
-        const n = parseInt(s.batch.semester.match(/\d+/)?.[0] ?? "0", 10);
-        map.set(key, { day: s.day, batch: s.batch as Row<T>["batch"], section: s.section, sortKey: n, sessions: [] });
-      }
-      map.get(key)!.sessions.push(s);
+      const key = `${s.day}|${s.batch.name}|${s.batch.semester}`;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(s);
     }
-    return [...map.values()].sort(
+    const out: BatchDayGroup<T>[] = [];
+    for (const sess of map.values()) {
+      const day = sess[0].day;
+      const batch = sess[0].batch as BatchDayGroup<T>["batch"];
+      const bothSessions = sess.filter((s) => s.section === "Both");
+      const nonBoth = sess.filter((s) => s.section !== "Both");
+      const distinctSections = [...new Set(nonBoth.map((s) => s.section))];
+      let sectionRows: SectionRow<T>[];
+      if (distinctSections.length > 0) {
+        const sorted = distinctSections.sort((a, b) => (a ?? "").localeCompare(b ?? ""));
+        sectionRows = sorted.map((sec) => ({ section: sec, sessions: nonBoth.filter((s) => s.section === sec) }));
+      } else {
+        // No Sec 1/Sec 2/null rows this day — fall back to one row so a
+        // Both-only day still renders (labelled "Sec 1 & 2" via the pill).
+        sectionRows = [{ section: bothSessions.length > 0 ? "Both" : null, sessions: [] }];
+      }
+      const n = parseInt(batch.semester.match(/\d+/)?.[0] ?? "0", 10);
+      out.push({ day, batch, sortKey: n, sectionRows, bothSessions });
+    }
+    return out.sort(
       (a, b) =>
         DAY_ORDER.indexOf(a.day) - DAY_ORDER.indexOf(b.day) ||
         b.sortKey - a.sortKey ||
@@ -229,11 +302,24 @@ export function RoutineGrid<T extends FilterableSession>({
     );
   }, [sessions]);
 
+  // Flatten into physical rows, each carrying its own pre-built cell row —
+  // a Both cell's rowSpan is already resolved here, before rendering.
+  const physicalRows = useMemo(() => {
+    const out: { day: string; batch: T["batch"]; section: string | null; cells: CellDesc<T>[] }[] = [];
+    for (const g of groups) {
+      const grid = buildGroupGrid(g, slotColumns);
+      g.sectionRows.forEach((sr, i) => {
+        out.push({ day: g.day, batch: g.batch as T["batch"], section: sr.section, cells: grid[i] });
+      });
+    }
+    return out;
+  }, [groups, slotColumns]);
+
   const dayRowSpans = useMemo(() => {
     const counts = new Map<string, number>();
-    for (const r of rows) counts.set(r.day, (counts.get(r.day) ?? 0) + 1);
+    for (const r of physicalRows) counts.set(r.day, (counts.get(r.day) ?? 0) + 1);
     return counts;
-  }, [rows]);
+  }, [physicalRows]);
 
   if (loading) return <GridSkeleton />;
 
@@ -298,15 +384,17 @@ export function RoutineGrid<T extends FilterableSession>({
               </tr>
             </thead>
             <tbody>
-              {rows.map((row, rIdx) => {
+              {physicalRows.map((row, rIdx) => {
                 const band = bandForBatch(row.batch);
-                const cells = buildCells(row.sessions, slotColumns);
                 const showDay = row.day !== lastDay;
                 if (showDay) lastDay = row.day;
                 const daySpan = dayRowSpans.get(row.day) ?? 1;
 
                 return (
-                  <tr key={`${row.day}-${row.batch.name}-${row.batch.semester}-${row.section ?? ""}`} className="break-inside-avoid">
+                  <tr
+                    key={`${row.day}-${row.batch.name}-${row.batch.semester}-${row.section ?? ""}-${rIdx}`}
+                    className="break-inside-avoid"
+                  >
                     {showDay && (
                       <td
                         className="grid-sticky sticky z-10 border border-border bg-card text-center align-middle"
@@ -328,7 +416,7 @@ export function RoutineGrid<T extends FilterableSession>({
                           out.push(
                             <td
                               key="break"
-                              rowSpan={rows.length}
+                              rowSpan={physicalRows.length}
                               className="border border-border bg-muted p-0 text-center align-top"
                             >
                               {/* Sticky so the label stays legible while scrolling a tall grid —
@@ -340,14 +428,13 @@ export function RoutineGrid<T extends FilterableSession>({
                             </td>
                           );
                         }
-                        const cell = cells[i];
-                        if (cell && cell.span === 0) continue;
+                        const desc = row.cells[i];
+                        if (desc.kind === "skip") continue;
                         out.push(
                           <GridCell
                             key={slotColumns[i].sortOrder}
-                            cell={cell}
+                            desc={desc}
                             band={band}
-                            span={cell?.span ?? 1}
                             day={row.day}
                             batch={row.batch}
                             section={row.section}

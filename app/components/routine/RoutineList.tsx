@@ -6,6 +6,7 @@ import { EmptyState } from "@/app/components/ui/EmptyState";
 import { StatusBadge } from "@/app/components/ui/StatusBadge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TypePill, MovedNote, rowEdgeClass, courseTitleIfDifferent } from "./RowBadges";
+import { sectionLabel } from "@/lib/ui/sections";
 import type { FilterableSession } from "./types";
 
 type SortKey = "day" | "slot" | "course" | "teacher" | "batch" | "room" | "status";
@@ -173,7 +174,9 @@ export function RoutineList<T extends FilterableSession>({
               </td>
               <td className="px-5 py-3.5">
                 <span className="font-medium text-foreground">{s.batch.name}</span>
-                {s.section && <span className="ml-1.5 text-xs text-slate bg-muted px-1.5 py-0.5 rounded">{s.section}</span>}
+                {sectionLabel(s.section) && (
+                  <span className="ml-1.5 text-xs text-slate bg-muted px-1.5 py-0.5 rounded">{sectionLabel(s.section)}</span>
+                )}
               </td>
               <td className="px-5 py-3.5 text-muted-foreground font-data">{s.room.name}</td>
               <td className="px-5 py-3.5">
