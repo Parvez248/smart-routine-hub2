@@ -1,6 +1,5 @@
 import "dotenv/config";
-import { readFileSync } from "fs";
-import { join } from "path";
+import { execFileSync } from "node:child_process";
 import bcrypt from "bcryptjs";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { PrismaClient } from "../app/generated/prisma/client";
@@ -18,105 +17,53 @@ function buildAdapterConfig(url: string) {
   };
 }
 
-const data = JSON.parse(
-  readFileSync(join(__dirname, "routine-data.json"), "utf-8")
-) as {
-  timeSlots: { id: number; label: string }[];
-  teachers: Record<string, string>;
-  rooms: { name: string; capacity: number }[];
-  batches: { name: string; semester: string }[];
-  courses: { code: string; type: "LAB" | "THEORY" }[];
-};
+// Bootstraps a blank database. The routine import (reference data, the
+// published version, and every session) is delegated to
+// import-routine-july.ts — the same script that refreshes production from
+// the current source — so there is exactly one place that knows how to
+// build the routine. This file only adds what that script doesn't cover:
+// the admin login, since nothing else creates it.
+//
+// Safe by default: without --apply this only reports what it would do
+// (both here and in the delegated import). `prisma db seed` passes
+// --apply explicitly (see prisma.config.ts); a bare `tsx prisma/seed.ts`
+// stays a dry run.
+const APPLY = process.argv.includes("--apply");
 
 async function main() {
-  const adapter = new PrismaMariaDb(buildAdapterConfig(process.env.DATABASE_URL!));
-  const prisma = new PrismaClient({ adapter });
+  console.log(`\n=== Database seed — ${APPLY ? "APPLY MODE (will write to the database)" : "DRY RUN (no changes will be made)"} ===`);
 
-  for (const ts of data.timeSlots) {
-    await prisma.timeSlot.upsert({
-      where: { id: ts.id },
-      update: { label: ts.label, sortOrder: ts.id },
-      create: { id: ts.id, label: ts.label, sortOrder: ts.id },
-    });
-  }
-
-  for (const [initials, name] of Object.entries(data.teachers)) {
-    await prisma.teacher.upsert({
-      where: { initials },
-      update: { name },
-      create: { initials, name },
-    });
-  }
-
-  for (const room of data.rooms) {
-    await prisma.room.upsert({
-      where: { name: room.name },
-      update: { capacity: room.capacity },
-      create: { name: room.name, capacity: room.capacity },
-    });
-  }
-
-  for (const batch of data.batches) {
-    await prisma.batch.upsert({
-      where: { name: batch.name },
-      update: { semester: batch.semester },
-      create: { name: batch.name, semester: batch.semester },
-    });
-  }
-
-  const validCodes = new Set(data.courses.map((c) => c.code));
-  const allCourses = await prisma.course.findMany({ select: { id: true, code: true } });
-  for (const existing of allCourses) {
-    if (!validCodes.has(existing.code)) {
-      await prisma.session.deleteMany({ where: { courseId: existing.id } });
-      await prisma.course.delete({ where: { id: existing.id } });
-      console.log(`Removed stale course: ${existing.code}`);
-    }
-  }
-
-  for (const course of data.courses) {
-    await prisma.course.upsert({
-      where: { code: course.code },
-      update: { type: course.type },
-      create: { code: course.code, title: course.code, type: course.type },
-    });
-  }
-
-  // Default routine version: preserves any pre-existing sessions (versionId null)
-  const defaultVersion = await prisma.routineVersion.upsert({
-    where: { name: "Spring 2026" },
-    update: {},
-    create: { name: "Spring 2026", isPublished: true },
-  });
-  const backfilled = await prisma.session.updateMany({
-    where: { versionId: null },
-    data: { versionId: defaultVersion.id },
-  });
-  if (backfilled.count > 0) {
-    console.log(`Backfilled ${backfilled.count} session(s) into "${defaultVersion.name}"`);
-  }
-
-  // Seed admin user
+  console.log("\n--- Admin user ---");
   const adminEmail = process.env.ADMIN_EMAIL;
   const adminPassword = process.env.ADMIN_PASSWORD;
-  if (adminEmail && adminPassword) {
-    const passwordHash = await bcrypt.hash(adminPassword, 12);
-    await prisma.user.upsert({
-      where: { email: adminEmail },
-      update: { status: "ACTIVE", emailVerified: true },
-      create: {
-        email: adminEmail,
-        passwordHash,
-        role: "ADMIN",
-        status: "ACTIVE",
-        emailVerified: true,
-      },
-    });
-    console.log(`Admin user seeded: ${adminEmail}`);
+  if (!adminEmail || !adminPassword) {
+    console.log("ADMIN_EMAIL / ADMIN_PASSWORD not set — skipping admin user seed.");
+  } else {
+    const adapter = new PrismaMariaDb(buildAdapterConfig(process.env.DATABASE_URL!));
+    const prisma = new PrismaClient({ adapter });
+    const existing = await prisma.user.findUnique({ where: { email: adminEmail } });
+    if (APPLY) {
+      const passwordHash = await bcrypt.hash(adminPassword, 12);
+      await prisma.user.upsert({
+        where: { email: adminEmail },
+        update: { status: "ACTIVE", emailVerified: true },
+        create: { email: adminEmail, passwordHash, role: "ADMIN", status: "ACTIVE", emailVerified: true },
+      });
+      console.log(`Admin user ${existing ? "confirmed" : "created"}: ${adminEmail}`);
+    } else {
+      console.log(existing ? `Would confirm existing admin user: ${adminEmail}` : `Would create admin user: ${adminEmail}`);
+    }
+    await prisma.$disconnect();
   }
 
-  console.log("Seed complete.");
-  await prisma.$disconnect();
+  console.log("\n--- Routine (reference data, published version, sessions) ---");
+  console.log(`Delegating to import-routine-july.ts${APPLY ? " --apply" : " (dry run)"}...\n`);
+  execFileSync("npx", ["tsx", "prisma/import-routine-july.ts", ...(APPLY ? ["--apply"] : [])], {
+    stdio: "inherit",
+    cwd: process.cwd(),
+  });
+
+  console.log(`\n=== Seed ${APPLY ? "complete" : "dry run complete — no changes were made"} ===`);
 }
 
 main().catch((e) => {
