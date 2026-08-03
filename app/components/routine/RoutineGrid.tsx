@@ -161,7 +161,7 @@ function GridCell<T extends FilterableSession>({
     <td
       colSpan={colSpan}
       rowSpan={rowSpan}
-      className="border border-border p-1 align-top"
+      className="h-px border border-border p-1 align-top"
       style={{ width: SLOT_COL_WIDTH * colSpan }}
     >
       <div className="relative group/cell h-full">
