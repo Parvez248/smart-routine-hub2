@@ -110,7 +110,7 @@ export default function TeacherDashboardPage() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <StatCard loading={classesLoading} label="Today's Classes" value={todaysClasses.length} icon={CalendarCheck} color="var(--confirmed)" />
         <StatCard loading={classesLoading} label="This Week's Classes" value={classes.length} icon={CalendarRange} color="var(--band-2)" />
-        <StatCard loading={classesLoading} label="My Courses" value={courseCount} icon={BookOpen} color="var(--band-1)" />
+        <StatCard loading={classesLoading} label="My Courses" value={courseCount} icon={BookOpen} color="var(--band-1)" href="/teacher/courses" />
         <StatCard
           loading={requestsLoading}
           label="My Pending Requests"

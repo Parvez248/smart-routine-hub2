@@ -6,8 +6,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button, LinkButton } from "@/app/components/ui/Button";
 import { Message } from "@/app/components/ui/Message";
 import { isValidLabStart, combineSlotLabels } from "./labMerge";
+import { courseOptionLabel } from "./RowBadges";
 
-type RefCourse = { id: number; code: string; type: string };
+type RefCourse = { id: number; code: string; title: string; type: string };
 type RefTeacher = { id: number; initials: string; name: string };
 type RefRoom = { id: number; name: string; capacity: number };
 type RefBatch = { id: number; name: string; semester: string };
@@ -391,12 +392,12 @@ export function SessionDialog({
                 <option value="">Select course</option>
                 <optgroup label="── Theory">
                   {ref?.courses.filter((c) => c.type === "THEORY").map((c) => (
-                    <option key={c.id} value={c.id}>{c.code} (Theory)</option>
+                    <option key={c.id} value={c.id}>{courseOptionLabel(c)}</option>
                   ))}
                 </optgroup>
                 <optgroup label="── Lab">
                   {ref?.courses.filter((c) => c.type === "LAB").map((c) => (
-                    <option key={c.id} value={c.id}>{c.code} (Lab)</option>
+                    <option key={c.id} value={c.id}>{courseOptionLabel(c)}</option>
                   ))}
                 </optgroup>
               </select>

@@ -86,3 +86,10 @@ export function courseTitleIfDifferent(course: { code: string; title: string }):
   if (title.toLowerCase() === (code ?? "").toLowerCase()) return null;
   return title;
 }
+
+/** "CSE215 — Data Structures" for a course picker option — falls back to the
+ * bare code when there's no separate title (same guard as courseTitleIfDifferent). */
+export function courseOptionLabel(course: { code: string; title: string }): string {
+  const title = courseTitleIfDifferent(course);
+  return title ? `${course.code} — ${title}` : course.code;
+}

@@ -8,6 +8,7 @@ import TeacherMobileNav from "./TeacherMobileNav";
 const LINKS = [
   { href: "/teacher/dashboard", label: "Dashboard" },
   { href: "/teacher/classes", label: "My Classes" },
+  { href: "/teacher/courses", label: "My Courses" },
   { href: "/teacher/routine", label: "Full Routine" },
   { href: "/teacher/rescheduled", label: "Rescheduled Classes" },
   { href: "/teacher/free-rooms", label: "Free Rooms" },

@@ -15,6 +15,7 @@ import { ViewToggle, type RoutineView } from "@/app/components/routine/ViewToggl
 import { useIsDesktop } from "@/app/components/routine/useIsDesktop";
 import { SessionDialog, type SessionFormValues } from "@/app/components/routine/SessionDialog";
 import { combineSlotLabels, mergeLabPairs } from "@/app/components/routine/labMerge";
+import { courseOptionLabel } from "@/app/components/routine/RowBadges";
 import { canCombine, sectionLabel } from "@/lib/ui/sections";
 
 type Course   = { id: number; code: string; title: string; type: string };
@@ -609,12 +610,12 @@ export default function ScheduleSection() {
               <option value="">Select course</option>
               <optgroup label="── Theory">
                 {ref?.courses.filter((c) => c.type === "THEORY").map((c) => (
-                  <option key={c.id} value={c.id}>{c.code} (Theory)</option>
+                  <option key={c.id} value={c.id}>{courseOptionLabel(c)}</option>
                 ))}
               </optgroup>
               <optgroup label="── Lab">
                 {ref?.courses.filter((c) => c.type === "LAB").map((c) => (
-                  <option key={c.id} value={c.id}>{c.code} (Lab)</option>
+                  <option key={c.id} value={c.id}>{courseOptionLabel(c)}</option>
                 ))}
               </optgroup>
             </Select>
