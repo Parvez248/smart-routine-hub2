@@ -298,6 +298,22 @@ export function RoutineGrid<T extends FilterableSession>({
     return slotColumns.length >= 5 ? 3 : -1;
   }, [slotColumns]);
 
+  // Step 45 — a batch is "sectioned" if it uses sections *anywhere* in the
+  // currently loaded sessions, not just on the one day being laid out. A
+  // sectioned batch always draws both its Sec 1 and Sec 2 rows on every day
+  // it appears, even on a day where one (or both) is empty — otherwise the
+  // row count would silently vary day to day depending on which section
+  // happened to have a class.
+  const sectionedBatchKeys = useMemo(() => {
+    const set = new Set<string>();
+    for (const s of sessions) {
+      if (s.section === "Sec 1" || s.section === "Sec 2" || s.section === "Both") {
+        set.add(`${s.batch.name}|${s.batch.semester}`);
+      }
+    }
+    return set;
+  }, [sessions]);
+
   // Group by day+batch (no section) — sections are resolved into 1-2 rows below.
   const groups = useMemo(() => {
     const map = new Map<string, T[]>();
@@ -312,15 +328,20 @@ export function RoutineGrid<T extends FilterableSession>({
       const batch = sess[0].batch as BatchDayGroup<T>["batch"];
       const bothSessions = sess.filter((s) => s.section === "Both");
       const nonBoth = sess.filter((s) => s.section !== "Both");
-      const distinctSections = [...new Set(nonBoth.map((s) => s.section))];
       let sectionRows: SectionRow<T>[];
-      if (distinctSections.length > 0) {
-        const sorted = distinctSections.sort((a, b) => (a ?? "").localeCompare(b ?? ""));
-        sectionRows = sorted.map((sec) => ({ section: sec, sessions: nonBoth.filter((s) => s.section === sec) }));
+      if (sectionedBatchKeys.has(`${batch.name}|${batch.semester}`)) {
+        sectionRows = [
+          { section: "Sec 1", sessions: nonBoth.filter((s) => s.section === "Sec 1") },
+          { section: "Sec 2", sessions: nonBoth.filter((s) => s.section === "Sec 2") },
+        ];
+        // Defensive: a sectioned batch shouldn't have a session with any
+        // other section value, but never silently drop one if it does.
+        const other = nonBoth.filter((s) => s.section !== "Sec 1" && s.section !== "Sec 2");
+        for (const sec of new Set(other.map((s) => s.section))) {
+          sectionRows.push({ section: sec, sessions: other.filter((s) => s.section === sec) });
+        }
       } else {
-        // No Sec 1/Sec 2/null rows this day — fall back to one row so a
-        // Both-only day still renders (labelled "Sec 1 & 2" via the pill).
-        sectionRows = [{ section: bothSessions.length > 0 ? "Both" : null, sessions: [] }];
+        sectionRows = [{ section: null, sessions: nonBoth }];
       }
       const n = parseInt(batch.semester.match(/\d+/)?.[0] ?? "0", 10);
       out.push({ day, batch, sortKey: n, sectionRows, bothSessions });
@@ -331,7 +352,7 @@ export function RoutineGrid<T extends FilterableSession>({
         b.sortKey - a.sortKey ||
         a.batch.name.localeCompare(b.batch.name)
     );
-  }, [sessions]);
+  }, [sessions, sectionedBatchKeys]);
 
   // Flatten into physical rows, each carrying its own pre-built cell row —
   // a Both cell's rowSpan is already resolved here, before rendering.
