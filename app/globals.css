@@ -264,6 +264,14 @@
 /* Print — routine views only. Force light colours regardless of active theme,
    drop chrome/interactive UI, and make status legible without relying on colour. */
 @media print {
+  /* Default @page — everything except the routine grid (e.g. the teacher
+     credentials slip) prints portrait, unchanged. The routine grid needs
+     landscape (it's a full week × every batch), but a named `@page` +
+     `page:` property proved unreliable in real PDF export (verified via
+     Chromium's print-to-PDF: it fell back to Letter portrait, ignoring the
+     named page entirely) — so RoutineMasthead injects a scoped `<style>`
+     overriding just `@page { size }` while a routine page is mounted,
+     instead (Step 46). See RoutineMasthead.tsx. */
   @page {
     size: A4 portrait;
     margin: 1.5cm;
@@ -349,6 +357,14 @@
   }
 
   tr {
+    break-inside: avoid;
+  }
+
+  /* Belt-and-braces alongside the `tr` rule above — a spanning lab/Both/
+     Club-Activities cell straddles two or more <tr>s by itself, so it needs
+     its own break-inside: avoid too (Step 46). */
+  td[rowspan],
+  td[colspan] {
     break-inside: avoid;
   }
 

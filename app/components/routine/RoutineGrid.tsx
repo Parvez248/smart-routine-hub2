@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { bandForBatch, bandTint, bandVar, type Band } from "@/lib/ui/bandColors";
 import { BatchPill, courseTitleIfDifferent, formatMovedDate } from "./RowBadges";
 import { isSameLabPair, isMergeableAdjacent } from "./labMerge";
+import { SPECIAL_BLOCKS } from "@/lib/config/specialBlocks";
 import type { FilterableSession } from "./types";
 
 const DAY_ORDER = ["Sat", "Sun", "Mon", "Tues", "Wed"];
@@ -298,6 +299,23 @@ export function RoutineGrid<T extends FilterableSession>({
     return slotColumns.length >= 5 ? 3 : -1;
   }, [slotColumns]);
 
+  // Step 46 — a day listed in SPECIAL_BLOCKS (currently just Wednesday /
+  // Club Activities) gets one band spanning its post-break columns across
+  // every row for that day, replacing the individual empty cells there —
+  // but only when nothing real is actually scheduled in that slot for the
+  // sessions currently in view, so real data is never silently hidden
+  // behind the band.
+  const specialBlocksByDay = useMemo(() => {
+    const map = new Map<string, { label: string }>();
+    if (breakAfterIndex === -1 || breakAfterIndex >= slotColumns.length - 1) return map;
+    const postBreakSortOrders = new Set(slotColumns.slice(breakAfterIndex + 1).map((c) => c.sortOrder));
+    for (const block of SPECIAL_BLOCKS) {
+      const hasRealSession = sessions.some((s) => s.day === block.day && postBreakSortOrders.has(s.timeSlot.sortOrder));
+      if (!hasRealSession) map.set(block.day, { label: block.label });
+    }
+    return map;
+  }, [sessions, slotColumns, breakAfterIndex]);
+
   // Step 45 — a batch is "sectioned" if it uses sections *anywhere* in the
   // currently loaded sessions, not just on the one day being laid out. A
   // sectioned batch always draws both its Sec 1 and Sec 2 rows on every day
@@ -463,6 +481,7 @@ export function RoutineGrid<T extends FilterableSession>({
                     </td>
                     {(() => {
                       const out: React.ReactNode[] = [];
+                      const specialBlock = specialBlocksByDay.get(row.day);
                       for (let i = 0; i < slotColumns.length; i++) {
                         if (i === breakAfterIndex + 1 && rIdx === 0) {
                           out.push(
@@ -479,6 +498,30 @@ export function RoutineGrid<T extends FilterableSession>({
                               </span>
                             </td>
                           );
+                        }
+                        // Step 46 — this day's post-break columns are a special
+                        // block (e.g. Club Activities): one band for the whole
+                        // day, rendered once on its first row and spanning
+                        // every row + every remaining column; later rows for
+                        // the same day render nothing here (already covered).
+                        if (specialBlock && i === breakAfterIndex + 1) {
+                          if (showDay) {
+                            const span = slotColumns.length - i;
+                            out.push(
+                              <td
+                                key="special-block"
+                                colSpan={span}
+                                rowSpan={daySpan}
+                                style={{ width: SLOT_COL_WIDTH * span }}
+                                className="border border-border print:border-foreground bg-muted/30 text-center align-middle"
+                              >
+                                <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground print:text-foreground print:text-sm print:font-bold">
+                                  {specialBlock.label}
+                                </span>
+                              </td>
+                            );
+                          }
+                          break;
                         }
                         const desc = row.cells[i];
                         if (desc.kind === "skip") continue;

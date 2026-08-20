@@ -20,11 +20,11 @@ export function PrintButton({ className = "", compact = false }: { className?: s
     <button
       type="button"
       onClick={() => window.print()}
-      aria-label="Print this routine"
+      aria-label="Print this routine or save it as a PDF"
       className={`print:hidden inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors focus-visible:outline-none ${className}`}
     >
       <Printer className="size-3.5" aria-hidden="true" />
-      Print
+      Print / Save as PDF
     </button>
   );
 }
