@@ -1,3 +1,17 @@
+/**
+ * A student's own class reminders ("ring N minutes before this class").
+ * Student-only (getAuthenticatedStudent — see lib/services/student-auth.ts).
+ *   GET  — every alarm the student has set, with its session attached, in
+ *          day/slot order. An alarm whose session no longer exists is
+ *          silently dropped from the list rather than erroring.
+ *   POST — set a reminder on one of the student's OWN batch's published
+ *          sessions (403 otherwise — this is the one authorization check
+ *          beyond "is a student", since nothing stops a student from
+ *          passing an arbitrary sessionId). One alarm per student+session
+ *          (DB unique constraint `studentId_sessionId` — the 409 branch in
+ *          the catch is belt-and-braces alongside the explicit pre-check).
+ * PATCH/DELETE for one alarm live in ./[id]/route.ts.
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getDb } from "@/lib/db";

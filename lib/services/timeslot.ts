@@ -1,3 +1,7 @@
+// Turns a TimeSlot's free-text label ("09:30 – 10:30 am") into an actual
+// clock time, so the app can compute "when does this class next happen"
+// (dashboard countdowns, reminder scheduling) without TimeSlot storing a
+// structured start time of its own.
 export type StartTime = { hour: number; minute: number };
 
 type ClockPart = { hour: number; minute: number; period: "am" | "pm" | null };

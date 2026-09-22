@@ -1,3 +1,7 @@
+// Small presentational pieces shared across the three routine views
+// (grid/rail/list) and the admin dialog/pickers, so a batch pill, a
+// LAB/THEORY pill, a course title/code pairing, etc. always look and
+// behave the same wherever they appear.
 import { bandEdgeClass, bandForBatch, bandVar } from "@/lib/ui/bandColors";
 import { sectionLabel } from "@/lib/ui/sections";
 import type { FilterableSession } from "./types";

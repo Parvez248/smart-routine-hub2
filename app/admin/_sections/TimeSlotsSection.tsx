@@ -1,5 +1,9 @@
 "use client";
 
+// Admin "Academic Data → Time Slots" — CRUD over GET/POST
+// /api/admin/timeslots and PATCH/DELETE .../[id]. `sortOrder` here is what
+// drives schedule ordering and the break/lab-adjacency rules elsewhere
+// (labMerge.ts) — getting it wrong shifts the whole grid's column order.
 import { useEffect, useState } from "react";
 import { Card, CardHeader } from "@/app/components/ui/Card";
 import { Button, LinkButton } from "@/app/components/ui/Button";

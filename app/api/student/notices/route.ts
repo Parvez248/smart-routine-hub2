@@ -1,3 +1,6 @@
+// Notices visible to a student: audience ALL or STUDENTS only, newest
+// first. Student-only. See app/api/teacher/notices for the TEACHER
+// equivalent and app/api/admin/notices for the unfiltered admin view.
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { getAuthenticatedStudent } from "@/lib/services/student-auth";

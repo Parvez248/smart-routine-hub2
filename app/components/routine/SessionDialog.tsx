@@ -196,6 +196,11 @@ export function SessionDialog({
   if (!form) return null;
   const isEdit = Boolean(form.id);
 
+  // Generic field setter with two side effects that keep the form
+  // internally consistent when a choice invalidates another field's value:
+  // switching to a lab course clears an incompatible starting slot, and
+  // switching batch clears a section value that no longer makes sense for
+  // the newly-chosen batch's sectioned/unsectioned status.
   function setField<K extends keyof SessionFormValues>(key: K, value: SessionFormValues[K]) {
     setForm((f) => {
       if (!f) return f;

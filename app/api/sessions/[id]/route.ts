@@ -13,6 +13,15 @@ const include = {
   timeSlot: true,
 } as const;
 
+/**
+ * PATCH — admin-only: full replace of one session's day/slot/batch/section/
+ * course/teacher/room/version (same body shape and validation as POST
+ * /api/sessions). Conflict/capacity are re-checked exactly as on create,
+ * with `excludeSessionId: id` so the session being edited doesn't conflict
+ * with its own current placement. 401 if not admin, 400 for a bad id or
+ * failed validation or an unknown version, 409 for a conflict or capacity
+ * failure, 500 on unexpected errors.
+ */
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
   if (session?.user?.role !== "ADMIN") {

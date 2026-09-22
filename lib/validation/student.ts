@@ -1,3 +1,6 @@
+// Student self-registration (POST /api/auth/register-student). `studentId`
+// is an optional free-text roll/ID number — purely informational, not used
+// for login or matched against anything.
 import { z } from "zod";
 
 export const registerStudentSchema = z.object({

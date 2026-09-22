@@ -1,3 +1,7 @@
+// rescheduleRequestSchema: a teacher's new reschedule request (POST
+// /api/teacher/reschedule-requests) — always dated, see that route's
+// comment for why. reviewRescheduleSchema: the admin's decision on an
+// existing request (PATCH /api/admin/reschedule-requests/[id]).
 import { z } from "zod";
 
 const dateOnlyString = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date");

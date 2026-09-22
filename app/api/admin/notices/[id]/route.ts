@@ -1,3 +1,8 @@
+/**
+ * One notice, by id. Admin-only. PATCH does a full update (title/body/
+ * audience); DELETE removes it outright — no usage guard, since nothing
+ * else references a notice.
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";

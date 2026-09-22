@@ -1,3 +1,9 @@
+/**
+ * Room reference-data CRUD (Academic Data → Rooms). Admin-only. GET lists
+ * all rooms by name; POST creates one (body: roomSchema — name/capacity).
+ * PATCH/DELETE live in ./[id]/route.ts. 401 not admin, 400 invalid input,
+ * 409 duplicate room name, 500 unexpected.
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";

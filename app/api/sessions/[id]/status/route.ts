@@ -16,6 +16,15 @@ const include = {
   timeSlot: true,
 } as const;
 
+/**
+ * Cancel/restore one session — admin-only, `{ status: "ACTIVE" |
+ * "CANCELLED" }`. A cancel is unconditional (a cancelled class can't
+ * conflict with anything). A *restore* re-runs checkConflict +
+ * checkCapacity first, because something else may have taken that
+ * room/teacher/slot while this session was cancelled — 409 with a specific
+ * "cannot restore" message if so. 401/400/404 for auth/validation/missing-
+ * session failures, 500 unexpected.
+ */
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
   if (session?.user?.role !== "ADMIN") {

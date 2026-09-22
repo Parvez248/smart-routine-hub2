@@ -1,3 +1,11 @@
+/**
+ * Admin dashboard summary counts. Admin-only. One combined query (via
+ * Promise.all) for reference-data totals, published-version session counts
+ * (0/0 if nothing is published yet — no error), and the two "needs your
+ * attention" counts (pending teacher registrations that have verified
+ * their email, pending reschedule requests) that the dashboard surfaces as
+ * action items.
+ */
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { getDb } from "@/lib/db";

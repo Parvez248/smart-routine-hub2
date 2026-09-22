@@ -1,3 +1,11 @@
+/**
+ * Free rooms for one calendar date + slot (`?date=YYYY-MM-DD&timeSlotId=`,
+ * both required) — used while picking a room for a reschedule request, so
+ * it's date-based (getFreeRoomsForDate) rather than day-of-week-based like
+ * the admin equivalent (/api/admin/free-rooms), since a one-occurrence
+ * move needs to know what's actually free that specific date, not the
+ * weekly pattern. Teacher-only.
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { getAuthenticatedTeacher } from "@/lib/services/teacher-auth";

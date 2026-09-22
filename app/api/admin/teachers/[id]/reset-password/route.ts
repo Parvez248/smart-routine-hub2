@@ -1,3 +1,10 @@
+/**
+ * Reset a teacher's password to a new random one — admin-only, requires
+ * the teacher to already have a login (409 otherwise). Same
+ * one-time-visible-password and mustChangePassword behaviour as
+ * create-login. Always issues a random password; there's no path here for
+ * a caller-supplied one.
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { resetTeacherPassword } from "@/lib/services/teacherAccounts";

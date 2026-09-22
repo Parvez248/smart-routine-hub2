@@ -1,3 +1,7 @@
+// Teacher self-registration (POST /api/auth/register) and email
+// verification (POST /api/auth/verify). See lib/validation/student.ts for
+// the student registration equivalent — teacher additionally needs
+// `initials` (matched against/created as a Teacher row).
 import { z } from "zod";
 
 export const registerSchema = z.object({

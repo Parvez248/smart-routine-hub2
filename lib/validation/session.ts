@@ -1,3 +1,7 @@
+// Shared by every session-writing endpoint (POST/PATCH /api/sessions[/[id]],
+// PATCH /api/sessions/[id]/status uses a separate, smaller schema). `section`
+// is free-form text here — "Sec 1"/"Sec 2"/"Both" are conventions enforced
+// by lib/ui/sections.ts and the UI, not by this schema.
 import { z } from "zod";
 
 export const createSessionSchema = z.object({

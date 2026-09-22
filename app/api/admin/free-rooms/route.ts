@@ -1,3 +1,12 @@
+/**
+ * "Find Free Rooms" (weekly view — admin Schedule tab and SessionDialog).
+ * Admin-only. GET `?day=&timeSlotId=&versionId=`, all required — every room
+ * not already booked at that day+slot in that version's effective weekly
+ * schedule (see getFreeRooms in scheduling.ts). 400 if any param is
+ * missing/invalid, 401 if not admin, 500 unexpected. The teacher-facing
+ * equivalent (app/api/teacher/free-rooms) is date-based instead, for
+ * reschedule requests — different question, different function.
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { getFreeRooms } from "@/lib/services/scheduling";

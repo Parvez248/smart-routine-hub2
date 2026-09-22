@@ -1,5 +1,36 @@
 "use client";
 
+/**
+ * The desktop Full Routine grid — a real HTML `<table>`, one column per
+ * time slot, one or two rows per batch per day. Shared by all three roles
+ * (admin/teacher/student both fetch different data and pass it into the
+ * same component); the `editable` prop is what turns on admin-only affordances
+ * (the "+" add button on empty cells, hover edit/delete/combine controls) —
+ * teacher and student always render with `editable` unset, so they get the
+ * exact same layout, read-only.
+ *
+ * Three kinds of "span" compose in the same cell, and get harder to reason
+ * about together, so here's the model:
+ *  - a two-period LAB is one class occupying two adjacent time-slot
+ *    *columns* → `colSpan={2}` (see buildCells/isSameLabPair in labMerge.ts);
+ *  - a `"Both"`-section class is one class occupying both the Sec 1 and
+ *    Sec 2 *rows* of its batch at that slot → `rowSpan={2}` (see
+ *    buildGroupGrid below and sectionsCoveredBy in lib/ui/sections.ts);
+ *  - a lab that is also Both does both at once → a single cell with
+ *    colSpan={2} AND rowSpan={2}, a 2×2 block.
+ * Whichever cells a span covers, the *other* cells it would otherwise
+ * occupy must not also render a `<td>` — HTML tables render the next cell
+ * immediately adjacent to a spanning one, so an extra `<td>` there would
+ * visually shift every following column/row. Cells covered by a span are
+ * marked `{ kind: "skip" }` and the render loop below (`if (desc.kind ===
+ * "skip") continue`) simply emits nothing for them — this "skip"
+ * bookkeeping is the single most important invariant in this file.
+ *
+ * A day's post-break columns can also be entirely replaced by one
+ * full-width, full-height band (e.g. Wednesday's "Club Activities" —
+ * Step 46) using the exact same span+skip mechanism, driven by
+ * SPECIAL_BLOCKS rather than session data.
+ */
 import { Fragment, useMemo } from "react";
 import { Pencil, Trash2, Plus, Combine } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -38,6 +69,11 @@ export type AddSessionContext<T extends FilterableSession> = {
 // how eligibility is computed.
 export type CombineTarget<T> = { partner: T; partnerPair?: T };
 
+// Lays out one section row's sessions across the slot columns, merging a
+// matched lab pair into a single span-2 cell. First pass places each
+// session at its own time slot; second pass scans adjacent pairs and
+// collapses them where isSameLabPair + isMergeableAdjacent agree they're
+// one lab (the second slot becomes `span: 0`, meaning "already covered").
 function buildCells<T extends FilterableSession>(sessions: T[], slots: SlotColumn<T["timeSlot"]>[]): Cell<T>[] {
   const cells: Cell<T>[] = new Array(slots.length).fill(null);
   for (const s of sessions) {
@@ -81,6 +117,12 @@ type CellDesc<T> =
   | { kind: "skip" }
   | { kind: "session"; session: T; colSpan: 1 | 2; rowSpan: 1 | 2; pair?: T; isBoth: boolean };
 
+// Builds the 1-or-2-row × slot-count grid of CellDesc for one batch on one
+// day: each section row's own sessions are placed first (via buildCells,
+// so lab colSpan is already resolved), then any "Both" sessions are placed
+// on top starting at row 0 with rowSpan 2 (or 1 if there's only one section
+// row to span into) — `place()` marks whatever that covers in the row(s)
+// below as "skip" so the render loop never double-emits a cell there.
 function buildGroupGrid<T extends FilterableSession>(
   group: BatchDayGroup<T>,
   slots: SlotColumn<T["timeSlot"]>[]
@@ -159,6 +201,14 @@ function GridCell<T extends FilterableSession>({
   const title = courseTitleIfDifferent(s.course);
 
   return (
+    // `h-px` (height: 1px) looks wrong but is deliberate: a <td>'s height is
+    // "auto" by default, and CSS ignores percentage heights (like the child
+    // `h-full` below) inside an auto-height container. Giving the cell any
+    // *definite* height — even 1px — makes the browser resolve `h-full`
+    // against the cell's real rendered height instead, which is what
+    // actually makes the band colour fill the whole rowSpan (not just one
+    // row's worth) for a "Both" cell. Table layout still sizes the row by
+    // content as normal; this only unlocks the percentage-height chain.
     <td
       colSpan={colSpan}
       rowSpan={rowSpan}
@@ -292,6 +342,13 @@ export function RoutineGrid<T extends FilterableSession>({
     return [...map.values()].sort((a, b) => a.sortOrder - b.sortOrder);
   }, [sessions]);
 
+  // The column index (into slotColumns) right before the break/prayer gap
+  // between sortOrder 4 and 5 — everything after it gets a narrow visual
+  // divider column, and (Step 46) is where a day's special block starts.
+  // Detected from whichever slots actually appear in `sessions` (not
+  // hard-coded to always be index 3) so a filtered view that happens to
+  // drop slot 4 or 5 doesn't break the divider's position; falls back to
+  // "index 3, if there are at least 5 slots at all" when 4→5 aren't both present.
   const breakAfterIndex = useMemo(() => {
     for (let i = 0; i < slotColumns.length - 1; i++) {
       if (slotColumns[i].sortOrder === 4 && slotColumns[i + 1].sortOrder === 5) return i;
@@ -385,6 +442,9 @@ export function RoutineGrid<T extends FilterableSession>({
     return out;
   }, [groups, slotColumns]);
 
+  // How many physical rows each day occupies — drives the rowSpan on that
+  // day's sticky "Sat"/"Sun"/etc. label cell (only rendered once, on the
+  // day's first row) and, since Step 46, a special block's rowSpan too.
   const dayRowSpans = useMemo(() => {
     const counts = new Map<string, number>();
     for (const r of physicalRows) counts.set(r.day, (counts.get(r.day) ?? 0) + 1);

@@ -1,5 +1,14 @@
 "use client";
 
+/**
+ * The "Table" view of the routine — a flat, sortable spreadsheet-style
+ * listing (one row per Session, no lab/Both merging or spanning), used
+ * alongside the grid and rail as an alternative way to scan the same data.
+ * Column sort is client-side only; when sorted by Day, rows are additionally
+ * grouped under a day header banner (see `grouped` below) — any other sort
+ * key shows a plain flat list instead, since day-grouping wouldn't make
+ * sense once rows aren't ordered by day.
+ */
 import { Fragment, useMemo, useState } from "react";
 import { Table } from "@/app/components/ui/Table";
 import { EmptyState } from "@/app/components/ui/EmptyState";

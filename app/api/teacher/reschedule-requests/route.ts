@@ -1,3 +1,23 @@
+/**
+ * A teacher's reschedule requests ("My Requests"). Teacher-only.
+ *   GET  — every request for this teacher's sessions, any status, newest
+ *          first (see the comment on /api/teacher/history — same
+ *          underlying query, richer response fields).
+ *   POST — submit a new one-occurrence reschedule request for one of the
+ *          teacher's OWN sessions (403 if not theirs). Always dated
+ *          (originalDate/newDate both required — see rescheduleRequestSchema)
+ *          — there is no teacher-facing way to request a *permanent* move,
+ *          only the admin can do that directly on the master session.
+ *          Validates, in order: the original date really falls on the
+ *          session's weekly day, both dates are today-or-later, the new
+ *          date is a class day (Sat–Wed) and within the allowed
+ *          rescheduling window, there isn't already a PENDING request for
+ *          this exact session+original-date, and finally the usual
+ *          conflict/capacity checks for the new slot (checkConflictForDate
+ *          — date-based, since this is a one-occurrence move). Creates a
+ *          PENDING Reschedule row; it has no schedule effect until an
+ *          admin approves it (see /api/admin/reschedule-requests/[id]).
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getDb } from "@/lib/db";

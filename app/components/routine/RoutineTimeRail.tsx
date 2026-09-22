@@ -1,5 +1,20 @@
 "use client";
 
+/**
+ * The mobile/narrow-viewport routine view — a vertical list of collapsible
+ * day sections, each holding one solid-colour "Bar" per class, grouped by
+ * batch. This is the table grid's (RoutineGrid.tsx) counterpart for small
+ * screens: same data, same `editable` role-gating, but flowing layout
+ * instead of a `<table>`, so it doesn't need the grid's colSpan/rowSpan/
+ * skip-cell bookkeeping — a lab pair is merged into one taller bar
+ * (mergeLabPairs) and a "Both" class is simply one bar with a "Sec 1 & 2"
+ * chip, no spanning required since there's no row/column grid here. The
+ * general ink-friendly print rules (globals.css) still apply if this view
+ * happens to be what's on screen when printing, but the grid's
+ * pagination-specific rules (repeating header, per-row break-inside-avoid)
+ * are table-only and don't apply here — the routine's Print button and
+ * landscape page are really built around the table grid.
+ */
 import { useMemo, useState } from "react";
 import { ChevronDown, Pencil, Trash2, Plus } from "lucide-react";
 import { EmptyState } from "@/app/components/ui/EmptyState";
@@ -131,6 +146,8 @@ export function RoutineTimeRail<T extends FilterableSession>({
     });
   }
 
+  // Pre-seed every weekday (even ones with no sessions) so the day-section
+  // order is always Sat→Wed regardless of what's actually in `sessions`.
   const byDay = useMemo(() => {
     const map = new Map<string, T[]>();
     for (const day of DAY_ORDER) map.set(day, []);

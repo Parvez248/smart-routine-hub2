@@ -1,3 +1,9 @@
+/**
+ * Pending teacher self-registrations awaiting admin approval. Admin-only.
+ * Only users who have verified their email are shown — an unverified
+ * signup isn't actionable yet. Approve/reject for one request lives in
+ * ./[id]/route.ts.
+ */
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { getDb } from "@/lib/db";

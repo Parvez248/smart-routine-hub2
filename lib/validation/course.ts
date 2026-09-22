@@ -1,3 +1,6 @@
+// Admin Course create/update (POST /api/admin/courses, PATCH .../[id]).
+// `type` is what drives the two-period lab behaviour throughout the app
+// (labMerge.ts, RoutineGrid.tsx) — a course is either always LAB or always THEORY.
 import { z } from "zod";
 
 export const courseSchema = z.object({

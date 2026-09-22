@@ -1,3 +1,9 @@
+/**
+ * One teacher, by id. Admin-only. PATCH updates initials/name (409 on
+ * duplicate initials); DELETE refuses (409) while any Session still
+ * references this teacher. Does not touch the teacher's login (`User`
+ * row) — see the sibling create-login/reset-password routes for that.
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";

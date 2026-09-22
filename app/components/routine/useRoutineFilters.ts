@@ -1,5 +1,27 @@
 "use client";
 
+/**
+ * Filter state for a routine view (grid/rail/list), shared by all three
+ * roles' Full Routine pages via one hook so the filtering rules and
+ * URL/storage persistence never drift between them. Filtering itself is
+ * pure client-side (`filtered`, over whatever `sessions` was passed in —
+ * this hook does not fetch).
+ *
+ * Persistence has two layers, applied once on mount (see the init effect):
+ * the URL's query string wins if present (so a shared/bookmarked link
+ * reproduces the exact same view), otherwise the last-used filters are
+ * restored from localStorage (`routine-filters:<storageKey>` — storageKey
+ * scopes it per role, e.g. "admin" vs "teacher", so switching roles
+ * doesn't inherit another role's filters), otherwise defaults. After that,
+ * every filter change is mirrored back to both the URL (`router.replace`,
+ * `scroll: false` so filtering doesn't jump the page) and localStorage, so
+ * either mechanism can restore the same state next time.
+ *
+ * `today` and `days` are mutually exclusive in effect though both exist in
+ * state: when `today` is on, the day filter is ignored for both matching
+ * (see `filtered`) and display (activeCount/chips skip `days` while
+ * `today` is set) — the UI stops the user from combining them.
+ */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { FilterableSession } from "./types";

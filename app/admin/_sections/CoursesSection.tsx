@@ -1,5 +1,8 @@
 "use client";
 
+// Admin "Academic Data → Courses" — CRUD over GET/POST /api/admin/courses
+// and PATCH/DELETE .../[id]. `type` (THEORY/LAB) is what drives two-period
+// lab behaviour throughout the app.
 import { useEffect, useState } from "react";
 import { Card, CardHeader } from "@/app/components/ui/Card";
 import { Button, LinkButton } from "@/app/components/ui/Button";

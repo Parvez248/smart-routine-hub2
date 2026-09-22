@@ -1,3 +1,13 @@
+/**
+ * Confirm the 6-digit code from register/register-student. Public. Body:
+ * `{ email, code }`. Rejects (400, generically "Invalid or expired code" —
+ * doesn't distinguish wrong-code from expired, to avoid leaking which) if
+ * the code doesn't match or its TTL (15 minutes, set at registration) has
+ * passed. On success, clears the code (single-use) and sets
+ * `emailVerified: true` — for a teacher this still leaves them PENDING
+ * admin approval (see /api/admin/teacher-requests); for a student this is
+ * the last gate before they can sign in, since student status is already ACTIVE.
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getDb } from "@/lib/db";

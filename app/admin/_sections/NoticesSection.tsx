@@ -1,5 +1,8 @@
 "use client";
 
+// Admin "People & Notices → Notices" — CRUD over GET/POST
+// /api/admin/notices and PATCH/DELETE .../[id]. `audience` is enforced by
+// the teacher/student read endpoints filtering on it, not here.
 import { useEffect, useState } from "react";
 import { Card, CardHeader } from "@/app/components/ui/Card";
 import { Button, LinkButton } from "@/app/components/ui/Button";

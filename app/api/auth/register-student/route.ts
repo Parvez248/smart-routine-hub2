@@ -1,3 +1,15 @@
+/**
+ * Student self-registration. Public. Body: name/email/password/batchId/
+ * optional studentId (registerStudentSchema). Creates the User and a
+ * Student row (linked to the chosen batch) in one transaction.
+ *
+ * Deliberately unlike teacher registration: status starts ACTIVE, not
+ * PENDING — a student needs only to verify their email (see ./verify), no
+ * admin approval step, since there's no equivalent risk to gate (a student
+ * account can't affect the routine). Same dev-only verification-code
+ * logging as teacher registration — see that route's comment. 409 if the
+ * email is already registered, 400 for an invalid/unknown batch.
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import bcrypt from "bcryptjs";

@@ -1,5 +1,22 @@
 "use client";
 
+/**
+ * The admin "Schedule" tab — the biggest page in the app. Owns:
+ *  - the routine version picker and the reference-data + session fetch for
+ *    whichever version is selected;
+ *  - the "Add New Session" form (the original, always-visible way to add a
+ *    class) alongside SessionDialog (Step 36's on-grid inline add/edit —
+ *    same endpoints, just a second entry point opened from a grid cell);
+ *  - cancel/restore and delete for existing sessions;
+ *  - the Find Free Rooms tool;
+ *  - the Step 41 Combine/Split actions (a Sec 1 + Sec 2 pair → one "Both"
+ *    class, and back) — see combinablePairs/handleCombine below;
+ *  - rendering the routine itself in whichever view (grid/rail/table) is
+ *    selected, via the shared routine components, with `editable` on so
+ *    their admin-only affordances (add/edit/delete/combine) are active.
+ * All writes go through the same session/course/teacher/room/etc. REST
+ * endpoints the rest of the app uses — nothing here talks to the database directly.
+ */
 import { useEffect, useId, useMemo, useState } from "react";
 import Link from "next/link";
 import { Card, CardHeader } from "@/app/components/ui/Card";

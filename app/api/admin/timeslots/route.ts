@@ -1,3 +1,11 @@
+/**
+ * Time-slot reference-data CRUD (Academic Data → Time Slots — the day's
+ * period columns, ordered by `sortOrder`, which is also what the break/lab
+ * adjacency rules in labMerge.ts key off). Admin-only. GET lists all slots
+ * in schedule order; POST creates one. PATCH/DELETE live in ./[id]/route.ts.
+ * Unlike the other reference CRUD routes there's no unique-name conflict
+ * handling here — sortOrder collisions aren't specially guarded against.
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";

@@ -1,3 +1,28 @@
+/**
+ * Approve, reject, or revert one teacher reschedule request. Admin-only.
+ * Body: `{ action: "approve" | "reject" | "revert", adminNote? }`
+ * (reviewRescheduleSchema). This is the one route where scheduling.ts's
+ * two effective-schedule flavours both matter in the same handler:
+ *  - `isDated` (originalDate/newDate both set) — a one-occurrence move,
+ *    checked with checkConflictForDate against what's actually taught that
+ *    calendar date;
+ *  - otherwise — a legacy/permanent weekly move, checked with checkConflict
+ *    against the weekly pattern.
+ *
+ *  - "reject": only valid while PENDING (409 otherwise) — just marks it
+ *    rejected, no schedule effect since it was never applied.
+ *  - "approve": only valid while PENDING; re-checks conflict/capacity for
+ *    the NEW slot right now — the slot may have been taken by something
+ *    else since the teacher submitted the request — and refuses (409) if
+ *    this session already has another active override for the same
+ *    scope (dated: same date; permanent: any). A dated request whose date
+ *    has already passed by approval time is also refused.
+ *  - "revert": undoes an already-approved, still-active override by
+ *    re-checking conflict for the ORIGINAL slot (something may have taken
+ *    it back) and, if clear, marking the override CANCELLED — the
+ *    session's own row is never touched; getEffectiveSessions(ForDate)
+ *    simply stops seeing this override once it isn't APPROVED anymore.
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";

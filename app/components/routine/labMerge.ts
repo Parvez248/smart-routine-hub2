@@ -5,6 +5,12 @@ import type { FilterableSession } from "./types";
 // This is the one place that decides whether two rows are "the same lab" so
 // the grid, the rail, and the admin dialog never disagree with each other.
 
+/**
+ * True when `a` and `b` are the two rows of one lab class — same LAB
+ * course, teacher, room, status, and (if either was rescheduled) the same
+ * override destination. Does not check that the time slots are adjacent;
+ * callers combine this with isMergeableAdjacent for that.
+ */
 export function isSameLabPair<T extends FilterableSession>(a: T, b: T): boolean {
   if (a.course.type !== "LAB" || b.course.type !== "LAB") return false;
   if (a.course.code !== b.course.code) return false;
@@ -46,6 +52,8 @@ export function isValidLabStart(startSortOrder: number, allSortOrders: number[])
   return isMergeableAdjacent(startSortOrder, next);
 }
 
+// One display entry after merging: span 1 is a normal class, span 2 is a
+// matched lab pair (`pair` holds its second-period session).
 export type MergedEntry<T> = { session: T; span: 1 | 2; pair?: T };
 
 /**

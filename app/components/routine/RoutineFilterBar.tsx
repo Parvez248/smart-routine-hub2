@@ -1,5 +1,13 @@
 "use client";
 
+/**
+ * The filter bar UI for a routine view — search box, Today toggle, and one
+ * multi-select dropdown per filterable field (batch/day/teacher/room/
+ * course/slot), plus the removable filter chips row and a bottom-sheet
+ * variant for mobile. Purely presentational: all the actual filter state,
+ * persistence, and matching logic lives in useRoutineFilters.ts — this
+ * file just renders that hook's state and calls its setters.
+ */
 import { useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";

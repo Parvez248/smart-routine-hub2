@@ -1,3 +1,6 @@
+// Admin Teacher create/update — the scheduling identity only (initials
+// shown throughout the routine, display name); login/account fields
+// (email, password) are managed separately, see teacherAccounts.ts.
 import { z } from "zod";
 
 export const teacherSchema = z.object({

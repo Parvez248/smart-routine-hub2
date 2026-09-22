@@ -1,5 +1,8 @@
 "use client";
 
+// Admin's read view of every currently-active reschedule override, sourced
+// from GET /api/rescheduled (the same shared endpoint teacher/student use
+// for their own "Rescheduled Classes" pages — see that route's comment).
 import { useEffect, useMemo, useState } from "react";
 import { Card, CardHeader } from "@/app/components/ui/Card";
 import { LinkButton } from "@/app/components/ui/Button";

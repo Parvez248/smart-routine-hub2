@@ -1,3 +1,8 @@
+/**
+ * One batch, by id. Admin-only. PATCH updates name/semester/studentCount
+ * (409 on duplicate name); DELETE refuses (409) while any Session still
+ * references this batch.
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";

@@ -1,3 +1,14 @@
+/**
+ * The teacher's "Full Routine" view — deliberately NOT filtered to this
+ * teacher's own classes (unlike /api/teacher/classes): every ACTIVE
+ * session in the published version, across every batch, is returned,
+ * optionally narrowed by `?batchId=`/`?day=`/`?roomId=` (all optional,
+ * validated if present). Teacher-only, but read-only for the whole
+ * department's schedule — this is how a teacher can see what's using a
+ * room or what a batch's day looks like beyond their own classes. Each
+ * session gets its active reschedule override attached as `movedTo`, same
+ * as GET /api/sessions.
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { getAuthenticatedTeacher } from "@/lib/services/teacher-auth";

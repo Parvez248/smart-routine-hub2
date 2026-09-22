@@ -1,3 +1,6 @@
+// POST /api/teacher/change-password. currentPassword just needs to be
+// non-empty here — it's verified against the stored hash in the route
+// handler, not by this schema.
 import { z } from "zod";
 
 export const changePasswordSchema = z.object({

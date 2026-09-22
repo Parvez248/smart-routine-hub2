@@ -1,3 +1,6 @@
+// Admin Notice create/update. `audience` is enforced only by the
+// teacher/student read endpoints filtering on it (WHERE audience IN
+// (...)) — this schema just constrains it to a known value.
 import { z } from "zod";
 
 export const noticeSchema = z.object({

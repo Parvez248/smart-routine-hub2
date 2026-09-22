@@ -1,5 +1,14 @@
 "use client";
 
+/**
+ * Admin "Academic Data → Teachers" — CRUD over the Teacher table (GET/POST
+ * /api/admin/teachers, PATCH/DELETE .../[id]) plus login management: a
+ * teacher with `userId: null` has no login yet, and this page can create
+ * one (POST .../[id]/create-login) or reset an existing one's password
+ * (POST .../[id]/reset-password) — see lib/services/teacherAccounts.ts for
+ * what that actually does. The generated password is shown once, here,
+ * and printable — it can't be retrieved again after leaving the page.
+ */
 import { useEffect, useState } from "react";
 import { Card, CardHeader } from "@/app/components/ui/Card";
 import { Button, LinkButton } from "@/app/components/ui/Button";

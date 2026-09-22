@@ -1,3 +1,7 @@
+/**
+ * One time slot, by id. Admin-only. PATCH updates label/sortOrder; DELETE
+ * refuses (409) while any Session still references this slot.
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";

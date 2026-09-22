@@ -1,3 +1,10 @@
+/**
+ * One reminder, by id. Student-only, and further gated to *your own*
+ * reminder — every handler loads the alarm first and checks `alarm.
+ * studentId === student.id` (403 if not), since the id alone doesn't prove
+ * ownership. PATCH updates leadMinutes; DELETE removes it. 404 if the
+ * alarm doesn't exist at all.
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getDb } from "@/lib/db";

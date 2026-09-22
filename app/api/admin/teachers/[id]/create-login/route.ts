@@ -1,3 +1,12 @@
+/**
+ * Give one teacher (who doesn't already have one) a login: admin-only,
+ * generates a random password and an @hamdard.local email from their
+ * initials (see lib/services/teacherAccounts.ts), returned once in the
+ * response body — the admin must relay it to the teacher, since it can't
+ * be shown again after this response. `mustChangePassword` is set, so
+ * proxy.ts forces them to change it on first sign-in. 409 if this teacher
+ * already has a login.
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { createTeacherLogin } from "@/lib/services/teacherAccounts";

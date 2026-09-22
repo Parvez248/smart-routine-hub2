@@ -1,3 +1,14 @@
+/**
+ * Routine version CRUD (Admin → Routine → Versions). A `RoutineVersion` is
+ * a named snapshot of the schedule (e.g. "Spring 2026") — sessions belong
+ * to exactly one version, and only one version is ever `isPublished` at a
+ * time (that's the one teacher/student/public views read). Admin-only.
+ *   GET  — every version, newest first, each with its session count.
+ *   POST — create a new (unpublished) version to start building a new
+ *          routine without touching the currently-published one. 409 on
+ *          a duplicate name.
+ * PATCH/DELETE (including publish/unpublish) live in ./[id]/route.ts.
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";

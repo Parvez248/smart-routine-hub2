@@ -1,3 +1,12 @@
+/**
+ * One version, by id. Admin-only.
+ *   PATCH  — "publish" this version: in one transaction, unpublish every
+ *            other version and publish this one, so exactly one version is
+ *            ever published — never zero, never two. (Body is currently
+ *            only ever the publish action — see versionActionSchema.)
+ *   DELETE — refuses (409) if the version still has sessions, or if it's
+ *            the currently-published one; 404 if it doesn't exist.
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";

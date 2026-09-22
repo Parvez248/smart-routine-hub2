@@ -1,3 +1,12 @@
+/**
+ * "Rescheduled Classes" history for this teacher — every Reschedule row
+ * ever created for one of their sessions, any status, newest first.
+ * Teacher-only. Queries the same underlying data as GET
+ * /api/teacher/reschedule-requests ("My Requests" — that one additionally
+ * returns status/originalDate/newDate/adminNote/reviewedAt); the two exist
+ * as separate endpoints for the two separate pages, not because the
+ * underlying query differs.
+ */
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { getAuthenticatedTeacher } from "@/lib/services/teacher-auth";

@@ -1,3 +1,14 @@
+/**
+ * Teacher reference-data CRUD (Academic Data → Teachers). Admin-only.
+ *   GET  — every teacher, each with its login email if one exists
+ *          (`Teacher.userId` links to a `User`; a teacher can exist purely
+ *          as a routine-scheduling entity with no login at all, e.g. right
+ *          after being imported — see lib/services/teacherAccounts.ts for
+ *          how a login gets created for one).
+ *   POST — create a teacher record (initials/name only — no login; use
+ *          ./[id]/create-login to add one). 409 if the initials already exist.
+ * PATCH/DELETE and the login-management actions live under ./[id]/.
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";

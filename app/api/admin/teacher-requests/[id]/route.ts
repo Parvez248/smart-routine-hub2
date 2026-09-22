@@ -1,3 +1,14 @@
+/**
+ * Approve or reject one pending teacher self-registration. Admin-only.
+ * `{ action: "approve" | "reject" }` → sets the User's status to ACTIVE or
+ * REJECTED. That's the only effect here — the Teacher↔User link
+ * (`Teacher.userId`) and the teacher's own chosen password were already
+ * set up at registration time (see /api/auth/register); approving just
+ * flips the status so proxy.ts lets them into `/teacher/*`. This is a
+ * different path from /api/admin/teachers/[id]/create-login, which is for
+ * a teacher who was imported directly into the Teacher table (e.g. by the
+ * routine import script) and never self-registered at all.
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";

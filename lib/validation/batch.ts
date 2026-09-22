@@ -1,3 +1,7 @@
+// Admin Batch create/update. `semester` is free text (e.g. "5th") parsed
+// for its leading number elsewhere (RoutineGrid.tsx's band-colour-by-
+// seniority logic) — not constrained to a specific format here.
+// `studentCount` feeds checkCapacity in scheduling.ts.
 import { z } from "zod";
 
 export const batchSchema = z.object({

@@ -1,3 +1,8 @@
+// Public: the batch list (name/semester only, no student counts or other
+// admin-facing fields). Used by the student registration form's batch
+// picker (which by definition runs before the visitor has any account),
+// and by logged-in students' routine/dashboard pages to switch which
+// batch's routine they're viewing.
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 

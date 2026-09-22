@@ -1,3 +1,10 @@
+/**
+ * Bulk version of create-login: creates a login for every teacher who
+ * doesn't already have one (e.g. right after importing a routine that
+ * introduced new teachers). Admin-only. Always 200 with a summary
+ * (`created`/`skipped`/`failed` per lib/services/teacherAccounts.ts) rather
+ * than failing the whole batch if one teacher errors.
+ */
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { createLoginsForAllTeachers } from "@/lib/services/teacherAccounts";

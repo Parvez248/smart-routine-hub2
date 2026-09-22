@@ -1,3 +1,11 @@
+/**
+ * A teacher's own classes — every session in the published version where
+ * `teacherId` matches the signed-in teacher, day/slot ordered. Teacher-only
+ * (getAuthenticatedTeacher — see lib/services/teacher-auth.ts). This is
+ * the underlying data for both "My Classes" and (Step 43) "My Courses",
+ * which derives its distinct-course cards from this same list client-side
+ * rather than needing its own endpoint.
+ */
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { getAuthenticatedTeacher } from "@/lib/services/teacher-auth";

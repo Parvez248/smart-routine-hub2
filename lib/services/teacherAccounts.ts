@@ -1,3 +1,15 @@
+/**
+ * Admin-initiated teacher login creation — the alternative to a teacher
+ * self-registering (see /api/auth/register). For a teacher who was
+ * imported straight into the Teacher table (e.g. by the routine import
+ * script) with no User account at all, the admin can generate one here:
+ * a random password and an @hamdard.local email derived from their
+ * initials, returned once so the admin can hand it to the teacher. Unlike
+ * self-registration this skips the PENDING/emailVerified dance entirely —
+ * the admin creating the login IS the approval, so the account is created
+ * straight to ACTIVE + emailVerified: true, with mustChangePassword: true
+ * standing in for "you must prove you received this and pick your own password".
+ */
 import { randomInt } from "crypto";
 import bcrypt from "bcryptjs";
 import { getDb } from "@/lib/db";
@@ -92,6 +104,10 @@ export async function resetTeacherPassword(teacherId: number): Promise<ServiceRe
   };
 }
 
+// Bulk version of createTeacherLogin, for every teacher who doesn't
+// already have one — used after an import introduces new teachers.
+// Continues past a per-teacher failure rather than aborting the whole
+// batch; each teacher ends up in exactly one of created/skipped/failed.
 export async function createLoginsForAllTeachers(): Promise<{
   created: Credentials[];
   skipped: { initials: string; name: string }[];

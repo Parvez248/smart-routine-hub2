@@ -1,3 +1,7 @@
+// RoutineVersion create (POST /api/admin/versions) and publish
+// (PATCH .../[id] — versionActionSchema; currently the only action is
+// "publish", literal-typed so an invalid action is a type error, not just
+// a runtime one).
 import { z } from "zod";
 
 export const versionSchema = z.object({

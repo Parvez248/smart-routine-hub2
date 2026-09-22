@@ -1,5 +1,8 @@
 "use client";
 
+// Admin "Academic Data → Batches" — CRUD over GET/POST /api/admin/batches
+// and PATCH/DELETE .../[id]. `semester`'s leading number is what
+// lib/ui/bandColors.ts reads to pick each batch's routine colour band.
 import { useEffect, useState } from "react";
 import { Card, CardHeader } from "@/app/components/ui/Card";
 import { Button, LinkButton } from "@/app/components/ui/Button";

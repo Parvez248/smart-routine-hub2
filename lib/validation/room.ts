@@ -1,3 +1,4 @@
+// Admin Room create/update. `capacity` feeds checkCapacity in scheduling.ts.
 import { z } from "zod";
 
 export const roomSchema = z.object({

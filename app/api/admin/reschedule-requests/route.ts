@@ -1,3 +1,13 @@
+/**
+ * Every teacher-submitted reschedule request, for the admin to review.
+ * Admin-only. Each `Reschedule` row records old/new day+slot+room around
+ * one specific date (see the `Reschedule` model / scheduling.ts's
+ * date-based effective schedule); this joins in the underlying session's
+ * course/teacher/batch and resolves the room/timeSlot ids to their
+ * records, since the raw `Reschedule` row only stores ids. Sorted with
+ * PENDING requests first (the ones needing action), then newest first.
+ * Approve/reject for one request lives in ./[id]/route.ts.
+ */
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { getDb } from "@/lib/db";

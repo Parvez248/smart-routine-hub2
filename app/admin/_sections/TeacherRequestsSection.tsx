@@ -1,5 +1,8 @@
 "use client";
 
+// Admin "People & Notices" → pending teacher self-registrations. Lists
+// requests from GET /api/admin/teacher-requests and approves/rejects one
+// via PATCH .../[id] — see that route for what approval does and doesn't do.
 import { useEffect, useState } from "react";
 import { Card, CardHeader } from "@/app/components/ui/Card";
 import { LinkButton } from "@/app/components/ui/Button";

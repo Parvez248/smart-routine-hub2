@@ -1,3 +1,14 @@
+/**
+ * A signed-in teacher changes their own password — used both for a
+ * voluntary change and to clear the forced first-login change (see
+ * proxy.ts's mustChangePassword redirect). Requires the current password
+ * to match (400 if not); on success clears `mustChangePassword` in the
+ * database. Note this alone does NOT update the caller's live JWT — the
+ * client must call NextAuth's `update()` afterwards (which the
+ * change-password page does) to trigger the `trigger === "update"` branch
+ * in lib/auth.ts's jwt callback and pick up the fresh value; otherwise the
+ * token would keep redirecting them back here for the rest of the session.
+ */
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { z } from "zod";

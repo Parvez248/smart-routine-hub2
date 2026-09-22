@@ -1,5 +1,8 @@
 "use client";
 
+// Admin queue for teacher-submitted reschedule requests (approve/reject),
+// sourced from GET /api/admin/reschedule-requests and actioned via PATCH
+// .../[id] — see that route's comment for the approve/reject/revert rules.
 import { useEffect, useState } from "react";
 import { Card, CardHeader } from "@/app/components/ui/Card";
 import { LinkButton } from "@/app/components/ui/Button";

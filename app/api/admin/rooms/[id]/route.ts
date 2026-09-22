@@ -1,3 +1,8 @@
+/**
+ * One room, by id. Admin-only. PATCH updates name/capacity (409 on
+ * duplicate name); DELETE refuses (409) while any Session still references
+ * this room, so the routine can never be left pointing at a deleted room.
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";

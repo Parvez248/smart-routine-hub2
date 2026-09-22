@@ -1,3 +1,6 @@
+// Student class reminders (POST/PATCH /api/student/alarms[/[id]]).
+// updateAlarmSchema's `.refine` rejects an empty PATCH body — at least one
+// of leadMinutes/isActive must actually change something.
 import { z } from "zod";
 
 export const createAlarmSchema = z.object({

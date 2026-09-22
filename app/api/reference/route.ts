@@ -1,3 +1,11 @@
+/**
+ * All reference data in one call — courses/teachers/rooms/batches/
+ * timeSlots plus the fixed list of class days. Public (no auth() check):
+ * used to populate the admin's session create/edit form and pickers
+ * (SessionDialog, ScheduleSection), which are themselves behind proxy.ts's
+ * /admin gate, but this endpoint itself doesn't re-check role — it's not
+ * secret data (the same reference info is visible in the public routine).
+ */
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 

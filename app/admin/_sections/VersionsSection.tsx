@@ -1,5 +1,8 @@
 "use client";
 
+// Admin "Routine → Versions" — create/publish/delete a RoutineVersion (see
+// GET/POST /api/admin/versions and PATCH/DELETE .../[id] for the actual
+// rules, especially "exactly one version is ever published").
 import { useEffect, useState } from "react";
 import { Card, CardHeader } from "@/app/components/ui/Card";
 import { Button, LinkButton } from "@/app/components/ui/Button";

@@ -1,3 +1,18 @@
+/**
+ * A student's own routine — every ACTIVE session for their batch in the
+ * published version, in day/slot order, each with its `movedTo` override
+ * (if any) attached, same shape as GET /api/sessions.
+ *
+ * NOTE: this does NOT filter by section — the `Student` model has no
+ * `section` field at all, so a Sec 1 student and a Sec 2 student of the
+ * same batch see the exact same session list, including every `"Sec 1"`/
+ * `"Sec 2"`/`"Both"` class. This is intentional, not a gap: it's what
+ * makes the Step 39 "Both" class visibility requirement trivially true
+ * here — there was nothing to filter in the first place.
+ *
+ * `?batchId=` lets a student browse a *different* batch's routine (e.g.
+ * out of curiosity) — defaults to their own batch, but isn't restricted to it.
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { getAuthenticatedStudent } from "@/lib/services/student-auth";

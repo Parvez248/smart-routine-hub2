@@ -1,3 +1,11 @@
+/**
+ * Cancel one of the teacher's own reschedule requests before the admin
+ * decides it. Teacher-only, and further gated to the requester
+ * (`request.changedById === teacher.userId`, 403 otherwise). Only a
+ * PENDING request can be cancelled (409 if already approved/rejected —
+ * nothing to undo, or use the admin's revert action instead). This is a
+ * soft cancel (`status: "CANCELLED"`), not a delete — the record stays for history.
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { getAuthenticatedTeacher } from "@/lib/services/teacher-auth";

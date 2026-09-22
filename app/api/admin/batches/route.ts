@@ -1,3 +1,10 @@
+/**
+ * Batch reference-data CRUD (Academic Data → Batches — "28th", "29th",
+ * etc., each with a semester and student count). Admin-only. GET lists all
+ * batches by name; POST creates one (body: batchSchema). PATCH/DELETE live
+ * in ./[id]/route.ts. 401 not admin, 400 invalid input, 409 duplicate
+ * batch name, 500 unexpected.
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";

@@ -4,6 +4,10 @@ import { LayoutGrid, Rows3, Table2 } from "lucide-react";
 
 export type RoutineView = "grid" | "rail" | "table";
 
+// The Grid button is desktop-only (`hidden md:inline-flex`) since the
+// table grid isn't offered on narrow viewports at all — the page picks
+// "rail" for the actual rendered view on mobile regardless of this toggle's
+// stored value (see each routine page's `effectiveView` / useIsDesktop()).
 export function ViewToggle({ value, onChange }: { value: RoutineView; onChange: (v: RoutineView) => void }) {
   return (
     <div className="print:hidden inline-flex items-center rounded-md border border-border p-0.5 bg-muted/40">

@@ -1,3 +1,13 @@
+/**
+ * Notice board CRUD (Admin → Notices). Admin-only.
+ *   GET  — every notice, newest first (audience filtering for who
+ *          *sees* a notice happens on the teacher/student read endpoints,
+ *          not here — the admin view sees everything).
+ *   POST — create a notice; body validated by noticeSchema (title/body/
+ *          audience: ALL | TEACHERS | STUDENTS), `postedById` set from the
+ *          signed-in admin's session.
+ * PATCH/DELETE for one notice live in ./[id]/route.ts.
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";

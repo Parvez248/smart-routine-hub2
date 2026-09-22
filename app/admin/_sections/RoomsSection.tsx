@@ -1,5 +1,8 @@
 "use client";
 
+// Admin "Academic Data → Rooms" — CRUD over GET/POST /api/admin/rooms and
+// PATCH/DELETE .../[id]. Same list/add/inline-edit/delete pattern as the
+// other reference-data sections (Courses/Batches/TimeSlots).
 import { useEffect, useState } from "react";
 import { Card, CardHeader } from "@/app/components/ui/Card";
 import { Button, LinkButton } from "@/app/components/ui/Button";

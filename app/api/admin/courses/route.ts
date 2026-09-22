@@ -1,3 +1,11 @@
+/**
+ * Course reference-data CRUD (Academic Data → Courses). Admin-only.
+ *   GET  — list all courses, alphabetical by code.
+ *   POST — create a course; body validated by courseSchema (code/title/type).
+ * PATCH/DELETE for one course live in ./[id]/route.ts. 401 if not admin,
+ * 400 for invalid input, 409 if the course code already exists
+ * (Prisma P2002 unique-constraint violation), 500 unexpected.
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";

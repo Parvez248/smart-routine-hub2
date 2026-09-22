@@ -1,3 +1,11 @@
+/**
+ * One course, by id. Admin-only.
+ *   PATCH  — full update (code/title/type), same validation as create; 409
+ *            on a duplicate code.
+ *   DELETE — refuses (409) if any Session still references this course, so
+ *            deleting a course can never silently orphan routine data.
+ * 401/400 for auth/id-or-body validation failures, 500 unexpected.
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";

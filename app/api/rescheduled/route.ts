@@ -1,3 +1,14 @@
+/**
+ * Every currently-active reschedule override on the published routine —
+ * the shared "Rescheduled Classes" list used by all three roles' own
+ * pages (admin/teacher/student), which is why this only requires *some*
+ * signed-in user (`session?.user`), not a specific role. "Active" means
+ * APPROVED and not yet folded into the master schedule
+ * (`appliedToMaster: false` — same definition getActiveOverrides in
+ * scheduling.ts uses for the "Moved" badge). `kind` distinguishes a
+ * one-occurrence dated move (`originalDate` set) from a legacy permanent
+ * weekly move, mirroring the isDated split in the admin approval route.
+ */
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { getDb } from "@/lib/db";

@@ -1,3 +1,17 @@
+/**
+ * Teacher self-registration. Public (no auth required — this IS how a
+ * teacher gets an account). Body: name/email/password/initials
+ * (registerSchema). Creates the User (role TEACHER, status PENDING,
+ * emailVerified false) and, in the same transaction, either links to an
+ * existing Teacher row by initials (e.g. one already in the schedule from
+ * a routine import, via `Teacher.userId`) or creates a new Teacher row —
+ * this is the one place that link is established; see ./verify for the
+ * next step and app/api/admin/teacher-requests for the approval after that.
+ * A 6-digit email verification code is generated and (since there's no
+ * email service wired up) logged to the server console rather than
+ * actually emailed — `devVerifyCode` is also returned in the response for
+ * the same reason. 409 if the email or initials are already taken.
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import bcrypt from "bcryptjs";

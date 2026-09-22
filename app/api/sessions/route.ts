@@ -1,3 +1,18 @@
+/**
+ * Master session CRUD — the raw weekly `Session` rows, one row per
+ * batch+day+slot. Every routine view (admin/teacher/student) reads through
+ * GET here for whichever version it wants; only the admin can write.
+ *   GET    — public (no auth() check): all sessions for a version (defaults
+ *            to the published one), with each session's active reschedule
+ *            override (if any) attached as `movedTo`.
+ *   POST   — admin-only: create one session. Body validated by
+ *            createSessionSchema; runs checkConflict + checkCapacity before
+ *            writing, so a 409 means "conflict" or "room too small", not a
+ *            generic failure.
+ *   DELETE — admin-only: delete one session by `?id=`. No conflict re-check
+ *            needed (deleting can't create a new conflict).
+ * PATCH for a single session lives in ./[id]/route.ts.
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { z } from "zod";
