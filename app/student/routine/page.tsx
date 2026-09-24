@@ -1,9 +1,25 @@
 "use client";
 
+/**
+ * Student "My Routine" — the focused everyday view: only this student's own
+ * batch. The all-batches view lives at /student/full-routine (see
+ * RoutineScopeTabs); the two are separate routes so each is linkable and
+ * the layout nav can highlight them independently.
+ *
+ * Data comes from the existing GET /api/student/routine (own batch by
+ * default) — no new endpoint. Reminder bells, the next-class countdown,
+ * and the reminder API calls are unchanged from before the Step 48
+ * redesign; only the surrounding layout/presentation is new.
+ */
 import { Suspense, useEffect, useMemo, useState } from "react";
+import { PageHeader } from "@/app/components/ui/PageHeader";
 import { Loading } from "@/app/components/ui/Loading";
 import { LinkButton } from "@/app/components/ui/Button";
 import { EmptyState } from "@/app/components/ui/EmptyState";
+import { Skeleton } from "@/components/ui/skeleton";
+import { SectionCard } from "@/app/components/dashboard/SectionCard";
+import { MiniClassRow } from "@/app/components/dashboard/MiniClassRow";
+import { dayNameForDate } from "@/lib/services/dates";
 import { nextOccurrenceOf } from "@/lib/services/timeslot";
 import { useRoutineFilters } from "@/app/components/routine/useRoutineFilters";
 import { RoutineList } from "@/app/components/routine/RoutineList";
@@ -13,6 +29,7 @@ import { RoutineMasthead } from "@/app/components/routine/RoutineMasthead";
 import { FilterCard } from "@/app/components/routine/FilterCard";
 import { ViewToggle, type RoutineView } from "@/app/components/routine/ViewToggle";
 import { useIsDesktop } from "@/app/components/routine/useIsDesktop";
+import { RoutineScopeTabs } from "@/app/student/_components/RoutineScopeTabs";
 import type { FilterableSession } from "@/app/components/routine/types";
 
 type SessionCell = {
@@ -115,8 +132,7 @@ function StudentRoutineInner() {
   const effectiveView: RoutineView = view === "table" ? "table" : isDesktop ? view : "rail";
 
   const [batches, setBatches] = useState<Batch[]>([]);
-  const [selectedBatchId, setSelectedBatchId] = useState<string>("");
-  const [myBatchId, setMyBatchId] = useState<string>("");
+  const [myBatchId, setMyBatchId] = useState<number | null>(null);
 
   const [alarms, setAlarms] = useState<AlarmRow[]>([]);
   const [openBellFor, setOpenBellFor] = useState<number | null>(null);
@@ -125,21 +141,15 @@ function StudentRoutineInner() {
 
   const [now, setNow] = useState(new Date());
 
-  useEffect(() => {
-    document.title = "My Routine · Routine Management System";
-  }, []);
-
-  async function loadRoutine(batchId?: string) {
+  async function loadRoutine() {
     setLoadingState(true);
-    const url = batchId ? `/api/student/routine?batchId=${batchId}` : "/api/student/routine";
-    const res = await fetch(url);
+    const res = await fetch("/api/student/routine");
     const json = await res.json();
     if (json.ok) {
       setSessions(json.data.sessions);
       setVersionName(json.data.versionName);
       setMessage(json.data.message);
-      setSelectedBatchId(String(json.data.batchId));
-      if (!batchId) setMyBatchId(String(json.data.batchId));
+      setMyBatchId(json.data.batchId);
     }
     setLoadingState(false);
   }
@@ -161,12 +171,6 @@ function StudentRoutineInner() {
     return () => clearInterval(t);
   }, []);
 
-  function handleBatchChange(batchId: string) {
-    setSelectedBatchId(batchId);
-    setOpenBellFor(null);
-    loadRoutine(batchId);
-  }
-
   const filterState = useRoutineFilters(sessions, { storageKey: "student" });
   const { filtered, totalCount, clearAll } = filterState;
 
@@ -175,17 +179,27 @@ function StudentRoutineInner() {
     [alarms]
   );
 
-  const viewingOwnBatch = myBatchId !== "" && selectedBatchId === myBatchId;
+  // "28th · 3rd sem" for the page subtitle — the Student model has no
+  // section of its own, so a student's routine is identified by batch only.
+  const myBatchLabel = useMemo(() => {
+    const b = batches.find((x) => x.id === myBatchId);
+    return b ? `${b.name} · ${b.semester} sem` : null;
+  }, [batches, myBatchId]);
+
+  const todayName = dayNameForDate(now);
+  const todaysClasses = useMemo(
+    () => sessions.filter((s) => s.day === todayName).sort((a, b) => a.timeSlot.sortOrder - b.timeSlot.sortOrder),
+    [sessions, todayName]
+  );
 
   const nextClass = useMemo(() => {
-    if (!viewingOwnBatch) return null;
     const upcoming = sessions
       .filter((s) => s.status !== "CANCELLED")
       .map((s) => ({ session: s, at: nextOccurrenceOf(s.day, s.timeSlot.label, now) }))
       .filter((x): x is { session: SessionCell; at: Date } => x.at !== null)
       .sort((a, b) => a.at.getTime() - b.at.getTime());
     return upcoming[0] ?? null;
-  }, [sessions, now, viewingOwnBatch]);
+  }, [sessions, now]);
 
   function openBell(session: SessionCell) {
     const existing = alarmBySessionId.get(session.id);
@@ -237,7 +251,7 @@ function StudentRoutineInner() {
   }
 
   const renderActions = (s: SessionCell) => {
-    if (!viewingOwnBatch || s.status === "CANCELLED") return null;
+    if (s.status === "CANCELLED") return null;
     return (
       <ReminderBell
         session={s}
@@ -258,22 +272,14 @@ function StudentRoutineInner() {
 
   return (
     <>
-      <div className="print:hidden flex items-center justify-end gap-2">
-        <label htmlFor="student-routine-batch" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Batch</label>
-        <select
-          id="student-routine-batch"
-          value={selectedBatchId}
-          onChange={(e) => handleBatchChange(e.target.value)}
-          className="border border-border bg-muted rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition"
-        >
-          {batches.map((b) => (
-            <option key={b.id} value={b.id}>{b.name} — {b.semester} sem</option>
-          ))}
-        </select>
-      </div>
+      <PageHeader
+        title="My Routine"
+        description={myBatchLabel ? `Your batch — ${myBatchLabel}` : "Your batch's weekly routine"}
+        action={<RoutineScopeTabs active="mine" />}
+      />
 
       {nextClass && (
-        <div className="print:hidden bg-primary rounded-lg px-6 py-4 text-white flex items-center justify-between gap-4 flex-wrap">
+        <div className="print:hidden bg-primary rounded-lg px-6 py-4 text-primary-foreground flex items-center justify-between gap-4 flex-wrap">
           <div>
             <p className="text-xs text-primary-foreground/70 font-semibold uppercase tracking-wide">Next Class</p>
             <p className="text-lg font-bold mt-0.5">
@@ -290,7 +296,31 @@ function StudentRoutineInner() {
         </div>
       )}
 
-      <RoutineMasthead versionName={versionName} filterSummary={filterState.chips.map((c) => c.label).join(", ")} />
+      <div className="print:hidden">
+        <SectionCard title={`Today's Classes${todayName ? ` · ${todayName}` : ""}`}>
+          {loading ? (
+            <div className="p-4 space-y-2">
+              {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
+            </div>
+          ) : message ? (
+            <EmptyState icon="🗓️" message={message} />
+          ) : todaysClasses.length > 0 ? (
+            <div>
+              {todaysClasses.map((s) => <MiniClassRow key={s.id} session={s} />)}
+            </div>
+          ) : (
+            <EmptyState icon="📭" message="No classes today." />
+          )}
+        </SectionCard>
+      </div>
+
+      {/* No effectiveDate: GET /api/student/routine doesn't return one and
+          Step 48 forbids adding an endpoint for it, so the masthead simply
+          omits that line here (it's optional). */}
+      <RoutineMasthead
+        versionName={versionName}
+        filterSummary={filterState.chips.map((c) => c.label).join(", ")}
+      />
 
       <FilterCard state={filterState} totalCount={totalCount} />
 

@@ -1,13 +1,21 @@
 "use client";
 
+/**
+ * Student "Reminders" — the alarms the student has set on their own
+ * classes. Step 48 restyled this from a dense table into one card per
+ * reminder (so the class, its lead time, its on/off state and delete all
+ * read clearly on mobile too); the API calls and their behaviour —
+ * PATCH leadMinutes, PATCH isActive, DELETE — are unchanged.
+ */
 import { useEffect, useState } from "react";
+import { BellRing, Trash2 } from "lucide-react";
 import { PageHeader } from "@/app/components/ui/PageHeader";
-import { Card, CardHeader } from "@/app/components/ui/Card";
 import { LinkButton } from "@/app/components/ui/Button";
-import { Table } from "@/app/components/ui/Table";
 import { Message } from "@/app/components/ui/Message";
 import { EmptyState } from "@/app/components/ui/EmptyState";
-import { Loading } from "@/app/components/ui/Loading";
+import { StatusBadge } from "@/app/components/ui/StatusBadge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Card } from "@/app/components/ui/Card";
 
 type AlarmRow = {
   id: number;
@@ -106,76 +114,111 @@ export default function StudentAlarmsPage() {
     }
   }
 
+  const activeCount = alarms.filter((a) => a.isActive).length;
+
   return (
     <>
       <PageHeader
         title="Reminders"
         description="Reminders fire as an on-screen banner (and a browser notification, if allowed) while this site is open."
         action={
-          <span className="text-xs bg-primary/10 text-primary font-semibold px-3 py-1 rounded-full">
-            {alarms.length} reminders
+          <span className="text-xs bg-primary/10 text-primary font-semibold px-3 py-1 rounded-full font-data">
+            {activeCount} active · {alarms.length} total
           </span>
         }
       />
 
       {status && <Message type={status.type}>{status.msg}</Message>}
 
-      <Card>
-        <CardHeader title={<>Reminders <span className="ml-2 text-sm font-normal text-slate">{alarms.length}</span></>} />
-
-        {loading ? (
-          <Loading />
-        ) : alarms.length === 0 ? (
-          <EmptyState icon="🔔" message="No reminders yet. Set one from the bell icon on My Routine." />
-        ) : (
-          <Table headers={["Class", "Day · Time", "Room", "Remind me before", "Active", ""]}>
-            {alarms.map((a) => (
-              <tr key={a.id} className="hover:bg-muted/40 transition-colors">
-                <td className="px-5 py-3.5">
-                  <span className="font-semibold font-data text-foreground">{a.session?.course.code ?? "—"}</span>
-                  {a.session?.status === "CANCELLED" && (
-                    <span className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-cancelled/10 text-cancelled">
-                      Cancelled
-                    </span>
-                  )}
-                </td>
-                <td className="px-5 py-3.5 text-muted-foreground font-data whitespace-nowrap">
-                  {a.session ? `${a.session.day} · ${a.session.timeSlot.label}` : "—"}
-                </td>
-                <td className="px-5 py-3.5 text-muted-foreground font-data">{a.session ? `Room ${a.session.room.name}` : "—"}</td>
-                <td className="px-5 py-3.5">
-                  <select
-                    value={a.leadMinutes}
-                    disabled={actingId === a.id}
-                    onChange={(e) => handleLeadChange(a.id, Number(e.target.value))}
-                    className="border border-border bg-muted rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                  >
-                    {LEAD_OPTIONS.map((m) => (
-                      <option key={m} value={m}>{m} min</option>
-                    ))}
-                  </select>
-                </td>
-                <td className="px-5 py-3.5">
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-36 w-full rounded-lg" />)}
+        </div>
+      ) : alarms.length === 0 ? (
+        <Card>
+          <EmptyState icon="🔔" message="No reminders yet — set one from the bell icon on My Routine." />
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {alarms.map((a) => {
+            const cancelled = a.session?.status === "CANCELLED";
+            const busy = actingId === a.id;
+            return (
+              <div
+                key={a.id}
+                className={`bg-card border border-border rounded-lg p-4 ${a.isActive ? "" : "opacity-70"}`}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span
+                        className={`font-data font-semibold text-base ${
+                          cancelled ? "text-muted-foreground line-through" : "text-foreground"
+                        }`}
+                      >
+                        {a.session?.course.code ?? "—"}
+                      </span>
+                      {cancelled && <StatusBadge status="Cancelled" />}
+                    </div>
+                    <p className="text-xs text-muted-foreground font-data mt-1">
+                      {a.session ? `${a.session.day} · ${a.session.timeSlot.label}` : "—"}
+                    </p>
+                    <p className="text-xs text-muted-foreground font-data mt-0.5">
+                      {a.session ? `Room ${a.session.room.name}` : "—"}
+                    </p>
+                  </div>
                   <button
+                    type="button"
                     onClick={() => handleToggleActive(a)}
-                    disabled={actingId === a.id}
-                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold disabled:opacity-50 transition-colors ${
+                    disabled={busy}
+                    aria-pressed={a.isActive}
+                    aria-label={a.isActive ? "Reminder on — turn off" : "Reminder off — turn on"}
+                    className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold disabled:opacity-50 transition-colors ${
                       a.isActive ? "bg-confirmed/10 text-confirmed" : "bg-muted text-muted-foreground"
                     }`}
                   >
+                    <BellRing className="size-3" aria-hidden="true" />
                     {a.isActive ? "On" : "Off"}
                   </button>
-                </td>
-                <td className="px-5 py-3.5 text-right whitespace-nowrap">
-                  <LinkButton tone="danger" muted loading={actingId === a.id} onClick={() => handleDelete(a.id)}>
-                    Delete
+                </div>
+
+                <div className="mt-3.5 pt-3 border-t border-border flex items-end justify-between gap-3">
+                  <div className="flex flex-col gap-1 min-w-0">
+                    <label
+                      htmlFor={`lead-${a.id}`}
+                      className="text-[10px] uppercase tracking-wide text-muted-foreground/70 font-medium"
+                    >
+                      Remind me before
+                    </label>
+                    <select
+                      id={`lead-${a.id}`}
+                      value={a.leadMinutes}
+                      disabled={busy}
+                      onChange={(e) => handleLeadChange(a.id, Number(e.target.value))}
+                      className="border border-border bg-muted rounded-lg px-2.5 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                    >
+                      {LEAD_OPTIONS.map((m) => (
+                        <option key={m} value={m}>{m} min</option>
+                      ))}
+                    </select>
+                  </div>
+                  <LinkButton
+                    tone="danger"
+                    muted
+                    loading={busy}
+                    onClick={() => handleDelete(a.id)}
+                    className="p-1 rounded"
+                    title="Remove reminder"
+                    aria-label={`Remove reminder for ${a.session?.course.code ?? "this class"}`}
+                  >
+                    <Trash2 className="size-4" aria-hidden="true" />
                   </LinkButton>
-                </td>
-              </tr>
-            ))}
-          </Table>
-        )}
-      </Card>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </>
   );
 }

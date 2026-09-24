@@ -9,6 +9,8 @@ import StudentMobileNav from "./StudentMobileNav";
 const LINKS = [
   { href: "/student/dashboard", label: "Dashboard" },
   { href: "/student/routine", label: "My Routine" },
+  // Step 48 — the all-batches view, alongside the student's own routine.
+  { href: "/student/full-routine", label: "Full Routine" },
   { href: "/student/rescheduled", label: "Rescheduled Classes" },
   { href: "/student/notices", label: "Notices" },
   { href: "/student/alarms", label: "Reminders" },
@@ -22,13 +24,15 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
       <header className="sticky top-0 z-20 print:hidden">
         <AppHeaderBand roleLabel="Student" maxWidthClassName="max-w-5xl" />
         <div className="bg-surface border-b border-border">
-          <div className="max-w-5xl mx-auto px-6 py-3">
+          {/* overflow-x-auto + whitespace-nowrap so the nav scrolls rather
+              than wrapping once Full Routine (Step 48) made it six items. */}
+          <div className="max-w-5xl mx-auto px-6 py-3 overflow-x-auto">
             <nav className="hidden sm:flex items-center gap-1 text-xs font-medium">
               {LINKS.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`px-2.5 py-1.5 rounded-full transition-colors ${
+                  className={`px-2.5 py-1.5 rounded-full transition-colors whitespace-nowrap ${
                     pathname === link.href
                       ? "bg-primary text-primary-foreground"
                       : "text-slate hover:text-foreground"
