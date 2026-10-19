@@ -33,12 +33,12 @@ import { useIsDesktop } from "@/app/components/routine/useIsDesktop";
 import { SessionDialog, type SessionFormValues } from "@/app/components/routine/SessionDialog";
 import { combineSlotLabels, mergeLabPairs } from "@/app/components/routine/labMerge";
 import { courseOptionLabel } from "@/app/components/routine/RowBadges";
-import { canCombine, sectionLabel } from "@/lib/ui/sections";
+import { canCombine, sectionLabel, sectionOptionsFor, sectionOptionLabel } from "@/lib/ui/sections";
 
 type Course   = { id: number; code: string; title: string; type: string };
 type Teacher  = { id: number; initials: string; name: string };
 type Room     = { id: number; name: string; capacity: number };
-type Batch    = { id: number; name: string; semester: string };
+type Batch    = { id: number; name: string; semester: string; sectionCount: number };
 type TimeSlot = { id: number; label: string; sortOrder: number };
 
 type SessionRow = {
@@ -161,8 +161,27 @@ export default function ScheduleSection() {
   useEffect(() => { loadRef(); loadVersions(); }, []);
   useEffect(() => { loadSessions(selectedVersionId); }, [selectedVersionId]);
 
+  // The section options for whichever batch the "Add New Session" form has
+  // selected, from that batch's own sectionCount (Step 50).
+  const formBatchSectionOptions = useMemo(
+    () => sectionOptionsFor(ref?.batches.find((b) => String(b.id) === form.batchId)?.sectionCount ?? 1),
+    [ref, form.batchId]
+  );
+
   const field = (name: keyof typeof form, value: string) =>
-    setForm((f) => ({ ...f, [name]: value }));
+    setForm((f) => {
+      const next = { ...f, [name]: value };
+      if (name === "batchId") {
+        // Changing batch clears a section that the new batch can't use —
+        // empty for a sectioned batch (the admin must choose), and empty
+        // for an unsectioned one too, where it's sent as null on save.
+        const nextOptions = sectionOptionsFor(
+          ref?.batches.find((b) => String(b.id) === value)?.sectionCount ?? 1
+        );
+        if (!nextOptions.includes(next.section)) next.section = "";
+      }
+      return next;
+    });
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -432,18 +451,6 @@ export default function ScheduleSection() {
     days: new Set(sessions.map((s) => s.day)).size,
   };
 
-  // batchId → distinct Sec 1/Sec 2 values seen anywhere in the loaded routine
-  // — tells the dialog which batches are sectioned (Step 39), from data
-  // already fetched, no new query.
-  const batchSections: Record<number, string[]> = {};
-  for (const s of sessions) {
-    if (s.section === "Sec 1" || s.section === "Sec 2") {
-      const set = batchSections[s.batch.id] ?? [];
-      if (!set.includes(s.section)) set.push(s.section);
-      batchSections[s.batch.id] = set;
-    }
-  }
-
   // Step 41 — Sec 1 sessions (or Sec 1 lab pairs) that have an identical
   // Sec 2 counterpart in the same batch+day+slot, keyed by the Sec 1
   // session's id. Reuses mergeLabPairs (same lab-pairing logic the grid
@@ -453,6 +460,9 @@ export default function ScheduleSection() {
     const map = new Map<number, CombineTarget<SessionRow>>();
     const groups = new Map<string, SessionRow[]>();
     for (const s of sessions) {
+      // Step 50 — only batches actually configured with two sections can
+      // offer Combine; the section values alone are no longer the test.
+      if (s.batch.sectionCount !== 2) continue;
       if (s.section !== "Sec 1" && s.section !== "Sec 2") continue;
       if (s.status !== "ACTIVE" || s.movedTo) continue;
       const key = `${s.batch.id}|${s.day}`;
@@ -607,18 +617,19 @@ export default function ScheduleSection() {
               {ref?.batches.map((b) => <option key={b.id} value={b.id}>{b.name} — {b.semester} sem</option>)}
             </Select>
 
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                Section <span className="text-muted-foreground/60 normal-case font-normal">(optional)</span>
-              </label>
-              <input
-                type="text"
-                value={form.section}
-                onChange={(e) => field("section", e.target.value)}
-                placeholder="e.g. Sec 1"
-                className="border border-border bg-muted rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition"
-              />
-            </div>
+            {/* Step 50 — same rule as the inline dialog: the section comes
+                from the chosen batch's sectionCount, so a sectioned batch
+                gets a required dropdown and an unsectioned one gets no
+                field at all. The old free-text box is gone; it was what let
+                values like "1" or "sec1" into the data. */}
+            {formBatchSectionOptions.length > 0 && (
+              <Select label="Section" required value={form.section} onChange={(v) => field("section", v)}>
+                <option value="">Select section</option>
+                {formBatchSectionOptions.map((value) => (
+                  <option key={value} value={value}>{sectionOptionLabel(value)}</option>
+                ))}
+              </Select>
+            )}
           </div>
 
           {/* Row 2: Course + Teacher + Room */}
@@ -743,7 +754,6 @@ export default function ScheduleSection() {
         versionId={selectedVersionId ? Number(selectedVersionId) : null}
         initial={dialogInitial}
         onSaved={() => loadSessions(selectedVersionId)}
-        batchSections={batchSections}
       />
     </>
   );

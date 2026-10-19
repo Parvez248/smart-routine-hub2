@@ -40,7 +40,7 @@ type SessionCell = {
   course: { code: string; title: string; type: string };
   teacher: { initials: string; name: string };
   room: { name: string };
-  batch: { id: number; name: string; semester: string };
+  batch: { id: number; name: string; semester: string; sectionCount: number };
   timeSlot: { id: number; label: string; sortOrder: number };
   movedTo: FilterableSession["movedTo"];
 };

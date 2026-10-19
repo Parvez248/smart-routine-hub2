@@ -7,11 +7,12 @@ import { Button, LinkButton } from "@/app/components/ui/Button";
 import { Message } from "@/app/components/ui/Message";
 import { isValidLabStart, combineSlotLabels } from "./labMerge";
 import { courseOptionLabel } from "./RowBadges";
+import { sectionOptionsFor, sectionOptionLabel } from "@/lib/ui/sections";
 
 type RefCourse = { id: number; code: string; title: string; type: string };
 type RefTeacher = { id: number; initials: string; name: string };
 type RefRoom = { id: number; name: string; capacity: number };
-type RefBatch = { id: number; name: string; semester: string };
+type RefBatch = { id: number; name: string; semester: string; sectionCount: number };
 type RefTimeSlot = { id: number; label: string; sortOrder: number };
 
 type RefData = {
@@ -94,17 +95,12 @@ export function SessionDialog({
   versionId,
   initial,
   onSaved,
-  batchSections,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   versionId: number | null;
   initial: SessionFormValues | null;
   onSaved: () => void;
-  // batchId → distinct Sec 1/Sec 2 values already in use for that batch, so
-  // the Section field knows whether to offer Sec 1 / Sec 2 / Both Sections
-  // (Step 39) or stay free-text for a batch with no sections.
-  batchSections: Record<number, string[]>;
 }) {
   const [ref, setRef] = useState<RefData | null>(null);
   const [form, setForm] = useState<SessionFormValues | null>(null);
@@ -138,7 +134,18 @@ export function SessionDialog({
     [ref, form?.courseId]
   );
   const isLabSelected = selectedCourse?.type === "LAB";
-  const hasSections = Boolean(form?.batchId && (batchSections[Number(form.batchId)]?.length ?? 0) > 0);
+
+  // Step 50 — the Section field is driven by the chosen batch's own
+  // sectionCount, straight from /api/reference, instead of being inferred
+  // from the sessions already in the selected version. That inference made
+  // every batch look section-less in a new or nearly empty version, which
+  // is exactly the bug this step fixes.
+  const selectedBatch = useMemo(
+    () => ref?.batches.find((b) => String(b.id) === form?.batchId),
+    [ref, form?.batchId]
+  );
+  const sectionOptions = sectionOptionsFor(selectedBatch?.sectionCount ?? 1);
+  const hasSections = sectionOptions.length > 0;
 
   const labStartOptions = useMemo(() => {
     if (!ref) return [];
@@ -214,11 +221,13 @@ export function SessionDialog({
         }
       }
       if (key === "batchId") {
-        const nowHasSections = (batchSections[Number(value)]?.length ?? 0) > 0;
-        const validSectionValues = ["Sec 1", "Sec 2", "Both"];
-        if (nowHasSections ? !validSectionValues.includes(next.section) : next.section !== "") {
-          next.section = "";
-        }
+        // Reset the section whenever the batch changes: a sectioned batch
+        // starts empty so the admin must pick one, and an unsectioned batch
+        // carries no section at all (sent as null on save).
+        const nextOptions = sectionOptionsFor(
+          ref?.batches.find((b) => String(b.id) === value)?.sectionCount ?? 1
+        );
+        if (!nextOptions.includes(next.section)) next.section = "";
       }
       return next;
     });
@@ -360,24 +369,21 @@ export function SessionDialog({
                 {ref?.batches.map((b) => <option key={b.id} value={b.id}>{b.name} — {b.semester} sem</option>)}
               </select>
             </Field>
-            <Field label={hasSections ? "Section" : "Section (optional)"}>
-              {hasSections ? (
+            {/* Step 50 — no free-text section box any more: a sectioned
+                batch gets a required dropdown of its real options, and an
+                unsectioned batch gets no field at all (section saves as
+                null). This is what stops typos like "sec1" reaching the
+                data and breaking sectionsIntersect/the two-row span/Combine. */}
+            {hasSections && (
+              <Field label="Section">
                 <select required value={form.section} onChange={(e) => setField("section", e.target.value)} className={selectClass}>
                   <option value="">Select section</option>
-                  <option value="Sec 1">Sec 1</option>
-                  <option value="Sec 2">Sec 2</option>
-                  <option value="Both">Both Sections</option>
+                  {sectionOptions.map((value) => (
+                    <option key={value} value={value}>{sectionOptionLabel(value)}</option>
+                  ))}
                 </select>
-              ) : (
-                <input
-                  type="text"
-                  value={form.section}
-                  onChange={(e) => setField("section", e.target.value)}
-                  placeholder="e.g. Sec 1"
-                  className={selectClass}
-                />
-              )}
-            </Field>
+              </Field>
+            )}
           </div>
 
           {isLabSelected && (

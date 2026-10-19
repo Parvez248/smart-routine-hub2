@@ -373,22 +373,16 @@ export function RoutineGrid<T extends FilterableSession>({
     return map;
   }, [sessions, slotColumns, breakAfterIndex]);
 
-  // Step 45 — a batch is "sectioned" if it uses sections *anywhere* in the
-  // currently loaded sessions, not just on the one day being laid out. A
-  // sectioned batch always draws both its Sec 1 and Sec 2 rows on every day
-  // it appears, even on a day where one (or both) is empty — otherwise the
-  // row count would silently vary day to day depending on which section
-  // happened to have a class.
-  const sectionedBatchKeys = useMemo(() => {
-    const set = new Set<string>();
-    for (const s of sessions) {
-      if (s.section === "Sec 1" || s.section === "Sec 2" || s.section === "Both") {
-        set.add(`${s.batch.name}|${s.batch.semester}`);
-      }
-    }
-    return set;
-  }, [sessions]);
-
+  // A sectioned batch (Step 45) always draws both its Sec 1 and Sec 2 rows
+  // on every day it appears, even where one or both are empty — otherwise
+  // the row count would vary day to day with whichever section happened to
+  // have a class.
+  //
+  // Step 50 — "sectioned" now comes from the batch's own `sectionCount`
+  // setting rather than being inferred from the loaded sessions. The old
+  // inference made a batch look section-less in any version that didn't
+  // yet contain its Sec 1/Sec 2 classes, so a brand-new or empty version
+  // drew a single row and offered no section options at all.
   // Group by day+batch (no section) — sections are resolved into 1-2 rows below.
   const groups = useMemo(() => {
     const map = new Map<string, T[]>();
@@ -404,7 +398,7 @@ export function RoutineGrid<T extends FilterableSession>({
       const bothSessions = sess.filter((s) => s.section === "Both");
       const nonBoth = sess.filter((s) => s.section !== "Both");
       let sectionRows: SectionRow<T>[];
-      if (sectionedBatchKeys.has(`${batch.name}|${batch.semester}`)) {
+      if (batch.sectionCount === 2) {
         sectionRows = [
           { section: "Sec 1", sessions: nonBoth.filter((s) => s.section === "Sec 1") },
           { section: "Sec 2", sessions: nonBoth.filter((s) => s.section === "Sec 2") },
@@ -427,7 +421,7 @@ export function RoutineGrid<T extends FilterableSession>({
         b.sortKey - a.sortKey ||
         a.batch.name.localeCompare(b.batch.name)
     );
-  }, [sessions, sectionedBatchKeys]);
+  }, [sessions]);
 
   // Flatten into physical rows, each carrying its own pre-built cell row —
   // a Both cell's rowSpan is already resolved here, before rendering.

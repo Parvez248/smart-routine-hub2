@@ -27,6 +27,43 @@ export function sectionLabel(section: SectionValue): string | null {
   return /^sec\b/i.test(trimmed) ? trimmed : `Sec ${trimmed}`;
 }
 
+/**
+ * The section values a batch may use, from its own `sectionCount` setting
+ * (Step 50) — the single answer to "does this batch have sections?", replacing
+ * the old approach of inferring it from whichever sessions a version happened
+ * to contain (which made every batch look section-less in a new/empty version).
+ * `[]` means the batch isn't split, so its classes carry `section: null`.
+ */
+export function sectionOptionsFor(sectionCount: number): string[] {
+  return sectionCount === 2 ? ["Sec 1", "Sec 2", "Both"] : [];
+}
+
+/** Dropdown label for a section value — "Both" reads as "Both Sections". */
+export function sectionOptionLabel(section: string): string {
+  return section === "Both" ? "Both Sections" : section;
+}
+
+/**
+ * Whether `section` is a legal value for a batch with this `sectionCount`:
+ * an unsectioned batch (1) must use `null`; a sectioned one (2) must use
+ * exactly "Sec 1", "Sec 2" or "Both". Used by the session API to reject
+ * anything else with a 400 (Step 50 §7) — which also closes the door on the
+ * typos the old free-text section box allowed ("sec1", "Section 1"), since
+ * those would silently break sectionsIntersect, the two-row span and Combine.
+ */
+export function isValidSectionFor(sectionCount: number, section: SectionValue): boolean {
+  const trimmed = section?.trim() || null;
+  if (sectionCount === 2) return trimmed !== null && sectionOptionsFor(2).includes(trimmed);
+  return trimmed === null;
+}
+
+/** The 400 message when a session's section doesn't fit its batch (Step 50 §7). */
+export function sectionErrorFor(batch: { name: string; sectionCount: number }): string {
+  return batch.sectionCount === 2
+    ? `Batch ${batch.name} has two sections — choose Sec 1, Sec 2 or Both.`
+    : `Batch ${batch.name} has no sections.`;
+}
+
 // The subset of a session's fields Step 41's Combine action needs to judge
 // whether a Sec 1 row and a Sec 2 row are truly the same class — deliberately
 // narrower than the routine views' FilterableSession (which drops entity ids

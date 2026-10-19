@@ -11,10 +11,23 @@ import { Message } from "@/app/components/ui/Message";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { Loading } from "@/app/components/ui/Loading";
 
-type Batch = { id: number; name: string; semester: string; studentCount: number };
-type BatchForm = { name: string; semester: string; studentCount: string };
+type Batch = { id: number; name: string; semester: string; studentCount: number; sectionCount: number };
+type BatchForm = { name: string; semester: string; studentCount: string; sectionCount: string };
 
-const emptyForm: BatchForm = { name: "", semester: "", studentCount: "" };
+const emptyForm: BatchForm = { name: "", semester: "", studentCount: "", sectionCount: "1" };
+
+// Step 50 — a batch is either one group or split into Sec 1 + Sec 2. This
+// setting (not the sessions of whichever version is open) is what decides
+// whether the session dialog offers section options, whether the grid draws
+// two section rows, and whether Combine is available.
+const SECTION_CHOICES = [
+  { value: "1", label: "None" },
+  { value: "2", label: "Two (Sec 1 & Sec 2)" },
+];
+
+function sectionsLabel(sectionCount: number): string {
+  return sectionCount === 2 ? "Sec 1 & Sec 2" : "None";
+}
 
 export default function BatchesSection() {
   const [batches, setBatches] = useState<Batch[]>([]);
@@ -68,7 +81,12 @@ export default function BatchesSection() {
 
   function startEdit(batch: Batch) {
     setEditingId(batch.id);
-    setEditForm({ name: batch.name, semester: batch.semester, studentCount: String(batch.studentCount) });
+    setEditForm({
+      name: batch.name,
+      semester: batch.semester,
+      studentCount: String(batch.studentCount),
+      sectionCount: String(batch.sectionCount),
+    });
   }
 
   async function handleEditSubmit(id: number) {
@@ -118,7 +136,7 @@ export default function BatchesSection() {
       <Card>
         <CardHeader title="Add Batch" accent />
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="flex flex-col gap-1">
               <label htmlFor="batch-name" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                 Name <span className="text-cancelled">*</span>
@@ -164,6 +182,23 @@ export default function BatchesSection() {
                 className="border border-border bg-muted rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition"
               />
             </div>
+
+            <div className="flex flex-col gap-1">
+              <label htmlFor="batch-section-count" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Sections <span className="text-cancelled">*</span>
+              </label>
+              <select
+                id="batch-section-count"
+                required
+                value={form.sectionCount}
+                onChange={(e) => setForm((f) => ({ ...f, sectionCount: e.target.value }))}
+                className="w-full border border-border bg-muted rounded-lg px-3 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition"
+              >
+                {SECTION_CHOICES.map((c) => (
+                  <option key={c.value} value={c.value}>{c.label}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {status && <Message type={status.type}>{status.msg}</Message>}
@@ -184,7 +219,7 @@ export default function BatchesSection() {
         ) : batches.length === 0 ? (
           <EmptyState icon="🎓" message="No batches yet. Add one above." />
         ) : (
-          <Table headers={["Name", "Semester", "Students", ""]}>
+          <Table headers={["Name", "Semester", "Students", "Sections", ""]}>
             {batches.map((b) =>
               editingId === b.id ? (
                 <tr key={b.id} className="bg-primary/5">
@@ -211,6 +246,18 @@ export default function BatchesSection() {
                       className="w-full border border-border bg-card rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                     />
                   </td>
+                  <td className="px-5 py-3">
+                    <select
+                      value={editForm.sectionCount}
+                      onChange={(e) => setEditForm((f) => ({ ...f, sectionCount: e.target.value }))}
+                      aria-label="Sections"
+                      className="w-full border border-border bg-card rounded-lg px-2.5 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    >
+                      {SECTION_CHOICES.map((c) => (
+                        <option key={c.value} value={c.value}>{c.label}</option>
+                      ))}
+                    </select>
+                  </td>
                   <td className="px-5 py-3 text-right whitespace-nowrap">
                     <LinkButton tone="primary" loading={editSubmitting} onClick={() => handleEditSubmit(b.id)} className="mr-3">
                       Save
@@ -225,6 +272,15 @@ export default function BatchesSection() {
                   <td className="px-5 py-3.5 font-semibold font-data text-foreground">{b.name}</td>
                   <td className="px-5 py-3.5 text-muted-foreground font-data">{b.semester}</td>
                   <td className="px-5 py-3.5 text-muted-foreground font-data">{b.studentCount}</td>
+                  <td className="px-5 py-3.5">
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
+                        b.sectionCount === 2 ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {sectionsLabel(b.sectionCount)}
+                    </span>
+                  </td>
                   <td className="px-5 py-3.5 text-right whitespace-nowrap">
                     <LinkButton tone="primary" muted revealOnHover onClick={() => startEdit(b)} className="mr-3">
                       Edit

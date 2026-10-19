@@ -41,3 +41,8 @@ yarn-error.log*
 next-env.d.ts
 
 /app/generated/prisma
+
+# Database backups (prisma/backup-all.ts) — these contain live production
+# data including bcrypt password hashes, real email addresses and email
+# verification codes. Never commit them; this repo is public.
+/prisma/backups

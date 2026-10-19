@@ -19,6 +19,7 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { createSessionSchema } from "@/lib/validation/session";
 import { checkConflict, checkCapacity, getActiveOverrides } from "@/lib/services/scheduling";
+import { isValidSectionFor, sectionErrorFor } from "@/lib/ui/sections";
 
 const include = {
   course: true,
@@ -104,6 +105,18 @@ export async function POST(req: NextRequest) {
     const version = await db.routineVersion.findUnique({ where: { id: versionId } });
     if (!version) {
       return NextResponse.json({ ok: false, error: "Invalid version" }, { status: 400 });
+    }
+
+    // Step 50 §7 — the section must match the batch's own sectionCount
+    // setting, so a sectioned batch can't be given a section-less class
+    // (or a typo'd one) and vice versa. Existing rows are never
+    // re-validated; this gate is only on create/edit.
+    const batchForSection = await db.batch.findUnique({ where: { id: batchId } });
+    if (!batchForSection) {
+      return NextResponse.json({ ok: false, error: "Invalid batch" }, { status: 400 });
+    }
+    if (!isValidSectionFor(batchForSection.sectionCount, normSection)) {
+      return NextResponse.json({ ok: false, error: sectionErrorFor(batchForSection) }, { status: 400 });
     }
 
     const conflict = await checkConflict({ day, timeSlotId, batchId, section: normSection, teacherId, roomId, versionId });

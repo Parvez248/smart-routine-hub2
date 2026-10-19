@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { createSessionSchema } from "@/lib/validation/session";
 import { checkConflict, checkCapacity } from "@/lib/services/scheduling";
+import { isValidSectionFor, sectionErrorFor } from "@/lib/ui/sections";
 
 const include = {
   course: true,
@@ -51,6 +52,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const version = await db.routineVersion.findUnique({ where: { id: versionId } });
     if (!version) {
       return NextResponse.json({ ok: false, error: "Invalid version" }, { status: 400 });
+    }
+
+    // Step 50 §7 — same section-vs-batch check as on create; see
+    // POST /api/sessions. Only this edit is validated, never other rows.
+    const batchForSection = await db.batch.findUnique({ where: { id: batchId } });
+    if (!batchForSection) {
+      return NextResponse.json({ ok: false, error: "Invalid batch" }, { status: 400 });
+    }
+    if (!isValidSectionFor(batchForSection.sectionCount, normSection)) {
+      return NextResponse.json({ ok: false, error: sectionErrorFor(batchForSection) }, { status: 400 });
     }
 
     const conflict = await checkConflict({

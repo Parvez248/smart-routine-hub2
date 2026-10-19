@@ -1,7 +1,13 @@
 /**
- * One batch, by id. Admin-only. PATCH updates name/semester/studentCount
- * (409 on duplicate name); DELETE refuses (409) while any Session still
- * references this batch.
+ * One batch, by id. Admin-only. PATCH updates name/semester/studentCount/
+ * sectionCount (409 on duplicate name); DELETE refuses (409) while any
+ * Session still references this batch.
+ *
+ * Turning sections OFF (2 → 1) is refused with a 409 while any session of
+ * this batch — in ANY version, not just the published one — still carries a
+ * section, since those classes would otherwise be left with a section value
+ * the batch no longer allows (Step 50 §4). Turning them ON (1 → 2) is
+ * always safe and allowed.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -32,6 +38,31 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
 
     const db = getDb();
+
+    if (parsed.data.sectionCount === 1) {
+      const existing = await db.batch.findUnique({ where: { id } });
+      if (!existing) {
+        return NextResponse.json({ ok: false, error: "Batch not found" }, { status: 404 });
+      }
+      if (existing.sectionCount === 2) {
+        const sectionedCount = await db.session.count({
+          where: { batchId: id, section: { not: null } },
+        });
+        if (sectionedCount > 0) {
+          return NextResponse.json(
+            {
+              ok: false,
+              error:
+                sectionedCount === 1
+                  ? "1 class of this batch uses sections; change it first."
+                  : `${sectionedCount} classes of this batch use sections; change them first.`,
+            },
+            { status: 409 }
+          );
+        }
+      }
+    }
+
     const batch = await db.batch.update({ where: { id }, data: parsed.data });
     return NextResponse.json({ ok: true, data: batch });
   } catch (error: unknown) {

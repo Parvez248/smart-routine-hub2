@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `Batch` ADD COLUMN `sectionCount` INTEGER NOT NULL DEFAULT 1;

@@ -60,6 +60,12 @@ model Batch {
   name         String    @unique
   semester     String
   studentCount Int       @default(0)
+  // 1 = no sections (the whole batch is one group); 2 = split into "Sec 1"
+  // and "Sec 2". Drives every "does this batch have sections?" decision —
+  // the section dropdown, the grid's two section rows, Combine eligibility
+  // and the API's section validation — so those no longer have to be
+  // inferred from whichever sessions a version happens to contain (Step 50).
+  sectionCount Int       @default(1)
   sessions     Session[]
 }
 
