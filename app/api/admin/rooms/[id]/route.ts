@@ -1,12 +1,14 @@
 /**
  * One room, by id. Admin-only. PATCH updates name/capacity (409 on
- * duplicate name); DELETE refuses (409) while any Session still references
- * this room, so the routine can never be left pointing at a deleted room.
+ * duplicate name); DELETE refuses (409) while any Session or Exam still
+ * uses this room, so neither routine can be left pointing at a deleted
+ * room (Step 49 added the exam half).
  */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { getDb } from "@/lib/db";
+import { getRoomUsage, isInUse, usageMessage } from "@/lib/services/usage";
 import { roomSchema } from "@/lib/validation/room";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -57,12 +59,9 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
 
   try {
     const db = getDb();
-    const usageCount = await db.session.count({ where: { roomId: id } });
-    if (usageCount > 0) {
-      return NextResponse.json(
-        { ok: false, error: "Room is used in the routine and cannot be deleted" },
-        { status: 409 }
-      );
+    const usage = await getRoomUsage(id);
+    if (isInUse(usage)) {
+      return NextResponse.json({ ok: false, error: usageMessage("Room", usage) }, { status: 409 });
     }
 
     await db.room.delete({ where: { id } });

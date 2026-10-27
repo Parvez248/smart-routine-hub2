@@ -25,7 +25,8 @@ export function MobileBottomNav({ items, more }: { items: BottomNavItem[]; more?
       >
         <div className="grid" style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
           {items.map((item) => {
-            const active = pathname === item.href;
+            // Also active on sub-pages (e.g. /admin/exams/[termId] under Exams).
+            const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
             const Icon = item.icon;
             return (
               <Link

@@ -38,6 +38,8 @@ model Course {
   title    String
   type     ClassType @default(THEORY)
   sessions Session[]
+  // Back-relation only (Step 49) — adds no column to this table.
+  exams    Exam[]
 }
 
 model Teacher {
@@ -49,10 +51,12 @@ model Teacher {
 }
 
 model Room {
-  id       Int       @id @default(autoincrement())
-  name     String    @unique
-  capacity Int       @default(40)
-  sessions Session[]
+  id        Int        @id @default(autoincrement())
+  name      String     @unique
+  capacity  Int        @default(40)
+  sessions  Session[]
+  // Back-relation only (Step 49) — adds no column to this table.
+  examRooms ExamRoom[]
 }
 
 model Batch {
@@ -67,6 +71,8 @@ model Batch {
   // inferred from whichever sessions a version happens to contain (Step 50).
   sectionCount Int       @default(1)
   sessions     Session[]
+  // Back-relation only (Step 49) — adds no column to this table.
+  exams        Exam[]
 }
 
 model TimeSlot {
@@ -152,4 +158,63 @@ model Reschedule {
   originalDate  DateTime?
   newDate       DateTime?
   createdAt     DateTime  @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// Exam routine (Step 49) — a separate schedule from the weekly class routine.
+// Deliberately its own tables: exams are free-form (any date including
+// Thu/Sat, arbitrary start/end times, several rooms per exam) and so don't
+// fit Session's day + fixed-TimeSlot shape. Lab vs theory is never stored
+// here; it is read from Course.type.
+// ---------------------------------------------------------------------------
+
+enum ExamType {
+  MIDTERM
+  FINAL
+}
+
+/// One semester's exam schedule, holding both its Midterm and Final exams.
+model ExamTerm {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  /// Only published terms will be visible to teachers/students (Step 51).
+  isPublished Boolean  @default(false)
+  /// Optional note printed under the routine.
+  note        String?  @db.Text
+  createdAt   DateTime @default(now())
+  exams       Exam[]
+}
+
+model Exam {
+  id        Int        @id @default(autoincrement())
+  termId    Int
+  term      ExamTerm   @relation(fields: [termId], references: [id], onDelete: Cascade)
+  type      ExamType
+  courseId  Int
+  course    Course     @relation(fields: [courseId], references: [id])
+  batchId   Int
+  batch     Batch      @relation(fields: [batchId], references: [id])
+  /// "Sec 1" | "Sec 2" | "Both" | null — the same values and rules as
+  /// Session.section, validated with isValidSectionFor against the batch.
+  section   String?
+  date      DateTime   @db.Date
+  /// "HH:MM", 24-hour. Free-form rather than a TimeSlot: exam lengths vary
+  /// (1h30 midterm theory, 2h final theory, 2h labs).
+  startTime String
+  endTime   String
+  createdAt DateTime   @default(now())
+  rooms     ExamRoom[]
+
+  @@index([date])
+}
+
+/// An exam can occupy several rooms at once (e.g. 228, 251, 103).
+model ExamRoom {
+  id     Int  @id @default(autoincrement())
+  examId Int
+  exam   Exam @relation(fields: [examId], references: [id], onDelete: Cascade)
+  roomId Int
+  room   Room @relation(fields: [roomId], references: [id])
+
+  @@unique([examId, roomId])
 }

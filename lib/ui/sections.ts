@@ -57,6 +57,22 @@ export function isValidSectionFor(sectionCount: number, section: SectionValue): 
   return trimmed === null;
 }
 
+/**
+ * How many of a batch's students a section value actually covers — what the
+ * exam routine's seating check compares room capacity against (Step 49). One
+ * section of a split batch is about half of it, so a "Sec 1" exam isn't
+ * measured against the whole batch's head count; "Both" and unsectioned
+ * batches cover everyone.
+ */
+export function studentsInSection(
+  batch: { studentCount: number; sectionCount: number },
+  section: SectionValue
+): number {
+  const trimmed = section?.trim() || null;
+  const oneSectionOnly = batch.sectionCount === 2 && trimmed !== null && !/^both$/i.test(trimmed);
+  return oneSectionOnly ? Math.ceil(batch.studentCount / 2) : batch.studentCount;
+}
+
 /** The 400 message when a session's section doesn't fit its batch (Step 50 §7). */
 export function sectionErrorFor(batch: { name: string; sectionCount: number }): string {
   return batch.sectionCount === 2

@@ -1,7 +1,7 @@
 /**
  * One batch, by id. Admin-only. PATCH updates name/semester/studentCount/
  * sectionCount (409 on duplicate name); DELETE refuses (409) while any
- * Session still references this batch.
+ * Session or Exam still references this batch (Step 49 added the exam half).
  *
  * Turning sections OFF (2 → 1) is refused with a 409 while any session of
  * this batch — in ANY version, not just the published one — still carries a
@@ -13,6 +13,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { getDb } from "@/lib/db";
+import { getBatchUsage, isInUse, usageMessage } from "@/lib/services/usage";
 import { batchSchema } from "@/lib/validation/batch";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -88,12 +89,9 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
 
   try {
     const db = getDb();
-    const usageCount = await db.session.count({ where: { batchId: id } });
-    if (usageCount > 0) {
-      return NextResponse.json(
-        { ok: false, error: "Batch is used in the routine and cannot be deleted" },
-        { status: 409 }
-      );
+    const usage = await getBatchUsage(id);
+    if (isInUse(usage)) {
+      return NextResponse.json({ ok: false, error: usageMessage("Batch", usage) }, { status: 409 });
     }
 
     await db.batch.delete({ where: { id } });

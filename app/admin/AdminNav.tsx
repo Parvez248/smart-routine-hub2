@@ -6,9 +6,16 @@ import { usePathname } from "next/navigation";
 const LINKS = [
   { href: "/admin/dashboard", label: "Dashboard" },
   { href: "/admin/routine", label: "Routine" },
+  { href: "/admin/exams", label: "Exams" },
   { href: "/admin/data", label: "Academic Data" },
   { href: "/admin/people", label: "People & Notices" },
 ];
+
+// A link stays highlighted on its sub-pages too — /admin/exams/[termId] is
+// the only nested destination, and no link's href is a prefix of another's.
+function isActive(pathname: string, href: string): boolean {
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
 
 export default function AdminNav() {
   const pathname = usePathname();
@@ -20,7 +27,7 @@ export default function AdminNav() {
           key={link.href}
           href={link.href}
           className={`px-2.5 py-1.5 rounded-full transition-colors ${
-            pathname === link.href
+            isActive(pathname, link.href)
               ? "bg-primary text-primary-foreground"
               : "text-slate hover:text-foreground"
           }`}
