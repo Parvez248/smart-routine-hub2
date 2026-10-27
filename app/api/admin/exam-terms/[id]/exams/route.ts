@@ -1,15 +1,17 @@
 /**
  * The exams inside one term. Admin-only.
  *
- * GET lists them in sitting order (date, then start time), optionally
+ * GET lists them in sitting order (date, then morning/afternoon, then start
+ * time), optionally
  * narrowed by `?type=MIDTERM|FINAL` and `?batchId=` — the two filters the
  * builder's tabs and batch picker use.
  *
- * POST adds one. Every rule is checked by checkExamConflicts in
- * lib/services/exams.ts first (clashes, seating, section-vs-batch,
- * duplicates); `errors` there mean 409 and nothing is written, while
- * `warnings` are returned alongside the created exam so the builder can
- * show them without blocking the save.
+ * POST adds one. Times that fall outside the chosen sitting are a 400
+ * (a malformed request). Everything else is checked by checkExamConflicts
+ * in lib/services/exams.ts (batch clash, per-sitting room capacity,
+ * section-vs-batch, duplicates); `errors` there mean 409 and nothing is
+ * written, while `warnings` are returned alongside the created exam so the
+ * builder can show them without blocking the save.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -17,7 +19,7 @@ import { auth } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { examSchema } from "@/lib/validation/exam";
 import { checkExamConflicts } from "@/lib/services/exams";
-import { parseExamDate } from "@/lib/ui/examTime";
+import { parseExamDate, sittingTimeError } from "@/lib/ui/examTime";
 
 const EXAM_INCLUDE = {
   course: true,
@@ -58,7 +60,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     const exams = await db.exam.findMany({
       where: { termId, ...(type ? { type } : {}), ...(batchId ? { batchId } : {}) },
       include: EXAM_INCLUDE,
-      orderBy: [{ date: "asc" }, { startTime: "asc" }],
+      // sitting sorts by its declared enum order, so MORNING precedes AFTERNOON.
+      orderBy: [{ date: "asc" }, { sitting: "asc" }, { startTime: "asc" }],
     });
 
     return NextResponse.json({ ok: true, data: { term, exams } });
@@ -101,6 +104,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       return NextResponse.json({ ok: false, error: "Invalid date" }, { status: 400 });
     }
 
+    const timeError = sittingTimeError(parsed.data.sitting, parsed.data.startTime, parsed.data.endTime);
+    if (timeError) {
+      return NextResponse.json({ ok: false, error: timeError }, { status: 400 });
+    }
+
     const section = parsed.data.section?.trim() || null;
     const check = await checkExamConflicts({
       termId,
@@ -109,9 +117,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       batchId: parsed.data.batchId,
       section,
       date,
+      sitting: parsed.data.sitting,
       startTime: parsed.data.startTime,
       endTime: parsed.data.endTime,
-      roomIds: parsed.data.roomIds,
+      rooms: parsed.data.rooms,
     });
     if (!check.ok) {
       return NextResponse.json({ ok: false, error: check.errors.join(" "), errors: check.errors }, { status: 409 });
@@ -127,9 +136,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         batchId: parsed.data.batchId,
         section,
         date,
+        sitting: parsed.data.sitting,
         startTime: parsed.data.startTime,
         endTime: parsed.data.endTime,
-        rooms: { create: parsed.data.roomIds.map((roomId) => ({ roomId })) },
+        rooms: { create: parsed.data.rooms.map((r) => ({ roomId: r.roomId, seats: r.seats ?? null })) },
       },
       include: EXAM_INCLUDE,
     });

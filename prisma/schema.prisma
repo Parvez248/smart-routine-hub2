@@ -161,16 +161,29 @@ model Reschedule {
 }
 
 // ---------------------------------------------------------------------------
-// Exam routine (Step 49) — a separate schedule from the weekly class routine.
-// Deliberately its own tables: exams are free-form (any date including
-// Thu/Sat, arbitrary start/end times, several rooms per exam) and so don't
-// fit Session's day + fixed-TimeSlot shape. Lab vs theory is never stored
-// here; it is read from Course.type.
+// Exam routine (Step 49, extended in 49b) — a separate schedule from the
+// weekly class routine. Deliberately its own tables: exams fall on any date
+// including Thu/Sat, run in one of the day's two sittings with their own
+// start/end times, and spread over several rooms, so they don't fit
+// Session's day + fixed-TimeSlot shape. Lab vs theory is never stored here;
+// it is read from Course.type.
+//
+// Rooms are shared (49b): the department seats most batches together in the
+// Hall Room, so what limits a room is the number of seats taken in a
+// sitting, not "is it booked" — hence ExamRoom.seats.
 // ---------------------------------------------------------------------------
 
 enum ExamType {
   MIDTERM
   FINAL
+}
+
+/// Exams are held in two sittings a day (Step 49b). The clock times still
+/// live on each Exam; the sitting is what capacity and clash checks group by,
+/// because "the same room at the same time" is really "the same sitting".
+enum ExamSitting {
+  MORNING
+  AFTERNOON
 }
 
 /// One semester's exam schedule, holding both its Midterm and Final exams.
@@ -181,6 +194,11 @@ model ExamTerm {
   isPublished Boolean  @default(false)
   /// Optional note printed under the routine.
   note        String?  @db.Text
+  /// "HH:MM" start of each sitting, per term (Step 49b) — the exam dialog
+  /// fills a new exam's start time from these, so a term that runs its
+  /// mornings at 09:30 doesn't have to be re-typed for every exam.
+  morningStart   String @default("10:30")
+  afternoonStart String @default("14:30")
   createdAt   DateTime @default(now())
   exams       Exam[]
 }
@@ -198,6 +216,9 @@ model Exam {
   /// Session.section, validated with isValidSectionFor against the batch.
   section   String?
   date      DateTime   @db.Date
+  /// Which of the day's two sittings this exam belongs to (Step 49b).
+  /// Clash and capacity checks group by date + sitting, not by clock time.
+  sitting   ExamSitting @default(MORNING)
   /// "HH:MM", 24-hour. Free-form rather than a TimeSlot: exam lengths vary
   /// (1h30 midterm theory, 2h final theory, 2h labs).
   startTime String
@@ -215,6 +236,9 @@ model ExamRoom {
   exam   Exam @relation(fields: [examId], references: [id], onDelete: Cascade)
   roomId Int
   room   Room @relation(fields: [roomId], references: [id])
+  /// How many of this exam's students sit in this room (Step 49b). Null
+  /// means "not specified", which is allowed but can't be capacity-checked.
+  seats  Int?
 
   @@unique([examId, roomId])
 }

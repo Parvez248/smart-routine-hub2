@@ -1,6 +1,7 @@
 /**
- * One exam term, by id. Admin-only. PATCH renames it, edits its note, or
- * publishes/unpublishes it (409 on a duplicate name). DELETE removes the
+ * One exam term, by id. Admin-only. PATCH renames it, edits its note or its
+ * two sitting start times, or publishes/unpublishes it (409 on a duplicate
+ * name). DELETE removes the
  * term *and its exams* — the FK cascades — so it refuses (409) while the
  * term is still published: unpublish first, which makes deleting a live
  * exam routine a deliberate two-step action rather than one click.
@@ -33,7 +34,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       );
     }
 
-    const { name, note, isPublished } = parsed.data;
+    const { name, note, isPublished, morningStart, afternoonStart } = parsed.data;
     const db = getDb();
     const term = await db.examTerm.update({
       where: { id },
@@ -41,6 +42,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         ...(name !== undefined ? { name } : {}),
         ...(note !== undefined ? { note: note || null } : {}),
         ...(isPublished !== undefined ? { isPublished } : {}),
+        ...(morningStart !== undefined ? { morningStart } : {}),
+        ...(afternoonStart !== undefined ? { afternoonStart } : {}),
       },
     });
     return NextResponse.json({ ok: true, data: term });

@@ -13,7 +13,7 @@ import { auth } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { examSchema } from "@/lib/validation/exam";
 import { checkExamConflicts } from "@/lib/services/exams";
-import { parseExamDate } from "@/lib/ui/examTime";
+import { parseExamDate, sittingTimeError } from "@/lib/ui/examTime";
 
 const EXAM_INCLUDE = {
   course: true,
@@ -54,6 +54,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       return NextResponse.json({ ok: false, error: "Invalid date" }, { status: 400 });
     }
 
+    const timeError = sittingTimeError(parsed.data.sitting, parsed.data.startTime, parsed.data.endTime);
+    if (timeError) {
+      return NextResponse.json({ ok: false, error: timeError }, { status: 400 });
+    }
+
     const section = parsed.data.section?.trim() || null;
     const check = await checkExamConflicts({
       termId: existing.termId,
@@ -62,9 +67,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       batchId: parsed.data.batchId,
       section,
       date,
+      sitting: parsed.data.sitting,
       startTime: parsed.data.startTime,
       endTime: parsed.data.endTime,
-      roomIds: parsed.data.roomIds,
+      rooms: parsed.data.rooms,
       excludeExamId: id,
     });
     if (!check.ok) {
@@ -83,9 +89,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           batchId: parsed.data.batchId,
           section,
           date,
+          sitting: parsed.data.sitting,
           startTime: parsed.data.startTime,
           endTime: parsed.data.endTime,
-          rooms: { create: parsed.data.roomIds.map((roomId) => ({ roomId })) },
+          rooms: { create: parsed.data.rooms.map((r) => ({ roomId: r.roomId, seats: r.seats ?? null })) },
         },
         include: EXAM_INCLUDE,
       });
