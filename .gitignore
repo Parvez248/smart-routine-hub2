@@ -46,3 +46,9 @@ next-env.d.ts
 # data including bcrypt password hashes, real email addresses and email
 # verification codes. Never commit them; this repo is public.
 /prisma/backups
+
+# Superseded local routine data. The tracked source files are
+# prisma/routine-data-july.json (Step 31, Spring 2026) and
+# prisma/data/routine-data-fall-2026.json (Step 53, Fall 2026); this one
+# predates both and is kept on disk only for reference.
+/prisma/routine-data.json
