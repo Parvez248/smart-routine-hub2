@@ -23,6 +23,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { bandForBatch, bandVar } from "@/lib/ui/bandColors";
 import { TypePill, BatchPill, MovedNote, courseTitleIfDifferent } from "./RowBadges";
 import { mergeLabPairs, combineSlotLabels } from "./labMerge";
+import { breakAfterSortOrder, type Period } from "@/lib/ui/periods";
 import type { FilterableSession } from "./types";
 import type { AddSessionContext } from "./RoutineGrid";
 
@@ -124,7 +125,7 @@ function DaySkeleton() {
 
 export function RoutineTimeRail<T extends FilterableSession>({
   sessions, renderActions, onClearFilters, loading = false,
-  editable = false, onEditSession, onDeleteSession, onAddSession,
+  editable = false, onEditSession, onDeleteSession, onAddSession, periods,
 }: {
   sessions: T[];
   renderActions?: (s: T) => React.ReactNode;
@@ -134,8 +135,19 @@ export function RoutineTimeRail<T extends FilterableSession>({
   onEditSession?: (session: T, pair?: T) => void;
   onDeleteSession?: (session: T, pair?: T) => void;
   onAddSession?: (ctx: AddSessionContext<T>) => void;
+  // Step 52 — this routine version's periods. Only the break position is
+  // needed here (two periods either side of the break are never one lab),
+  // but it has to come from the version: Spring 2026 breaks after period 4
+  // and Fall 2026 after period 3.
+  periods?: Period[];
 }) {
   const [collapsedDays, setCollapsedDays] = useState<Set<string>>(new Set());
+  // Without a period set, fall back to Spring 2026's break position, which
+  // is what this was hard-coded to before Step 52.
+  const breakAfter = useMemo(
+    () => (periods && periods.length > 0 ? breakAfterSortOrder(periods) : 4),
+    [periods]
+  );
 
   function toggleDay(day: string) {
     setCollapsedDays((prev) => {
@@ -245,7 +257,7 @@ export function RoutineTimeRail<T extends FilterableSession>({
                       )}
                     </div>
                     <div className="mt-2 bg-card border border-border rounded-lg p-3 space-y-2">
-                      {mergeLabPairs(group.sessions).map((entry) => (
+                      {mergeLabPairs(group.sessions, breakAfter).map((entry) => (
                         <div key={entry.session.id} className="group/bar">
                           <Bar
                             session={entry.session}

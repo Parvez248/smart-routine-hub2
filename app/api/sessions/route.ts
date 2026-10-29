@@ -19,6 +19,7 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { createSessionSchema } from "@/lib/validation/session";
 import { checkConflict, checkCapacity, getActiveOverrides } from "@/lib/services/scheduling";
+import { checkPeriodForVersion } from "@/lib/services/periods";
 import { isValidSectionFor, sectionErrorFor } from "@/lib/ui/sections";
 
 const include = {
@@ -117,6 +118,19 @@ export async function POST(req: NextRequest) {
     }
     if (!isValidSectionFor(batchForSection.sectionCount, normSection)) {
       return NextResponse.json({ ok: false, error: sectionErrorFor(batchForSection) }, { status: 400 });
+    }
+
+    // Step 52 §2 — the period must belong to this version's own period set
+    // (periods are per-version now, so an id from another version's set is
+    // not a valid placement), and a lab must start at a period its set
+    // allows a two-period lab to start at.
+    const course = await db.course.findUnique({ where: { id: courseId } });
+    if (!course) {
+      return NextResponse.json({ ok: false, error: "Invalid course" }, { status: 400 });
+    }
+    const periodError = await checkPeriodForVersion(versionId, timeSlotId, course.type);
+    if (periodError) {
+      return NextResponse.json({ ok: false, error: periodError }, { status: 400 });
     }
 
     const conflict = await checkConflict({ day, timeSlotId, batchId, section: normSection, teacherId, roomId, versionId });

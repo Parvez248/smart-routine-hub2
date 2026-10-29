@@ -19,7 +19,11 @@ export async function GET() {
       db.teacher.findMany({ orderBy: { name: "asc" } }),
       db.room.findMany({ orderBy: { name: "asc" } }),
       db.batch.findMany({ orderBy: { name: "asc" } }),
-      db.timeSlot.findMany({ orderBy: { sortOrder: "asc" } }),
+      // Step 52 — the STANDARD period set only. Periods belong to a
+      // routine version now, so an unqualified query would mix other
+      // versions’ periods into every picker. A caller that needs one
+      // version’s periods uses GET /api/periods?versionId= instead.
+      db.timeSlot.findMany({ where: { versionId: null }, orderBy: { sortOrder: "asc" } }),
     ]);
     return NextResponse.json({ ok: true, data: { courses, teachers, rooms, batches, timeSlots, days: DAYS } });
   } catch (error) {

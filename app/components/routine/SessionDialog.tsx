@@ -5,7 +5,7 @@ import { DoorOpen } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button, LinkButton } from "@/app/components/ui/Button";
 import { Message } from "@/app/components/ui/Message";
-import { isValidLabStart, combineSlotLabels } from "./labMerge";
+import { isValidLabStart, type Period } from "@/lib/ui/periods";
 import { courseOptionLabel } from "./RowBadges";
 import { sectionOptionsFor, sectionOptionLabel } from "@/lib/ui/sections";
 
@@ -13,14 +13,12 @@ type RefCourse = { id: number; code: string; title: string; type: string };
 type RefTeacher = { id: number; initials: string; name: string };
 type RefRoom = { id: number; name: string; capacity: number };
 type RefBatch = { id: number; name: string; semester: string; sectionCount: number };
-type RefTimeSlot = { id: number; label: string; sortOrder: number };
 
 type RefData = {
   courses: RefCourse[];
   teachers: RefTeacher[];
   rooms: RefRoom[];
   batches: RefBatch[];
-  timeSlots: RefTimeSlot[];
   days: string[];
 };
 
@@ -86,19 +84,27 @@ function bodyFor(form: SessionFormValues, timeSlotId: number, versionId: number)
 // Step 37/38: a LAB course occupies two consecutive periods, stored as two
 // Session rows. When the chosen course is a lab, the "time slot" field
 // becomes a "starting slot" picker offering every slot whose pair doesn't
-// cross the break (see labMerge.ts's isValidLabStart — not a hard-coded
-// list), and save/delete always keep both rows in lockstep — see the
-// handleSubmit cases below for the four course-type × had-pair transitions.
+// cross the break (see isValidLabStart in lib/ui/periods.ts — not a
+// hard-coded list), and save/delete always keep both rows in lockstep —
+// see the handleSubmit cases below for the four course-type × had-pair
+// transitions.
+//
+// Step 52: the periods come from the routine version being edited, not
+// from a single global list, so the slots offered (and which of them a lab
+// may start at) are the ones that version actually schedules against.
 export function SessionDialog({
   open,
   onOpenChange,
   versionId,
+  periods,
   initial,
   onSaved,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   versionId: number | null;
+  /** The periods of the version being edited (GET /api/periods?versionId=). */
+  periods: Period[];
   initial: SessionFormValues | null;
   onSaved: () => void;
 }) {
@@ -148,31 +154,29 @@ export function SessionDialog({
   const hasSections = sectionOptions.length > 0;
 
   const labStartOptions = useMemo(() => {
-    if (!ref) return [];
-    const allSortOrders = ref.timeSlots.map((t) => t.sortOrder);
-    return ref.timeSlots
-      .filter((slotA) => isValidLabStart(slotA.sortOrder, allSortOrders))
+    return periods
+      .filter((slotA) => isValidLabStart(slotA.sortOrder, periods))
       .sort((a, b) => a.sortOrder - b.sortOrder)
       .map((slotA) => {
-        const slotB = ref.timeSlots.find((t) => t.sortOrder === slotA.sortOrder + 1)!;
+        const slotB = periods.find((t) => t.sortOrder === slotA.sortOrder + 1)!;
         const endTime = slotB.label.split("–")[1]?.trim() ?? slotB.label;
         return { id: slotA.id, label: `${slotA.label} (spans to ${endTime})` };
       });
-  }, [ref]);
+  }, [periods]);
 
   useEffect(() => {
-    if (!open || !form?.day || !form.timeSlotId || !versionId || !ref) {
+    if (!open || !form?.day || !form.timeSlotId || !versionId) {
       setFreeRooms(null);
       return;
     }
-    const slotA = ref.timeSlots.find((t) => String(t.id) === form.timeSlotId);
+    const slotA = periods.find((t) => String(t.id) === form.timeSlotId);
     if (!slotA) {
       setFreeRooms(null);
       return;
     }
     setFreeRoomsLoading(true);
     if (isLabSelected) {
-      const slotB = ref.timeSlots.find((t) => t.sortOrder === slotA.sortOrder + 1);
+      const slotB = periods.find((t) => t.sortOrder === slotA.sortOrder + 1);
       if (!slotB) {
         setFreeRooms(null);
         setFreeRoomsLoading(false);
@@ -198,7 +202,7 @@ export function SessionDialog({
     // Re-runs whenever day/slot/course change so the hint always matches the
     // current selection; the room field itself is a free choice.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, form?.day, form?.timeSlotId, isLabSelected, versionId, ref]);
+  }, [open, form?.day, form?.timeSlotId, isLabSelected, versionId, periods]);
 
   if (!form) return null;
   const isEdit = Boolean(form.id);
@@ -214,10 +218,9 @@ export function SessionDialog({
       const next = { ...f, [key]: value };
       if (key === "courseId") {
         const course = ref?.courses.find((c) => String(c.id) === value);
-        if (course?.type === "LAB" && ref) {
-          const allSortOrders = ref.timeSlots.map((t) => t.sortOrder);
-          const slot = ref.timeSlots.find((t) => String(t.id) === next.timeSlotId);
-          if (!slot || !isValidLabStart(slot.sortOrder, allSortOrders)) next.timeSlotId = "";
+        if (course?.type === "LAB") {
+          const slot = periods.find((t) => String(t.id) === next.timeSlotId);
+          if (!slot || !isValidLabStart(slot.sortOrder, periods)) next.timeSlotId = "";
         }
       }
       if (key === "batchId") {
@@ -239,12 +242,12 @@ export function SessionDialog({
     setSubmitting(true);
     setError(null);
     try {
-      const slotA = ref.timeSlots.find((t) => String(t.id) === form.timeSlotId);
+      const slotA = periods.find((t) => String(t.id) === form.timeSlotId);
       if (!slotA) {
         setError("Please choose a time slot.");
         return;
       }
-      const slotB = isLabSelected ? ref.timeSlots.find((t) => t.sortOrder === slotA.sortOrder + 1) : undefined;
+      const slotB = isLabSelected ? periods.find((t) => t.sortOrder === slotA.sortOrder + 1) : undefined;
       if (isLabSelected && !slotB) {
         setError("This lab's second period could not be found.");
         return;
@@ -254,7 +257,7 @@ export function SessionDialog({
 
       async function revertPrimary() {
         if (original && form?.id) {
-          const origSlot = ref!.timeSlots.find((t) => String(t.id) === original.timeSlotId);
+          const origSlot = periods.find((t) => String(t.id) === original.timeSlotId);
           if (origSlot) await patchSession(form.id, bodyFor(original, origSlot.id, versionId!));
         }
       }
@@ -359,7 +362,7 @@ export function SessionDialog({
               ) : (
                 <select required value={form.timeSlotId} onChange={(e) => setField("timeSlotId", e.target.value)} className={selectClass}>
                   <option value="">Select slot</option>
-                  {ref?.timeSlots.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
+                  {periods.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
                 </select>
               )}
             </Field>

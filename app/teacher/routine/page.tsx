@@ -10,6 +10,7 @@ import { RoutineMasthead } from "@/app/components/routine/RoutineMasthead";
 import { FilterCard } from "@/app/components/routine/FilterCard";
 import { ViewToggle, type RoutineView } from "@/app/components/routine/ViewToggle";
 import { useIsDesktop } from "@/app/components/routine/useIsDesktop";
+import { usePeriods } from "@/app/components/routine/usePeriods";
 import type { FilterableSession } from "@/app/components/routine/types";
 
 type RoutineSession = FilterableSession & { id: number };
@@ -32,6 +33,11 @@ function TeacherRoutineInner() {
       .finally(() => setLoadingState(false));
   }, []);
 
+  // Step 52 — the published version’s periods and special blocks, so the
+  // grid’s columns, its BREAK divider and its Club Activities band all come
+  // from the routine being shown rather than from a hard-coded structure.
+  const { periods, specialBlocks } = usePeriods();
+
   const filterState = useRoutineFilters(sessions, { storageKey: "teacher" });
   const { filtered, totalCount, clearAll } = filterState;
 
@@ -49,9 +55,15 @@ function TeacherRoutineInner() {
       </div>
 
       {effectiveView === "grid" ? (
-        <RoutineGrid sessions={filtered} loading={loading} onClearFilters={clearAll} />
+        <RoutineGrid
+          sessions={filtered}
+          loading={loading}
+          onClearFilters={clearAll}
+          periods={periods}
+          specialBlocks={specialBlocks}
+        />
       ) : effectiveView === "rail" ? (
-        <RoutineTimeRail sessions={filtered} loading={loading} onClearFilters={clearAll} />
+        <RoutineTimeRail sessions={filtered} loading={loading} onClearFilters={clearAll} periods={periods} />
       ) : (
         <div className="bg-card border border-border rounded-lg overflow-hidden">
           <RoutineList sessions={filtered} loading={loading} onClearFilters={clearAll} />

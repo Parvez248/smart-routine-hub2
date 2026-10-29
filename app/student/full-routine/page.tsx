@@ -28,6 +28,7 @@ import { RoutineMasthead } from "@/app/components/routine/RoutineMasthead";
 import { FilterCard } from "@/app/components/routine/FilterCard";
 import { ViewToggle, type RoutineView } from "@/app/components/routine/ViewToggle";
 import { useIsDesktop } from "@/app/components/routine/useIsDesktop";
+import { usePeriods } from "@/app/components/routine/usePeriods";
 import { RoutineScopeTabs } from "@/app/student/_components/RoutineScopeTabs";
 import type { FilterableSession } from "@/app/components/routine/types";
 
@@ -51,6 +52,9 @@ function StudentFullRoutineInner() {
       .catch(() => setError("Network error. Please try again."))
       .finally(() => setLoadingState(false));
   }, []);
+
+  // Step 52 — the published version’s day structure (see usePeriods).
+  const { periods, specialBlocks } = usePeriods();
 
   const filterState = useRoutineFilters(sessions, { storageKey: "student-full" });
   const { filtered, totalCount, clearAll } = filterState;
@@ -82,9 +86,15 @@ function StudentFullRoutineInner() {
           </div>
         </div>
       ) : effectiveView === "grid" ? (
-        <RoutineGrid sessions={filtered} loading={loading} onClearFilters={clearAll} />
+        <RoutineGrid
+          sessions={filtered}
+          loading={loading}
+          onClearFilters={clearAll}
+          periods={periods}
+          specialBlocks={specialBlocks}
+        />
       ) : effectiveView === "rail" ? (
-        <RoutineTimeRail sessions={filtered} loading={loading} onClearFilters={clearAll} />
+        <RoutineTimeRail sessions={filtered} loading={loading} onClearFilters={clearAll} periods={periods} />
       ) : (
         <div className="bg-card border border-border rounded-lg overflow-hidden">
           <RoutineList sessions={filtered} loading={loading} onClearFilters={clearAll} />

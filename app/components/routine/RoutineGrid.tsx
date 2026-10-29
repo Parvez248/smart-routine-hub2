@@ -27,9 +27,16 @@
  * bookkeeping is the single most important invariant in this file.
  *
  * A day's post-break columns can also be entirely replaced by one
- * full-width, full-height band (e.g. Wednesday's "Club Activities" —
- * Step 46) using the exact same span+skip mechanism, driven by
- * SPECIAL_BLOCKS rather than session data.
+ * full-width band (e.g. Wednesday's "Club Activities" — Step 46) using the
+ * exact same span+skip mechanism, driven by the routine version's special
+ * blocks rather than by session data.
+ *
+ * Step 52 — the columns themselves, and where the BREAK divider goes, come
+ * from the version's own period set (the `periods` prop), not from whichever
+ * slots happen to appear in `sessions`. That is what lets a routine with
+ * five 1h15 periods and the break after period 3 render beside one with six
+ * 1-hour periods and the break after period 4, and what makes a brand-new
+ * version show its columns before it has a single class in it.
  */
 import { Fragment, useMemo } from "react";
 import { Pencil, Trash2, Plus, Combine } from "lucide-react";
@@ -38,8 +45,16 @@ import { EmptyState } from "@/app/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/skeleton";
 import { bandForBatch, bandTint, bandVar, type Band } from "@/lib/ui/bandColors";
 import { BatchPill, courseTitleIfDifferent, formatMovedDate } from "./RowBadges";
-import { isSameLabPair, isMergeableAdjacent } from "./labMerge";
-import { SPECIAL_BLOCKS } from "@/lib/config/specialBlocks";
+import { isSameLabPair } from "./labMerge";
+import {
+  blockAppliesTo,
+  blocksForDay,
+  breakAfterSortOrder,
+  isMergeableAdjacent,
+  sortPeriods,
+  type Period,
+  type SpecialBlockView,
+} from "@/lib/ui/periods";
 import type { FilterableSession } from "./types";
 
 const DAY_ORDER = ["Sat", "Sun", "Mon", "Tues", "Wed"];
@@ -49,7 +64,10 @@ const YEAR_COL_WIDTH = 168;
 const BREAK_COL_WIDTH = 28;
 const SLOT_COL_WIDTH = 132;
 
-type SlotColumn<T> = { sortOrder: number; label: string; timeSlot: T };
+// A column is a period of the version's set. Before Step 52 it was
+// reconstructed from a session's own timeSlot, which is why an empty
+// version had no columns at all.
+type SlotColumn = Period;
 type Cell<T> = { session: T; span: 1 | 2; pair?: T } | { session: T; span: 0 } | null;
 
 export type AddSessionContext<T extends FilterableSession> = {
@@ -59,7 +77,7 @@ export type AddSessionContext<T extends FilterableSession> = {
   // Present when the click came from one specific empty grid cell (that
   // column's slot); absent from the rail's per-group "Add class" button,
   // which isn't tied to any one slot — the admin picks it in the dialog.
-  timeSlot?: T["timeSlot"];
+  timeSlot?: Period;
 };
 
 // Step 41: the Sec 2 (+ its lab pair, if any) that a Sec 1 (or Sec 1's lab
@@ -74,7 +92,11 @@ export type CombineTarget<T> = { partner: T; partnerPair?: T };
 // session at its own time slot; second pass scans adjacent pairs and
 // collapses them where isSameLabPair + isMergeableAdjacent agree they're
 // one lab (the second slot becomes `span: 0`, meaning "already covered").
-function buildCells<T extends FilterableSession>(sessions: T[], slots: SlotColumn<T["timeSlot"]>[]): Cell<T>[] {
+function buildCells<T extends FilterableSession>(
+  sessions: T[],
+  slots: SlotColumn[],
+  breakAfter: number | null
+): Cell<T>[] {
   const cells: Cell<T>[] = new Array(slots.length).fill(null);
   for (const s of sessions) {
     const idx = slots.findIndex((c) => c.sortOrder === s.timeSlot.sortOrder);
@@ -84,7 +106,7 @@ function buildCells<T extends FilterableSession>(sessions: T[], slots: SlotColum
     const a = cells[i];
     const b = cells[i + 1];
     if (!a || !b || a.span !== 1 || b.span !== 1) continue;
-    if (!isMergeableAdjacent(slots[i].sortOrder, slots[i + 1].sortOrder)) continue;
+    if (!isMergeableAdjacent(slots[i].sortOrder, slots[i + 1].sortOrder, breakAfter)) continue;
     if (isSameLabPair(a.session, b.session)) {
       cells[i] = { session: a.session, span: 2, pair: b.session };
       cells[i + 1] = { session: a.session, span: 0 };
@@ -125,7 +147,8 @@ type CellDesc<T> =
 // below as "skip" so the render loop never double-emits a cell there.
 function buildGroupGrid<T extends FilterableSession>(
   group: BatchDayGroup<T>,
-  slots: SlotColumn<T["timeSlot"]>[]
+  slots: SlotColumn[],
+  breakAfter: number | null
 ): CellDesc<T>[][] {
   const numRows = group.sectionRows.length;
   const grid: CellDesc<T>[][] = Array.from({ length: numRows }, () =>
@@ -133,7 +156,7 @@ function buildGroupGrid<T extends FilterableSession>(
   );
 
   function place(sessionList: T[], rowIdx: number, isBoth: boolean, rowSpan: 1 | 2) {
-    const cells = buildCells(sessionList, slots);
+    const cells = buildCells(sessionList, slots, breakAfter);
     for (let col = 0; col < slots.length; col++) {
       const cell = cells[col];
       if (!cell || cell.span === 0) continue;
@@ -163,7 +186,7 @@ function GridCell<T extends FilterableSession>({
   day: string;
   batch: T["batch"];
   section: string | null;
-  column: SlotColumn<T["timeSlot"]>;
+  column: SlotColumn;
   editable: boolean;
   onEditSession?: (session: T, pair?: T) => void;
   onDeleteSession?: (session: T, pair?: T) => void;
@@ -181,7 +204,7 @@ function GridCell<T extends FilterableSession>({
         {editable && onAddSession && (
           <button
             type="button"
-            onClick={() => onAddSession({ day, batch, section, timeSlot: column.timeSlot })}
+            onClick={() => onAddSession({ day, batch, section, timeSlot: column })}
             className="print:hidden absolute inset-0 flex items-center justify-center opacity-0 group-hover/cell:opacity-100 focus-visible:opacity-100 text-muted-foreground hover:text-primary transition-opacity"
             aria-label="Add class"
           >
@@ -316,7 +339,7 @@ function GridSkeleton() {
 
 export function RoutineGrid<T extends FilterableSession>({
   sessions, onClearFilters, loading = false, editable = false, onEditSession, onDeleteSession, onAddSession,
-  combinablePairs, onCombine, combiningId,
+  combinablePairs, onCombine, combiningId, periods, specialBlocks = [], showEmptyGrid = false,
 }: {
   sessions: T[];
   onClearFilters?: () => void;
@@ -325,6 +348,20 @@ export function RoutineGrid<T extends FilterableSession>({
   onEditSession?: (session: T, pair?: T) => void;
   onDeleteSession?: (session: T, pair?: T) => void;
   onAddSession?: (ctx: AddSessionContext<T>) => void;
+  // Step 52 — this routine version's period set (GET /api/periods). The
+  // columns, their labels and the BREAK divider all come from it. Omitted
+  // (or empty) falls back to reconstructing the columns from `sessions`,
+  // which is what every view did before this step.
+  periods?: Period[];
+  // The version's display-only bands (Club Activities). Each is drawn only
+  // across the rows of the batches it applies to.
+  specialBlocks?: SpecialBlockView[];
+  // Draw the period columns with empty, addable cells when there are no
+  // sessions at all, instead of the "no classes match" empty state. The
+  // admin builder passes this for a version that has no classes yet — it
+  // is how a new routine gets its first class. A view whose list is empty
+  // because of *filters* must not pass it, or the filter feedback is lost.
+  showEmptyGrid?: boolean;
   // Step 41 — combine a Sec 1 + Sec 2 pair into one "Both" class. Keyed by
   // the Sec 1 session's id; see CombineTarget for why the grid doesn't
   // compute eligibility itself.
@@ -332,46 +369,49 @@ export function RoutineGrid<T extends FilterableSession>({
   onCombine?: (anchor: T, anchorPair: T | undefined, partner: T, partnerPair: T | undefined) => void;
   combiningId?: number | null;
 }) {
-  const slotColumns = useMemo<SlotColumn<T["timeSlot"]>[]>(() => {
-    const map = new Map<number, SlotColumn<T["timeSlot"]>>();
+  // The columns: this version's periods when they were passed in, else
+  // reconstructed from the sessions in view (pre-Step-52 behaviour, kept so
+  // a caller that doesn't yet fetch periods still renders).
+  const slotColumns = useMemo<SlotColumn[]>(() => {
+    if (periods && periods.length > 0) return sortPeriods(periods);
+    const map = new Map<number, SlotColumn>();
     for (const s of sessions) {
       if (!map.has(s.timeSlot.sortOrder)) {
-        map.set(s.timeSlot.sortOrder, { sortOrder: s.timeSlot.sortOrder, label: s.timeSlot.label, timeSlot: s.timeSlot });
+        map.set(s.timeSlot.sortOrder, {
+          id: -s.timeSlot.sortOrder,
+          sortOrder: s.timeSlot.sortOrder,
+          label: s.timeSlot.label,
+          startTime: null,
+          endTime: null,
+          // Without a period set there is nothing to read the break from,
+          // so fall back to Spring 2026's structure (after period 4), which
+          // is what this was hard-coded to before Step 52.
+          breakAfter: s.timeSlot.sortOrder === 4,
+        });
       }
     }
     return [...map.values()].sort((a, b) => a.sortOrder - b.sortOrder);
-  }, [sessions]);
+  }, [periods, sessions]);
 
-  // The column index (into slotColumns) right before the break/prayer gap
-  // between sortOrder 4 and 5 — everything after it gets a narrow visual
-  // divider column, and (Step 46) is where a day's special block starts.
-  // Detected from whichever slots actually appear in `sessions` (not
-  // hard-coded to always be index 3) so a filtered view that happens to
-  // drop slot 4 or 5 doesn't break the divider's position; falls back to
-  // "index 3, if there are at least 5 slots at all" when 4→5 aren't both present.
+  // The sortOrder the break follows, straight from the period set.
+  const breakAfter = useMemo(() => breakAfterSortOrder(slotColumns), [slotColumns]);
+
+  // The column index right before the break/prayer gap — everything after
+  // it gets a narrow visual divider column, and (Step 46) is where a day's
+  // special block starts. -1 when this set has no break, or when the break
+  // falls after its last visible column (nothing to divide).
   const breakAfterIndex = useMemo(() => {
-    for (let i = 0; i < slotColumns.length - 1; i++) {
-      if (slotColumns[i].sortOrder === 4 && slotColumns[i + 1].sortOrder === 5) return i;
-    }
-    return slotColumns.length >= 5 ? 3 : -1;
-  }, [slotColumns]);
+    if (breakAfter === null) return -1;
+    const idx = slotColumns.findIndex((c) => c.sortOrder === breakAfter);
+    return idx === slotColumns.length - 1 ? -1 : idx;
+  }, [slotColumns, breakAfter]);
 
-  // Step 46 — a day listed in SPECIAL_BLOCKS (currently just Wednesday /
-  // Club Activities) gets one band spanning its post-break columns across
-  // every row for that day, replacing the individual empty cells there —
-  // but only when nothing real is actually scheduled in that slot for the
-  // sessions currently in view, so real data is never silently hidden
-  // behind the band.
-  const specialBlocksByDay = useMemo(() => {
-    const map = new Map<string, { label: string }>();
-    if (breakAfterIndex === -1 || breakAfterIndex >= slotColumns.length - 1) return map;
-    const postBreakSortOrders = new Set(slotColumns.slice(breakAfterIndex + 1).map((c) => c.sortOrder));
-    for (const block of SPECIAL_BLOCKS) {
-      const hasRealSession = sessions.some((s) => s.day === block.day && postBreakSortOrders.has(s.timeSlot.sortOrder));
-      if (!hasRealSession) map.set(block.day, { label: block.label });
-    }
-    return map;
-  }, [sessions, slotColumns, breakAfterIndex]);
+  // Which column position the BREAK divider is inserted *before* — a
+  // separate index because the divider is an extra column of its own, not
+  // one of the periods. -1 means this set draws no divider at all, and is
+  // kept separate from `breakAfterIndex + 1` so that case can't be
+  // confused with "before the first column".
+  const breakColumnIndex = breakAfterIndex >= 0 ? breakAfterIndex + 1 : -1;
 
   // A sectioned batch (Step 45) always draws both its Sec 1 and Sec 2 rows
   // on every day it appears, even where one or both are empty — otherwise
@@ -391,7 +431,38 @@ export function RoutineGrid<T extends FilterableSession>({
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(s);
     }
+
+    // Step 52 — a batch a special block *names* gets a row on that day even
+    // with no classes at all, because that row is the only place its block
+    // can be drawn. Fall 2026's 24th and 26th are exactly this: Club
+    // Activities on Wednesday afternoon and nothing else that day.
+    //
+    // Only batch-scoped blocks do this. An all-batches block says nothing
+    // about which batches exist, so it keeps using whichever rows the day
+    // already has — which is how Spring 2026's Wednesday band has always
+    // been drawn, and what keeps it unchanged.
+    const extraRowBatches = new Map<string, BatchDayGroup<T>["batch"]>();
+    for (const block of specialBlocks) {
+      if (block.allBatches) continue;
+      for (const batch of block.batches) {
+        const key = `${block.day}|${batch.name}|${batch.semester}`;
+        if (!map.has(key) && !extraRowBatches.has(key)) {
+          extraRowBatches.set(key, batch as BatchDayGroup<T>["batch"]);
+        }
+      }
+    }
+
     const out: BatchDayGroup<T>[] = [];
+    for (const [key, batch] of extraRowBatches) {
+      const day = key.split("|")[0];
+      const n = parseInt(batch.semester.match(/\d+/)?.[0] ?? "0", 10);
+      const sectionRows: SectionRow<T>[] =
+        batch.sectionCount === 2
+          ? [{ section: "Sec 1", sessions: [] }, { section: "Sec 2", sessions: [] }]
+          : [{ section: null, sessions: [] }];
+      out.push({ day, batch, sortKey: n, sectionRows, bothSessions: [] });
+    }
+
     for (const sess of map.values()) {
       const day = sess[0].day;
       const batch = sess[0].batch as BatchDayGroup<T>["batch"];
@@ -421,33 +492,133 @@ export function RoutineGrid<T extends FilterableSession>({
         b.sortKey - a.sortKey ||
         a.batch.name.localeCompare(b.batch.name)
     );
-  }, [sessions]);
+  }, [sessions, specialBlocks]);
 
   // Flatten into physical rows, each carrying its own pre-built cell row —
   // a Both cell's rowSpan is already resolved here, before rendering.
   const physicalRows = useMemo(() => {
     const out: { day: string; batch: T["batch"]; section: string | null; cells: CellDesc<T>[] }[] = [];
     for (const g of groups) {
-      const grid = buildGroupGrid(g, slotColumns);
+      const grid = buildGroupGrid(g, slotColumns, breakAfter);
       g.sectionRows.forEach((sr, i) => {
         out.push({ day: g.day, batch: g.batch as T["batch"], section: sr.section, cells: grid[i] });
       });
     }
     return out;
-  }, [groups, slotColumns]);
+  }, [groups, slotColumns, breakAfter]);
 
   // How many physical rows each day occupies — drives the rowSpan on that
   // day's sticky "Sat"/"Sun"/etc. label cell (only rendered once, on the
-  // day's first row) and, since Step 46, a special block's rowSpan too.
+  // day's first row).
   const dayRowSpans = useMemo(() => {
     const counts = new Map<string, number>();
     for (const r of physicalRows) counts.set(r.day, (counts.get(r.day) ?? 0) + 1);
     return counts;
   }, [physicalRows]);
 
+  /**
+   * Where each special block is drawn, resolved down to table coordinates.
+   *
+   * Step 46 drew one band per *day*, spanning every row — correct while
+   * Club Activities applied to every batch. Step 52's blocks can name
+   * specific batches (Fall 2026 runs it for the 6th-8th semesters only),
+   * so a block now covers a *run of consecutive rows*: the rows of the
+   * batches it applies to. When it applies to them all, that run is the
+   * whole day and the output is identical to Step 46's — which is what
+   * keeps Spring 2026's Wednesday band exactly as it was.
+   *
+   * A row is left out of the run when it already has something scheduled
+   * in the block's columns, so a real class is never hidden behind a band.
+   * `starts` holds the band to render at a row (keyed by row index);
+   * `covered` holds every row×column the bands occupy, which the render
+   * loop skips so no stray <td> shifts the table.
+   */
+  const bands = useMemo(() => {
+    const starts = new Map<string, { block: SpecialBlockView; colSpan: number; rowSpan: number; showLabel: boolean }>();
+    const covered = new Set<string>();
+    if (specialBlocks.length === 0 || slotColumns.length === 0) return { starts, covered };
+
+    // Rows are grouped by day (physicalRows is built in day order), so each
+    // day's rows are one contiguous index range.
+    const rowsByDay = new Map<string, number[]>();
+    physicalRows.forEach((row, idx) => {
+      if (!rowsByDay.has(row.day)) rowsByDay.set(row.day, []);
+      rowsByDay.get(row.day)!.push(idx);
+    });
+
+    for (const [day, rowIndexes] of rowsByDay) {
+      for (const block of blocksForDay(specialBlocks, day)) {
+        const cols: number[] = [];
+        slotColumns.forEach((col, i) => {
+          if (col.sortOrder >= block.fromSlot && col.sortOrder <= block.toSlot) cols.push(i);
+        });
+        if (cols.length === 0) continue;
+
+        // The BREAK divider is a column of its own, so a block covering
+        // periods on both sides of it is drawn as two bands either side
+        // rather than one <td> swallowing the divider (which would leave
+        // this row one cell short of every other row).
+        const segments: number[][] = [];
+        let current: number[] = [];
+        for (const c of cols) {
+          if (current.length > 0 && c === breakColumnIndex) {
+            segments.push(current);
+            current = [];
+          }
+          current.push(c);
+        }
+        if (current.length > 0) segments.push(current);
+
+        const eligible = rowIndexes.filter((idx) => {
+          const row = physicalRows[idx];
+          if (!blockAppliesTo(block, row.batch.id)) return false;
+          // "empty" is the only cell kind a band may replace: a "session"
+          // is a real class, and a "skip" is one spanning in from a
+          // neighbouring cell.
+          return cols.every((c) => row.cells[c]?.kind === "empty");
+        });
+
+        // Maximal runs of consecutive rows — one band per run per segment.
+        let runStart: number | null = null;
+        let runLength = 0;
+        const flush = () => {
+          if (runStart === null) return;
+          segments.forEach((segment, segmentIndex) => {
+            starts.set(`${runStart}|${segment[0]}`, {
+              block,
+              colSpan: segment.length,
+              rowSpan: runLength,
+              // The label belongs on the first segment only, so a split
+              // block doesn't read as two separate activities.
+              showLabel: segmentIndex === 0,
+            });
+          });
+          for (let r = runStart; r < runStart + runLength; r++) {
+            for (const c of cols) covered.add(`${r}|${c}`);
+          }
+          runStart = null;
+          runLength = 0;
+        };
+        for (const idx of eligible) {
+          if (runStart !== null && idx === runStart + runLength) runLength++;
+          else {
+            flush();
+            runStart = idx;
+            runLength = 1;
+          }
+        }
+        flush();
+      }
+    }
+
+    return { starts, covered };
+  }, [specialBlocks, slotColumns, physicalRows, breakColumnIndex]);
+
   if (loading) return <GridSkeleton />;
 
-  if (sessions.length === 0) {
+  // An empty version still draws its period columns for the admin builder
+  // (showEmptyGrid); every other empty list is a filter result and says so.
+  if (sessions.length === 0 && !(showEmptyGrid && slotColumns.length > 0)) {
     return (
       <div className="glass rounded-lg overflow-hidden">
         <EmptyState
@@ -477,7 +648,7 @@ export function RoutineGrid<T extends FilterableSession>({
               <col style={{ width: YEAR_COL_WIDTH }} />
               {slotColumns.map((col, i) => (
                 <Fragment key={col.sortOrder}>
-                  {i === breakAfterIndex + 1 && <col style={{ width: BREAK_COL_WIDTH }} />}
+                  {i === breakColumnIndex && <col style={{ width: BREAK_COL_WIDTH }} />}
                   <col style={{ width: SLOT_COL_WIDTH }} />
                 </Fragment>
               ))}
@@ -497,7 +668,7 @@ export function RoutineGrid<T extends FilterableSession>({
                 </th>
                 {slotColumns.map((col, i) => (
                   <Fragment key={col.sortOrder}>
-                    {i === breakAfterIndex + 1 && (
+                    {i === breakColumnIndex && (
                       <th className="grid-sticky sticky top-0 z-20 border border-border bg-muted p-0" rowSpan={1} />
                     )}
                     <th className="grid-sticky sticky top-0 z-20 border border-border bg-card px-2 py-2 text-center font-data text-[11px] tabular font-semibold text-muted-foreground whitespace-nowrap">
@@ -508,6 +679,21 @@ export function RoutineGrid<T extends FilterableSession>({
               </tr>
             </thead>
             <tbody>
+              {/* An empty version (showEmptyGrid) has its columns but no
+                  batch rows to hang cells on, so there is nothing to click
+                  "+" in — say where the first class comes from instead. */}
+              {physicalRows.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={2 + slotColumns.length + (breakColumnIndex >= 0 ? 1 : 0)}
+                    className="border border-border px-5 py-8 text-center text-sm text-muted-foreground"
+                  >
+                    This version has no classes yet. Add the first one with the
+                    <span className="font-semibold text-foreground"> Add New Session </span>
+                    form above.
+                  </td>
+                </tr>
+              )}
               {physicalRows.map((row, rIdx) => {
                 const band = bandForBatch(row.batch);
                 const showDay = row.day !== lastDay;
@@ -535,9 +721,8 @@ export function RoutineGrid<T extends FilterableSession>({
                     </td>
                     {(() => {
                       const out: React.ReactNode[] = [];
-                      const specialBlock = specialBlocksByDay.get(row.day);
                       for (let i = 0; i < slotColumns.length; i++) {
-                        if (i === breakAfterIndex + 1 && rIdx === 0) {
+                        if (i === breakColumnIndex && rIdx === 0) {
                           out.push(
                             <td
                               key="break"
@@ -553,30 +738,39 @@ export function RoutineGrid<T extends FilterableSession>({
                             </td>
                           );
                         }
-                        // Step 46 — this day's post-break columns are a special
-                        // block (e.g. Club Activities): one band for the whole
-                        // day, rendered once on its first row and spanning
-                        // every row + every remaining column; later rows for
-                        // the same day render nothing here (already covered).
-                        if (specialBlock && i === breakAfterIndex + 1) {
-                          if (showDay) {
-                            const span = slotColumns.length - i;
-                            out.push(
-                              <td
-                                key="special-block"
-                                colSpan={span}
-                                rowSpan={daySpan}
-                                style={{ width: SLOT_COL_WIDTH * span }}
-                                className="border border-border print:border-foreground bg-muted/30 text-center align-middle"
-                              >
-                                <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground print:text-foreground print:text-sm print:font-bold">
-                                  {specialBlock.label}
-                                </span>
-                              </td>
-                            );
-                          }
-                          break;
+                        // Step 46/52 — a special block (e.g. Club Activities)
+                        // replaces the cells it covers with one band, drawn
+                        // once at the top-left of the rows×columns it spans
+                        // (see `bands`). Rows and columns it covers but does
+                        // not start at render nothing, exactly like a lab's
+                        // or a "Both" class's skipped cells.
+                        const blockBand = bands.starts.get(`${rIdx}|${i}`);
+                        if (blockBand) {
+                          out.push(
+                            <td
+                              key={`band-${blockBand.block.id}-${i}`}
+                              colSpan={blockBand.colSpan}
+                              rowSpan={blockBand.rowSpan}
+                              style={{ width: SLOT_COL_WIDTH * blockBand.colSpan }}
+                              className="border border-border print:border-foreground bg-muted/30 text-center align-middle"
+                            >
+                              {blockBand.showLabel && (
+                                <>
+                                  <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground print:text-foreground print:text-sm print:font-bold">
+                                    {blockBand.block.label}
+                                  </span>
+                                  {blockBand.block.subLabel && (
+                                    <span className="block text-[10px] text-muted-foreground print:text-foreground">
+                                      {blockBand.block.subLabel}
+                                    </span>
+                                  )}
+                                </>
+                              )}
+                            </td>
+                          );
+                          continue;
                         }
+                        if (bands.covered.has(`${rIdx}|${i}`)) continue;
                         const desc = row.cells[i];
                         if (desc.kind === "skip") continue;
                         const combine = desc.kind === "session" ? combinablePairs?.get(desc.session.id) : undefined;

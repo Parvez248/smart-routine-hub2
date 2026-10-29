@@ -12,7 +12,7 @@ type AlarmWithSession = {
     status: string;
     course: { code: string };
     room: { name: string };
-    timeSlot: { label: string };
+    timeSlot: { label: string; startTime: string | null };
   } | null;
 };
 
@@ -48,7 +48,12 @@ export default function ReminderEngine() {
       for (const alarm of alarms) {
         if (!alarm.isActive || !alarm.session || alarm.session.status === "CANCELLED") continue;
 
-        const occurrence = nextOccurrenceOf(alarm.session.day, alarm.session.timeSlot.label, now);
+        const occurrence = nextOccurrenceOf(
+          alarm.session.day,
+          alarm.session.timeSlot.label,
+          now,
+          alarm.session.timeSlot.startTime
+        );
         if (!occurrence) continue;
 
         const reminderAt = new Date(occurrence.getTime() - alarm.leadMinutes * 60 * 1000);

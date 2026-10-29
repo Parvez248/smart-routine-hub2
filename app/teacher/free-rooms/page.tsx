@@ -18,10 +18,12 @@ export default function TeacherFreeRoomsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Step 52 — the published version's own periods (GET /api/periods), so
+  // the slots offered are the ones that routine actually runs.
   useEffect(() => {
-    fetch("/api/reference")
+    fetch("/api/periods")
       .then((res) => res.json())
-      .then((json) => { if (json.ok) setTimeSlots(json.data.timeSlots); });
+      .then((json) => { if (json.ok) setTimeSlots(json.data.periods); });
   }, []);
 
   async function handleSearch(e: React.FormEvent) {

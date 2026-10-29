@@ -86,7 +86,7 @@ export default function StudentDashboardPage() {
   const nextClass = useMemo(() => {
     const upcoming = sessions
       .filter((s) => s.status !== "CANCELLED")
-      .map((s) => ({ session: s, at: nextOccurrenceOf(s.day, s.timeSlot.label, now) }))
+      .map((s) => ({ session: s, at: nextOccurrenceOf(s.day, s.timeSlot.label, now, s.timeSlot.startTime) }))
       .filter((x): x is { session: RoutineSession; at: Date } => x.at !== null)
       .sort((a, b) => a.at.getTime() - b.at.getTime());
     return upcoming[0] ?? null;

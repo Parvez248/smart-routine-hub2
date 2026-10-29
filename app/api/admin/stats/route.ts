@@ -35,7 +35,9 @@ export async function GET() {
       db.teacher.count(),
       db.room.count(),
       db.batch.count(),
-      db.timeSlot.count(),
+      // The standard set only (Step 52) — the card links to the screen
+      // that edits exactly those; a version’s own periods are counted there.
+      db.timeSlot.count({ where: { versionId: null } }),
       publishedVersion ? db.session.count({ where: { versionId: publishedVersion.id } }) : Promise.resolve(0),
       publishedVersion
         ? db.session.count({ where: { versionId: publishedVersion.id, status: "CANCELLED" } })

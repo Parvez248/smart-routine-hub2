@@ -10,7 +10,8 @@
     "import:routine:july": "tsx prisma/import-routine-july.ts",
     "update:titles": "tsx prisma/update-course-titles.ts",
     "backfill:sections": "tsx prisma/backfill-batch-sections.ts",
-    "backfill:exam-sittings": "tsx prisma/backfill-exam-sittings.ts"
+    "backfill:exam-sittings": "tsx prisma/backfill-exam-sittings.ts",
+    "backfill:version-periods": "tsx prisma/backfill-version-periods.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",

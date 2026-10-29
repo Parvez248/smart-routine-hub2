@@ -27,6 +27,9 @@ type ClassSession = {
   timeSlot: { id: number; label: string; sortOrder: number };
 };
 
+// Step 52 — the periods a class can be moved to are the *published*
+// version's own periods (GET /api/periods), not one global list: a
+// reschedule always lands in the routine the class belongs to.
 type RefData = {
   timeSlots: { id: number; label: string; sortOrder: number }[];
 };
@@ -74,9 +77,9 @@ export default function TeacherClassesPage() {
   }
 
   async function loadRef() {
-    const res = await fetch("/api/reference");
+    const res = await fetch("/api/periods");
     const json = await res.json();
-    if (json.ok) setRef(json.data);
+    if (json.ok) setRef({ timeSlots: json.data.periods });
   }
 
   async function loadPendingRequests() {

@@ -10,10 +10,15 @@
  */
 import { getDb } from "@/lib/db";
 
-export type Usage = { classCount: number; examCount: number };
+// `blockCount` (Step 52) is only ever set for batches: a batch can be
+// named by a special block (Club Activities for the 6th-8th semesters),
+// and SpecialBlockBatch.batchId restricts on delete — so without counting
+// it here, deleting such a batch would come back as a foreign-key 500
+// instead of the 409 that explains itself.
+export type Usage = { classCount: number; examCount: number; blockCount?: number };
 
 export function isInUse(usage: Usage): boolean {
-  return usage.classCount > 0 || usage.examCount > 0;
+  return usage.classCount > 0 || usage.examCount > 0 || (usage.blockCount ?? 0) > 0;
 }
 
 /** e.g. "Course is used by 3 classes and 2 exams and cannot be deleted." */
@@ -24,6 +29,10 @@ export function usageMessage(entity: string, usage: Usage): string {
   }
   if (usage.examCount > 0) {
     parts.push(`${usage.examCount} ${usage.examCount === 1 ? "exam" : "exams"}`);
+  }
+  const blockCount = usage.blockCount ?? 0;
+  if (blockCount > 0) {
+    parts.push(`${blockCount} routine ${blockCount === 1 ? "block" : "blocks"}`);
   }
   return `${entity} is used by ${parts.join(" and ")} and cannot be deleted.`;
 }
@@ -51,9 +60,10 @@ export async function getRoomUsage(roomId: number): Promise<Usage> {
 
 export async function getBatchUsage(batchId: number): Promise<Usage> {
   const db = getDb();
-  const [classCount, examCount] = await Promise.all([
+  const [classCount, examCount, blockCount] = await Promise.all([
     db.session.count({ where: { batchId } }),
     db.exam.count({ where: { batchId } }),
+    db.specialBlockBatch.count({ where: { batchId } }),
   ]);
-  return { classCount, examCount };
+  return { classCount, examCount, blockCount };
 }

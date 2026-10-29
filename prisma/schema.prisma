@@ -60,26 +60,51 @@ model Room {
 }
 
 model Batch {
-  id           Int       @id @default(autoincrement())
-  name         String    @unique
-  semester     String
-  studentCount Int       @default(0)
+  id            Int                 @id @default(autoincrement())
+  name          String              @unique
+  semester      String
+  studentCount  Int                 @default(0)
   // 1 = no sections (the whole batch is one group); 2 = split into "Sec 1"
   // and "Sec 2". Drives every "does this batch have sections?" decision —
   // the section dropdown, the grid's two section rows, Combine eligibility
   // and the API's section validation — so those no longer have to be
   // inferred from whichever sessions a version happens to contain (Step 50).
-  sectionCount Int       @default(1)
-  sessions     Session[]
-  // Back-relation only (Step 49) — adds no column to this table.
-  exams        Exam[]
+  sectionCount  Int                 @default(1)
+  sessions      Session[]
+  // Back-relations only (Step 49, Step 52) — add no column to this table.
+  exams         Exam[]
+  specialBlocks SpecialBlockBatch[]
 }
 
+/// One period column of a day. Before Step 52 there was a single global
+/// list of periods; now a period can belong to one routine version, so two
+/// routines with different day structures can exist side by side (Spring
+/// 2026 runs six 1-hour periods with the break after period 4, Fall 2026
+/// five 1h15 periods with the break after period 3).
+///
+/// `versionId = null` marks the STANDARD set, used by every version that
+/// has no periods of its own — which is what keeps Spring 2026 working
+/// untouched. Read it through lib/services/periods.ts, never by querying
+/// TimeSlot directly, so "the version's own periods, else the standard
+/// set" is decided in exactly one place.
 model TimeSlot {
-  id        Int       @id @default(autoincrement())
-  label     String
-  sortOrder Int
-  sessions  Session[]
+  id         Int             @id @default(autoincrement())
+  label      String
+  sortOrder  Int
+  versionId  Int?
+  version    RoutineVersion? @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  /// True when a break follows this period — the grid's BREAK column goes
+  /// after it, and a two-period lab may not straddle it (see
+  /// validLabStarts in lib/ui/periods.ts). At most one period per set has
+  /// it, enforced by the API, not the schema.
+  breakAfter Boolean         @default(false)
+  /// "HH:MM" 24-hour. Added in Step 52 so the next-class countdown and
+  /// student reminders no longer have to parse `label` (which is free text
+  /// and formatted for people, e.g. "09:30 – 10:45 am"); null means "not
+  /// set", and those callers fall back to parsing the label as before.
+  startTime  String?
+  endTime    String?
+  sessions   Session[]
 }
 
 model Session {
@@ -112,12 +137,17 @@ model Notice {
 }
 
 model RoutineVersion {
-  id            Int       @id @default(autoincrement())
-  name          String    @unique
-  isPublished   Boolean   @default(false)
+  id            Int            @id @default(autoincrement())
+  name          String         @unique
+  isPublished   Boolean        @default(false)
   effectiveDate DateTime?
-  createdAt     DateTime  @default(now())
+  createdAt     DateTime       @default(now())
   sessions      Session[]
+  // Back-relations only (Step 52) — add no column to this table. Both
+  // cascade on delete, so deleting an empty version takes its own periods
+  // and special blocks with it.
+  timeSlots     TimeSlot[]
+  specialBlocks SpecialBlock[]
 }
 
 model Student {
@@ -140,24 +170,24 @@ model Alarm {
 }
 
 model Reschedule {
-  id            Int       @id @default(autoincrement())
-  sessionId     Int
-  changedById   Int?
-  oldDay        String
-  oldTimeSlotId Int
-  oldRoomId     Int
-  newDay        String
-  newTimeSlotId Int
-  newRoomId     Int
-  reason        String?   @db.Text
-  status        String    @default("PENDING")
-  reviewedById  Int?
-  reviewedAt    DateTime?
-  adminNote     String?   @db.Text
-  appliedToMaster Boolean @default(false)
-  originalDate  DateTime?
-  newDate       DateTime?
-  createdAt     DateTime  @default(now())
+  id              Int       @id @default(autoincrement())
+  sessionId       Int
+  changedById     Int?
+  oldDay          String
+  oldTimeSlotId   Int
+  oldRoomId       Int
+  newDay          String
+  newTimeSlotId   Int
+  newRoomId       Int
+  reason          String?   @db.Text
+  status          String    @default("PENDING")
+  reviewedById    Int?
+  reviewedAt      DateTime?
+  adminNote       String?   @db.Text
+  appliedToMaster Boolean   @default(false)
+  originalDate    DateTime?
+  newDate         DateTime?
+  createdAt       DateTime  @default(now())
 }
 
 // ---------------------------------------------------------------------------
@@ -188,34 +218,34 @@ enum ExamSitting {
 
 /// One semester's exam schedule, holding both its Midterm and Final exams.
 model ExamTerm {
-  id          Int      @id @default(autoincrement())
-  name        String   @unique
+  id             Int      @id @default(autoincrement())
+  name           String   @unique
   /// Only published terms will be visible to teachers/students (Step 51).
-  isPublished Boolean  @default(false)
+  isPublished    Boolean  @default(false)
   /// Optional note printed under the routine.
-  note        String?  @db.Text
+  note           String?  @db.Text
   /// "HH:MM" start of each sitting, per term (Step 49b) — the exam dialog
   /// fills a new exam's start time from these, so a term that runs its
   /// mornings at 09:30 doesn't have to be re-typed for every exam.
-  morningStart   String @default("10:30")
-  afternoonStart String @default("14:30")
-  createdAt   DateTime @default(now())
-  exams       Exam[]
+  morningStart   String   @default("10:30")
+  afternoonStart String   @default("14:30")
+  createdAt      DateTime @default(now())
+  exams          Exam[]
 }
 
 model Exam {
-  id        Int        @id @default(autoincrement())
+  id        Int         @id @default(autoincrement())
   termId    Int
-  term      ExamTerm   @relation(fields: [termId], references: [id], onDelete: Cascade)
+  term      ExamTerm    @relation(fields: [termId], references: [id], onDelete: Cascade)
   type      ExamType
   courseId  Int
-  course    Course     @relation(fields: [courseId], references: [id])
+  course    Course      @relation(fields: [courseId], references: [id])
   batchId   Int
-  batch     Batch      @relation(fields: [batchId], references: [id])
+  batch     Batch       @relation(fields: [batchId], references: [id])
   /// "Sec 1" | "Sec 2" | "Both" | null — the same values and rules as
   /// Session.section, validated with isValidSectionFor against the batch.
   section   String?
-  date      DateTime   @db.Date
+  date      DateTime    @db.Date
   /// Which of the day's two sittings this exam belongs to (Step 49b).
   /// Clash and capacity checks group by date + sitting, not by clock time.
   sitting   ExamSitting @default(MORNING)
@@ -223,7 +253,7 @@ model Exam {
   /// (1h30 midterm theory, 2h final theory, 2h labs).
   startTime String
   endTime   String
-  createdAt DateTime   @default(now())
+  createdAt DateTime    @default(now())
   rooms     ExamRoom[]
 
   @@index([date])
@@ -241,4 +271,45 @@ model ExamRoom {
   seats  Int?
 
   @@unique([examId, roomId])
+}
+
+// ---------------------------------------------------------------------------
+// Special blocks (Step 52) — a band drawn across the routine that is NOT a
+// class: Club Activities on Wednesday afternoon. Display only, so it is
+// deliberately not a Session: it is never scheduled, never counted in any
+// total, and never takes part in a conflict or capacity check.
+//
+// It belongs to a routine version because which batches it covers changes
+// between routines — Spring 2026 shows it to every batch, Fall 2026 only to
+// the 6th-8th semesters.
+// ---------------------------------------------------------------------------
+
+model SpecialBlock {
+  id         Int                 @id @default(autoincrement())
+  versionId  Int
+  version    RoutineVersion      @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  /// Same values as Session.day ("Sat", "Sun", "Mon", "Tues", "Wed") — a
+  /// String there, so a String here too.
+  day        String
+  /// The sortOrder of the first and last period the block covers, in its
+  /// version's own period set (inclusive, toSlot >= fromSlot).
+  fromSlot   Int
+  toSlot     Int
+  label      String
+  subLabel   String?
+  /// True = every batch. False = only the batches listed in `batches`.
+  allBatches Boolean             @default(false)
+  batches    SpecialBlockBatch[]
+
+  @@index([versionId])
+}
+
+model SpecialBlockBatch {
+  specialBlockId Int
+  specialBlock   SpecialBlock @relation(fields: [specialBlockId], references: [id], onDelete: Cascade)
+  batchId        Int
+  batch          Batch        @relation(fields: [batchId], references: [id])
+
+  @@id([specialBlockId, batchId])
+  @@index([batchId])
 }

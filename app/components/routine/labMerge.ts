@@ -1,9 +1,16 @@
+import { isMergeableAdjacent } from "@/lib/ui/periods";
 import type { FilterableSession } from "./types";
 
 // A lab class covers two consecutive periods, stored as two ordinary Session
 // rows (the schema has one timeSlotId per row — see lib/services/scheduling).
 // This is the one place that decides whether two rows are "the same lab" so
 // the grid, the rail, and the admin dialog never disagree with each other.
+//
+// Step 52 moved the *structural* half of these rules — which periods are
+// adjacent, which ones a lab may start at — into lib/ui/periods.ts, because
+// they depend on the routine version's own period set (where its break
+// falls). What is left here is the "are these two rows the same class?"
+// question, which is version-independent.
 
 /**
  * True when `a` and `b` are the two rows of one lab class — same LAB
@@ -28,28 +35,9 @@ export function isSameLabPair<T extends FilterableSession>(a: T, b: T): boolean 
   return true;
 }
 
-/** True when two sortOrders are adjacent and don't straddle the break (4→5). */
-export function isMergeableAdjacent(sortOrderA: number, sortOrderB: number): boolean {
-  if (sortOrderB !== sortOrderA + 1) return false;
-  return !(sortOrderA === 4 && sortOrderB === 5);
-}
-
 /** The two periods a lab starting at `startSortOrder` would occupy. */
 export function labPair(startSortOrder: number): [number, number] {
   return [startSortOrder, startSortOrder + 1];
-}
-
-/**
- * A lab may start at any slot whose next slot exists and doesn't cross the
- * break — i.e. every slot except the one right before the break (4) and the
- * very last slot (no next slot to pair with). `allSortOrders` is the full set
- * of slots actually in use, so a start is only offered when its pair partner
- * really exists (Step 38 — previously this was wrongly hard-coded to 1/3/5).
- */
-export function isValidLabStart(startSortOrder: number, allSortOrders: number[]): boolean {
-  const [, next] = labPair(startSortOrder);
-  if (!allSortOrders.includes(next)) return false;
-  return isMergeableAdjacent(startSortOrder, next);
 }
 
 // One display entry after merging: span 1 is a normal class, span 2 is a
@@ -62,8 +50,16 @@ export type MergedEntry<T> = { session: T; span: 1 | 2; pair?: T };
  * sessions; everything else stays span-1. Used by both the rail (flat list)
  * and, in spirit, the grid (which additionally needs column positions and
  * reimplements the same predicates against its own column index).
+ *
+ * `breakAfter` is the sortOrder the break follows in *this routine
+ * version's* period set (Step 52) — null when it has no break. Two periods
+ * either side of the break are never one lab, and where that break falls
+ * differs per version, so it has to be passed in rather than assumed.
  */
-export function mergeLabPairs<T extends FilterableSession>(sessions: T[]): MergedEntry<T>[] {
+export function mergeLabPairs<T extends FilterableSession>(
+  sessions: T[],
+  breakAfter: number | null
+): MergedEntry<T>[] {
   const sorted = [...sessions].sort((a, b) => a.timeSlot.sortOrder - b.timeSlot.sortOrder);
   const out: MergedEntry<T>[] = [];
   for (let i = 0; i < sorted.length; i++) {
@@ -71,7 +67,7 @@ export function mergeLabPairs<T extends FilterableSession>(sessions: T[]): Merge
     const next = sorted[i + 1];
     if (
       next &&
-      isMergeableAdjacent(cur.timeSlot.sortOrder, next.timeSlot.sortOrder) &&
+      isMergeableAdjacent(cur.timeSlot.sortOrder, next.timeSlot.sortOrder, breakAfter) &&
       isSameLabPair(cur, next)
     ) {
       out.push({ session: cur, span: 2, pair: next });

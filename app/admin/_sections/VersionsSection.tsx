@@ -3,6 +3,11 @@
 // Admin "Routine → Versions" — create/publish/delete a RoutineVersion (see
 // GET/POST /api/admin/versions and PATCH/DELETE .../[id] for the actual
 // rules, especially "exactly one version is ever published").
+//
+// Step 52 — a version also owns its day structure: how many periods it has,
+// where its break falls and which special blocks (Club Activities) it
+// draws. "Periods" on the create form chooses where that structure starts
+// from, and "Periods & blocks" on each row edits it (see PeriodsDialog).
 import { useEffect, useState } from "react";
 import { Card, CardHeader } from "@/app/components/ui/Card";
 import { Button, LinkButton } from "@/app/components/ui/Button";
@@ -10,6 +15,7 @@ import { Table } from "@/app/components/ui/Table";
 import { Message } from "@/app/components/ui/Message";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { Loading } from "@/app/components/ui/Loading";
+import { PeriodsDialog } from "./PeriodsDialog";
 
 type Version = {
   id: number;
@@ -19,8 +25,22 @@ type Version = {
   sessionCount: number;
 };
 
-type VersionForm = { name: string; effectiveDate: string };
-const emptyForm: VersionForm = { name: "", effectiveDate: "" };
+type Batch = { id: number; name: string; semester: string };
+
+// Where a new version's periods come from:
+//  standard — share the standard set (what every version did before Step 52);
+//  copy     — its own copy of another version's periods and blocks;
+//  custom   — start from a copy of the standard set and open the editor,
+//             so the admin can reshape it immediately.
+type PeriodsChoice = "standard" | "copy" | "custom";
+
+type VersionForm = {
+  name: string;
+  effectiveDate: string;
+  periodsChoice: PeriodsChoice;
+  copyFromVersionId: string;
+};
+const emptyForm: VersionForm = { name: "", effectiveDate: "", periodsChoice: "standard", copyFromVersionId: "" };
 
 export default function VersionsSection() {
   const [versions, setVersions] = useState<Version[]>([]);
@@ -29,6 +49,8 @@ export default function VersionsSection() {
   const [status, setStatus] = useState<{ type: "success" | "error"; msg: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [actingId, setActingId] = useState<number | null>(null);
+  const [batches, setBatches] = useState<Batch[]>([]);
+  const [periodsFor, setPeriodsFor] = useState<Version | null>(null);
 
   async function loadVersions() {
     const res = await fetch("/api/admin/versions");
@@ -37,7 +59,14 @@ export default function VersionsSection() {
     setLoadingState(false);
   }
 
-  useEffect(() => { loadVersions(); }, []);
+  // The batch list for a block's "these batches" picker (PeriodsDialog).
+  async function loadBatches() {
+    const res = await fetch("/api/reference");
+    const json = await res.json();
+    if (json.ok) setBatches(json.data.batches);
+  }
+
+  useEffect(() => { loadVersions(); loadBatches(); }, []);
 
   function flash(type: "success" | "error", msg: string) {
     setStatus({ type, msg });
@@ -48,19 +77,30 @@ export default function VersionsSection() {
     e.preventDefault();
     setSubmitting(true);
     try {
+      // "Custom" copies the standard set so there is something to reshape;
+      // "Copy from version" copies that version's. Both become the new
+      // version's own rows — see POST /api/admin/versions.
+      const copyFrom =
+        form.periodsChoice === "copy" && form.copyFromVersionId ? Number(form.copyFromVersionId) : null;
+
       const res = await fetch("/api/admin/versions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: form.name,
           effectiveDate: form.effectiveDate || null,
+          copyPeriodsFromVersionId: copyFrom,
         }),
       });
       const json = await res.json();
       if (json.ok) {
         flash("success", "Version created.");
+        const choice = form.periodsChoice;
         setForm(emptyForm);
         await loadVersions();
+        // Custom periods are edited straight away, as the step asks —
+        // otherwise the admin has to find the new row and open it by hand.
+        if (choice === "custom") setPeriodsFor(json.data);
       } else {
         flash("error", json.error ?? "Failed to create version.");
       }
@@ -147,6 +187,48 @@ export default function VersionsSection() {
             </div>
           </div>
 
+          <fieldset className="flex flex-col gap-2">
+            <legend className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Periods</legend>
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+              {([
+                ["standard", "Standard periods"],
+                ["copy", "Copy from version…"],
+                ["custom", "Custom"],
+              ] as const).map(([value, label]) => (
+                <label key={value} className="flex items-center gap-2 text-sm text-foreground">
+                  <input
+                    type="radio"
+                    name="periods-choice"
+                    value={value}
+                    checked={form.periodsChoice === value}
+                    onChange={() => setForm((f) => ({ ...f, periodsChoice: value }))}
+                    className="size-4 accent-[var(--primary)]"
+                  />
+                  {label}
+                </label>
+              ))}
+              {form.periodsChoice === "copy" && (
+                <select
+                  required
+                  value={form.copyFromVersionId}
+                  onChange={(e) => setForm((f) => ({ ...f, copyFromVersionId: e.target.value }))}
+                  aria-label="Version to copy periods from"
+                  className="border border-border bg-muted rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  <option value="">Select version</option>
+                  {versions.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
+                </select>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {form.periodsChoice === "standard"
+                ? "Shares the standard period set with every other version that has no periods of its own."
+                : form.periodsChoice === "copy"
+                  ? "Takes its own copy of that version's periods and special blocks — editing either afterwards never affects the other."
+                  : "Starts from a copy of the standard set and opens the period editor as soon as the version is created."}
+            </p>
+          </fieldset>
+
           {status && <Message type={status.type}>{status.msg}</Message>}
 
           <div className="flex justify-end">
@@ -185,6 +267,9 @@ export default function VersionsSection() {
                   )}
                 </td>
                 <td className="px-5 py-3.5 text-right whitespace-nowrap">
+                  <LinkButton onClick={() => setPeriodsFor(v)} className="mr-3">
+                    Periods &amp; blocks
+                  </LinkButton>
                   {!v.isPublished && (
                     <LinkButton tone="success" loading={actingId === v.id} onClick={() => handlePublish(v.id)} className="mr-3">
                       Publish
@@ -199,6 +284,14 @@ export default function VersionsSection() {
           </Table>
         )}
       </Card>
+
+      <PeriodsDialog
+        open={periodsFor !== null}
+        onOpenChange={(next) => { if (!next) setPeriodsFor(null); }}
+        version={periodsFor}
+        batches={batches}
+        onChanged={loadVersions}
+      />
     </>
   );
 }

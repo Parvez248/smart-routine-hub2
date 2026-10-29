@@ -87,7 +87,7 @@ export default function TeacherDashboardPage() {
     if (todaysClasses.length > 0) return null;
     const upcoming = classes
       .filter((c) => c.status !== "CANCELLED")
-      .map((c) => ({ session: c, at: nextOccurrenceOf(c.day, c.timeSlot.label, now) }))
+      .map((c) => ({ session: c, at: nextOccurrenceOf(c.day, c.timeSlot.label, now, c.timeSlot.startTime) }))
       .filter((x): x is { session: RoutineSession; at: Date } => x.at !== null)
       .sort((a, b) => a.at.getTime() - b.at.getTime());
     return upcoming[0] ?? null;

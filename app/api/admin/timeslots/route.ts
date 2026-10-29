@@ -20,7 +20,13 @@ export async function GET() {
 
   try {
     const db = getDb();
-    const timeSlots = await db.timeSlot.findMany({ orderBy: { sortOrder: "asc" } });
+    // Step 52 — this screen edits the STANDARD set (versionId = null),
+    // which every version without periods of its own uses. A version’s own
+    // periods are edited in Routine → Versions → Periods & blocks.
+    const timeSlots = await db.timeSlot.findMany({
+      where: { versionId: null },
+      orderBy: { sortOrder: "asc" },
+    });
     return NextResponse.json({ ok: true, data: timeSlots });
   } catch (error) {
     console.error(error);

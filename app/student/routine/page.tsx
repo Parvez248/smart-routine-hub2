@@ -29,6 +29,7 @@ import { RoutineMasthead } from "@/app/components/routine/RoutineMasthead";
 import { FilterCard } from "@/app/components/routine/FilterCard";
 import { ViewToggle, type RoutineView } from "@/app/components/routine/ViewToggle";
 import { useIsDesktop } from "@/app/components/routine/useIsDesktop";
+import { usePeriods } from "@/app/components/routine/usePeriods";
 import { RoutineScopeTabs } from "@/app/student/_components/RoutineScopeTabs";
 import type { FilterableSession } from "@/app/components/routine/types";
 
@@ -41,7 +42,7 @@ type SessionCell = {
   teacher: { initials: string; name: string };
   room: { name: string };
   batch: { id: number; name: string; semester: string; sectionCount: number };
-  timeSlot: { id: number; label: string; sortOrder: number };
+  timeSlot: { id: number; label: string; sortOrder: number; startTime: string | null };
   movedTo: FilterableSession["movedTo"];
 };
 
@@ -171,6 +172,9 @@ function StudentRoutineInner() {
     return () => clearInterval(t);
   }, []);
 
+  // Step 52 — the published version’s day structure (see usePeriods).
+  const { periods, specialBlocks } = usePeriods();
+
   const filterState = useRoutineFilters(sessions, { storageKey: "student" });
   const { filtered, totalCount, clearAll } = filterState;
 
@@ -195,7 +199,7 @@ function StudentRoutineInner() {
   const nextClass = useMemo(() => {
     const upcoming = sessions
       .filter((s) => s.status !== "CANCELLED")
-      .map((s) => ({ session: s, at: nextOccurrenceOf(s.day, s.timeSlot.label, now) }))
+      .map((s) => ({ session: s, at: nextOccurrenceOf(s.day, s.timeSlot.label, now, s.timeSlot.startTime) }))
       .filter((x): x is { session: SessionCell; at: Date } => x.at !== null)
       .sort((a, b) => a.at.getTime() - b.at.getTime());
     return upcoming[0] ?? null;
@@ -333,9 +337,21 @@ function StudentRoutineInner() {
           <EmptyState icon="🗓️" message={message} />
         </div>
       ) : effectiveView === "grid" ? (
-        <RoutineGrid sessions={filtered} loading={loading} onClearFilters={clearAll} />
+        <RoutineGrid
+          sessions={filtered}
+          loading={loading}
+          onClearFilters={clearAll}
+          periods={periods}
+          specialBlocks={specialBlocks}
+        />
       ) : effectiveView === "rail" ? (
-        <RoutineTimeRail sessions={filtered} loading={loading} onClearFilters={clearAll} renderActions={renderActions} />
+        <RoutineTimeRail
+          sessions={filtered}
+          loading={loading}
+          onClearFilters={clearAll}
+          renderActions={renderActions}
+          periods={periods}
+        />
       ) : (
         <div className="bg-card border border-border rounded-lg overflow-hidden">
           <RoutineList sessions={filtered} loading={loading} onClearFilters={clearAll} renderActions={renderActions} />

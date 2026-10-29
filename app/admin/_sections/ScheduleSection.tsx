@@ -30,6 +30,7 @@ import { RoutineMasthead } from "@/app/components/routine/RoutineMasthead";
 import { FilterCard } from "@/app/components/routine/FilterCard";
 import { ViewToggle, type RoutineView } from "@/app/components/routine/ViewToggle";
 import { useIsDesktop } from "@/app/components/routine/useIsDesktop";
+import { breakAfterSortOrder, type Period, type SpecialBlockView } from "@/lib/ui/periods";
 import { SessionDialog, type SessionFormValues } from "@/app/components/routine/SessionDialog";
 import { combineSlotLabels, mergeLabPairs } from "@/app/components/routine/labMerge";
 import { courseOptionLabel } from "@/app/components/routine/RowBadges";
@@ -59,9 +60,14 @@ type RefData = {
   teachers: Teacher[];
   rooms: Room[];
   batches: Batch[];
-  timeSlots: TimeSlot[];
   days: string[];
 };
+
+// The selected version's day structure (GET /api/periods?versionId=) —
+// Step 52. Every period picker on this page, the grid's columns and the
+// lab-pairing rules read it, so switching version switches all of them
+// together.
+type PeriodData = { periods: Period[]; specialBlocks: SpecialBlockView[] };
 
 type Version = {
   id: number;
@@ -117,6 +123,7 @@ export default function ScheduleSection() {
 
   const [versions, setVersions] = useState<Version[]>([]);
   const [selectedVersionId, setSelectedVersionId] = useState<string>("");
+  const [periodData, setPeriodData] = useState<PeriodData>({ periods: [], specialBlocks: [] });
   const [view, setView] = useState<RoutineView>("grid");
   const isDesktop = useIsDesktop();
   const effectiveView: RoutineView = view === "table" ? "table" : isDesktop ? view : "rail";
@@ -158,8 +165,28 @@ export default function ScheduleSection() {
     setSessionsLoading(false);
   }
 
+  async function loadPeriods(versionId: string) {
+    if (!versionId) {
+      setPeriodData({ periods: [], specialBlocks: [] });
+      return;
+    }
+    const res = await fetch(`/api/periods?versionId=${versionId}`);
+    const json = await res.json();
+    if (json.ok) setPeriodData({ periods: json.data.periods, specialBlocks: json.data.specialBlocks });
+  }
+
   useEffect(() => { loadRef(); loadVersions(); }, []);
-  useEffect(() => { loadSessions(selectedVersionId); }, [selectedVersionId]);
+  useEffect(() => {
+    loadSessions(selectedVersionId);
+    loadPeriods(selectedVersionId);
+    // A period id only means something within its own version, so anything
+    // half-chosen in the forms is cleared when the version changes.
+    setForm((f) => ({ ...f, timeSlotId: "" }));
+    setFreeSlotId("");
+    setFreeRooms(null);
+  }, [selectedVersionId]);
+
+  const breakAfter = useMemo(() => breakAfterSortOrder(periodData.periods), [periodData.periods]);
 
   // The section options for whichever batch the "Add New Session" form has
   // selected, from that batch's own sectionCount (Step 50).
@@ -473,8 +500,8 @@ export default function ScheduleSection() {
       const sec1 = groupSessions.filter((s) => s.section === "Sec 1");
       const sec2 = groupSessions.filter((s) => s.section === "Sec 2");
       if (sec1.length === 0 || sec2.length === 0) continue;
-      const sec1Entries = mergeLabPairs(sec1);
-      const sec2Entries = mergeLabPairs(sec2);
+      const sec1Entries = mergeLabPairs(sec1, breakAfter);
+      const sec2Entries = mergeLabPairs(sec2, breakAfter);
       for (const e1 of sec1Entries) {
         const e2 = sec2Entries.find(
           (e) => e.session.timeSlot.sortOrder === e1.session.timeSlot.sortOrder && e.span === e1.span
@@ -486,7 +513,7 @@ export default function ScheduleSection() {
       }
     }
     return map;
-  }, [sessions]);
+  }, [sessions, breakAfter]);
 
   const selectedVersionName = versions.find((v) => String(v.id) === selectedVersionId)?.name ?? "—";
   const publishedVersion = versions.find((v) => v.isPublished) ?? null;
@@ -550,7 +577,7 @@ export default function ScheduleSection() {
           <div className="w-56">
             <Select label="Time Slot" value={freeSlotId} onChange={setFreeSlotId}>
               <option value="">Select slot</option>
-              {ref?.timeSlots.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
+              {periodData.periods.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
             </Select>
           </div>
           <Button
@@ -609,7 +636,7 @@ export default function ScheduleSection() {
 
             <Select label="Time Slot" required value={form.timeSlotId} onChange={(v) => field("timeSlotId", v)}>
               <option value="">Select slot</option>
-              {ref?.timeSlots.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
+              {periodData.periods.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
             </Select>
 
             <Select label="Batch" required value={form.batchId} onChange={(v) => field("batchId", v)}>
@@ -730,6 +757,13 @@ export default function ScheduleSection() {
             combinablePairs={combinablePairs}
             onCombine={handleCombine}
             combiningId={combiningId}
+            periods={periodData.periods}
+            specialBlocks={periodData.specialBlocks}
+            // A version with no classes at all still shows its period
+            // columns here, so a new routine can be started from the grid.
+            // `totalCount` (not `filtered`) is what distinguishes "empty
+            // version" from "filtered down to nothing".
+            showEmptyGrid={totalCount === 0}
           />
         ) : effectiveView === "rail" ? (
           <RoutineTimeRail
@@ -740,6 +774,7 @@ export default function ScheduleSection() {
             onEditSession={openInlineEdit}
             onDeleteSession={handleInlineDelete}
             onAddSession={openInlineAdd}
+            periods={periodData.periods}
           />
         ) : (
           <div className="bg-card border border-border rounded-lg overflow-hidden">
@@ -752,6 +787,7 @@ export default function ScheduleSection() {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         versionId={selectedVersionId ? Number(selectedVersionId) : null}
+        periods={periodData.periods}
         initial={dialogInitial}
         onSaved={() => loadSessions(selectedVersionId)}
       />

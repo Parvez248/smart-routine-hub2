@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { createSessionSchema } from "@/lib/validation/session";
 import { checkConflict, checkCapacity } from "@/lib/services/scheduling";
+import { checkPeriodForVersion } from "@/lib/services/periods";
 import { isValidSectionFor, sectionErrorFor } from "@/lib/ui/sections";
 
 const include = {
@@ -62,6 +63,17 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
     if (!isValidSectionFor(batchForSection.sectionCount, normSection)) {
       return NextResponse.json({ ok: false, error: sectionErrorFor(batchForSection) }, { status: 400 });
+    }
+
+    // Step 52 §2 — same period check as on create: the slot must be one of
+    // this version's periods, and a lab must start where its set allows.
+    const course = await db.course.findUnique({ where: { id: courseId } });
+    if (!course) {
+      return NextResponse.json({ ok: false, error: "Invalid course" }, { status: 400 });
+    }
+    const periodError = await checkPeriodForVersion(versionId, timeSlotId, course.type);
+    if (periodError) {
+      return NextResponse.json({ ok: false, error: periodError }, { status: 400 });
     }
 
     const conflict = await checkConflict({
