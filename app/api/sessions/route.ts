@@ -128,7 +128,14 @@ export async function POST(req: NextRequest) {
     if (!course) {
       return NextResponse.json({ ok: false, error: "Invalid course" }, { status: 400 });
     }
-    const periodError = await checkPeriodForVersion(versionId, timeSlotId, course.type);
+    const periodError = await checkPeriodForVersion(versionId, timeSlotId, course.type, {
+      day,
+      batchId,
+      section: normSection,
+      courseId,
+      teacherId,
+      roomId,
+    });
     if (periodError) {
       return NextResponse.json({ ok: false, error: periodError }, { status: 400 });
     }

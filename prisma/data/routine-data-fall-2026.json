@@ -1,0 +1,2051 @@
+{
+ "university": "Hamdard University Bangladesh",
+ "department": "Department of Computer Science and Engineering",
+ "term": "Fall 2026",
+ "effectiveDate": null,
+ "sourcePdf": "Class_Routine_of_Fall_2026_19_oct.pdf",
+ "headOfDepartment": "Md. Shahidul Islam",
+ "days": [
+  "Sat",
+  "Sun",
+  "Mon",
+  "Tues",
+  "Wed"
+ ],
+ "timeSlots": [
+  {
+   "sortOrder": 1,
+   "label": "09:30 – 10:45 am",
+   "startTime": "09:30",
+   "endTime": "10:45",
+   "breakAfter": false
+  },
+  {
+   "sortOrder": 2,
+   "label": "10:45 – 12:00 pm",
+   "startTime": "10:45",
+   "endTime": "12:00",
+   "breakAfter": false
+  },
+  {
+   "sortOrder": 3,
+   "label": "12:00 – 01:15 pm",
+   "startTime": "12:00",
+   "endTime": "13:15",
+   "breakAfter": true
+  },
+  {
+   "sortOrder": 4,
+   "label": "02:00 – 03:15 pm",
+   "startTime": "14:00",
+   "endTime": "15:15",
+   "breakAfter": false
+  },
+  {
+   "sortOrder": 5,
+   "label": "03:15 – 04:30 pm",
+   "startTime": "15:15",
+   "endTime": "16:30",
+   "breakAfter": false
+  }
+ ],
+ "break": {
+  "label": "Break",
+  "from": "13:15",
+  "to": "14:00"
+ },
+ "validLabStarts": [
+  1,
+  2,
+  4
+ ],
+ "specialBlocks": [
+  {
+   "day": "Wed",
+   "label": "Club Activities",
+   "subLabel": "6th, 7th and 8th Semesters",
+   "slots": [
+    4,
+    5
+   ],
+   "batches": [
+    "24th",
+    "25th",
+    "26th"
+   ]
+  }
+ ],
+ "teachers": {
+  "AAZ": "Dr Md Abdullah Al Zubaer",
+  "AB": "Afsana Begum",
+  "AFS": "Abdullah Al Fahad Shaumik",
+  "AR": "Md. Afzalur Rahaman",
+  "AUM": "Prof. Dr. Md. Aman Uddin Muzahid",
+  "EA": "Era Aich",
+  "HI": "Hafijul Islam",
+  "IAZ": "Imam Abu Jubayer",
+  "JAT": "Jobair Ahammed Tusher",
+  "JF": null,
+  "MAA": "Md. Abdul Aziz",
+  "MAH": "Md. Abul Hasnat",
+  "MAM": null,
+  "MJI": null,
+  "MMH": "Md. Monowar Hossain",
+  "MMI": null,
+  "MMR": "Md. Mamunur Rashid",
+  "MSI": "Md. Shahidul Islam",
+  "NA": "Nusrat Anamilka",
+  "NF": "New Faculty",
+  "NHF": "Nahid Hasan Fahad",
+  "NS": "Nazmus Sakib",
+  "PKS": "Palash Saha",
+  "RH": "Riad Hossen",
+  "SAS": "Sabbir Ahmed Sumon",
+  "SNS": "Shamshunnaher Shanta",
+  "SS": null,
+  "TAS": "Tasfirul Alam Siam",
+  "TFS": "Taslima Ferdous Supty",
+  "TR": "Tahmid Rahman",
+  "TRT": "Tamanna Rahman Tanni"
+ },
+ "teachersWithoutNameInPdf": [
+  "JF",
+  "MAM",
+  "MJI",
+  "MMI",
+  "SS"
+ ],
+ "courses": [
+  {
+   "code": "ACT215",
+   "title": "Financial and Managerial Accounting",
+   "type": "THEORY"
+  },
+  {
+   "code": "BAN211",
+   "title": "History of Emergence of Bangladesh",
+   "type": "THEORY"
+  },
+  {
+   "code": "CSE112",
+   "title": "Basic Computer Skills Lab",
+   "type": "LAB"
+  },
+  {
+   "code": "CSE113",
+   "title": "Discrete Mathematics",
+   "type": "THEORY"
+  },
+  {
+   "code": "CSE117",
+   "title": "Engineering Ethics and Cyber Law",
+   "type": "THEORY"
+  },
+  {
+   "code": "CSE121",
+   "title": "Structured Programming Language",
+   "type": "THEORY"
+  },
+  {
+   "code": "CSE122",
+   "title": "Structured Programming Language Lab",
+   "type": "LAB"
+  },
+  {
+   "code": "CSE213",
+   "title": "Digital Electronics",
+   "type": "THEORY"
+  },
+  {
+   "code": "CSE214",
+   "title": "Digital Electronics Lab",
+   "type": "LAB"
+  },
+  {
+   "code": "CSE215",
+   "title": "Data Structures",
+   "type": "THEORY"
+  },
+  {
+   "code": "CSE216",
+   "title": "Data Structures Lab",
+   "type": "LAB"
+  },
+  {
+   "code": "CSE221",
+   "title": "Computer Algorithms",
+   "type": "THEORY"
+  },
+  {
+   "code": "CSE222",
+   "title": "Computer Algorithms Lab",
+   "type": "LAB"
+  },
+  {
+   "code": "CSE223",
+   "title": "Object Oriented Programming",
+   "type": "THEORY"
+  },
+  {
+   "code": "CSE224",
+   "title": "Object Oriented Programming Lab",
+   "type": "LAB"
+  },
+  {
+   "code": "CSE225",
+   "title": "Digital Logic Design",
+   "type": "THEORY"
+  },
+  {
+   "code": "CSE226",
+   "title": "Digital Logic Design Lab",
+   "type": "LAB"
+  },
+  {
+   "code": "CSE227",
+   "title": "Data Communication",
+   "type": "THEORY"
+  },
+  {
+   "code": "CSE229",
+   "title": "Computer Architecture",
+   "type": "THEORY"
+  },
+  {
+   "code": "CSE311",
+   "title": "Theory of Computing",
+   "type": "THEORY"
+  },
+  {
+   "code": "CSE313",
+   "title": "Database Management System",
+   "type": "THEORY"
+  },
+  {
+   "code": "CSE314",
+   "title": "Database Management System Lab",
+   "type": "LAB"
+  },
+  {
+   "code": "CSE315",
+   "title": "Microprocessors & Embedded System",
+   "type": "THEORY"
+  },
+  {
+   "code": "CSE316",
+   "title": "Microprocessors & Embedded System Lab",
+   "type": "LAB"
+  },
+  {
+   "code": "CSE317",
+   "title": "Computer Networks",
+   "type": "THEORY"
+  },
+  {
+   "code": "CSE318",
+   "title": "Computer Networks Lab",
+   "type": "LAB"
+  },
+  {
+   "code": "CSE321",
+   "title": "Operating System",
+   "type": "THEORY"
+  },
+  {
+   "code": "CSE322",
+   "title": "Operating System Lab",
+   "type": "LAB"
+  },
+  {
+   "code": "CSE323",
+   "title": "System Analysis & Design",
+   "type": "THEORY"
+  },
+  {
+   "code": "CSE324",
+   "title": "System Analysis & Design Lab",
+   "type": "LAB"
+  },
+  {
+   "code": "CSE325",
+   "title": "Computer Peripherals & Interfacing",
+   "type": "THEORY"
+  },
+  {
+   "code": "CSE326",
+   "title": "Computer Peripherals & Interfacing Lab",
+   "type": "LAB"
+  },
+  {
+   "code": "CSE411",
+   "title": "Artificial Intelligence",
+   "type": "THEORY"
+  },
+  {
+   "code": "CSE412",
+   "title": "Artificial Intelligence Lab",
+   "type": "LAB"
+  },
+  {
+   "code": "CSE413",
+   "title": "Computer Graphics",
+   "type": "THEORY"
+  },
+  {
+   "code": "CSE414",
+   "title": "Computer Graphics Lab",
+   "type": "LAB"
+  },
+  {
+   "code": "CSE415",
+   "title": "Digital Signal Processing",
+   "type": "THEORY"
+  },
+  {
+   "code": "CSE416",
+   "title": "Digital Signal Processing Lab",
+   "type": "LAB"
+  },
+  {
+   "code": "CSE417",
+   "title": "Compiler Design",
+   "type": "THEORY"
+  },
+  {
+   "code": "CSE418",
+   "title": "Compiler Design Lab",
+   "type": "LAB"
+  },
+  {
+   "code": "CSE419",
+   "title": "Communication Engineering",
+   "type": "THEORY"
+  },
+  {
+   "code": "CSE421",
+   "title": "Software Engineering",
+   "type": "THEORY"
+  },
+  {
+   "code": "CSE423",
+   "title": "Digital Image Processing",
+   "type": "THEORY"
+  },
+  {
+   "code": "CSE424",
+   "title": null,
+   "type": "LAB"
+  },
+  {
+   "code": "CSE469/471",
+   "title": null,
+   "type": "THEORY",
+   "elective": true,
+   "note": "Elective — only enrolled students attend"
+  },
+  {
+   "code": "CSE481",
+   "title": null,
+   "type": "THEORY"
+  },
+  {
+   "code": "EEE117",
+   "title": "Electrical Engineering",
+   "type": "THEORY"
+  },
+  {
+   "code": "EEE127",
+   "title": "Electronic Devices & Circuits",
+   "type": "THEORY"
+  },
+  {
+   "code": "EEE128",
+   "title": "Electrical and Electronic Circuits Lab",
+   "type": "LAB"
+  },
+  {
+   "code": "ENG111",
+   "title": "English Basics",
+   "type": "THEORY"
+  },
+  {
+   "code": "ENG127",
+   "title": "English Skills",
+   "type": "THEORY"
+  },
+  {
+   "code": "ENS221",
+   "title": "Environmental Science",
+   "type": "THEORY"
+  },
+  {
+   "code": "MAT115",
+   "title": "Differential & Integral Calculus",
+   "type": "THEORY"
+  },
+  {
+   "code": "MAT125",
+   "title": "Linear Algebra & Complex Variables",
+   "type": "THEORY"
+  },
+  {
+   "code": "MAT213",
+   "title": "Statistics and Probability",
+   "type": "THEORY"
+  },
+  {
+   "code": "MAT217",
+   "title": "Ordinary & Partial Differential Equation",
+   "type": "THEORY"
+  },
+  {
+   "code": "MAT317",
+   "title": "Engineering Mathematics",
+   "type": "THEORY"
+  },
+  {
+   "code": "MAT323",
+   "title": "Numerical Analysis",
+   "type": "THEORY"
+  },
+  {
+   "code": "MGT329",
+   "title": "Industrial and Operational Management",
+   "type": "THEORY"
+  },
+  {
+   "code": "PHY111",
+   "title": "Physics I",
+   "type": "THEORY"
+  },
+  {
+   "code": "PHY121",
+   "title": "Physics II",
+   "type": "THEORY"
+  },
+  {
+   "code": "PHY122",
+   "title": "Physics II Lab",
+   "type": "LAB"
+  }
+ ],
+ "coursesWithoutTitle": [
+  "CSE424",
+  "CSE469/471",
+  "CSE481"
+ ],
+ "rooms": [
+  "101",
+  "102",
+  "109",
+  "111",
+  "116",
+  "127",
+  "130",
+  "131",
+  "132",
+  "136",
+  "137",
+  "228",
+  "249"
+ ],
+ "batches": [
+  {
+   "name": "24th",
+   "semester": "8th",
+   "sectionCount": 1
+  },
+  {
+   "name": "25th",
+   "semester": "7th",
+   "sectionCount": 1
+  },
+  {
+   "name": "26th",
+   "semester": "6th",
+   "sectionCount": 2
+  },
+  {
+   "name": "27th",
+   "semester": "5th",
+   "sectionCount": 1
+  },
+  {
+   "name": "28th",
+   "semester": "4th",
+   "sectionCount": 2
+  },
+  {
+   "name": "29th",
+   "semester": "3rd",
+   "sectionCount": 2
+  },
+  {
+   "name": "30th",
+   "semester": "2nd",
+   "sectionCount": 2
+  },
+  {
+   "name": "31st",
+   "semester": "1st",
+   "sectionCount": 2
+  }
+ ],
+ "notesForReview": [
+  "EEE128 (30th) is taught by NHF on Sunday and NF (New Faculty) on Monday, as printed.",
+  "CSE112 (31st) is taught by IAZ on Tuesday and PKS on Wednesday, as printed.",
+  "CSE469/471 is one elective entry for 24th (only enrolled students).",
+  "Monday has no classes for 29th; Wednesday has no classes for 24th and 26th (Club Activities in the afternoon for 24th–26th)."
+ ],
+ "summary": {
+  "entries": 126,
+  "periodRows": 156,
+  "twoPeriodLabs": 30,
+  "bothSections": 46,
+  "conflictsFound": 0
+ },
+ "sessions": [
+  {
+   "day": "Sat",
+   "batch": "24th",
+   "semester": "8th",
+   "section": null,
+   "slots": [
+    1
+   ],
+   "course": "CSE469/471",
+   "teacher": "MMH",
+   "room": "137"
+  },
+  {
+   "day": "Sat",
+   "batch": "24th",
+   "semester": "8th",
+   "section": null,
+   "slots": [
+    2
+   ],
+   "course": "CSE421",
+   "teacher": "MMH",
+   "room": "137"
+  },
+  {
+   "day": "Sat",
+   "batch": "24th",
+   "semester": "8th",
+   "section": null,
+   "slots": [
+    3
+   ],
+   "course": "CSE423",
+   "teacher": "TAS",
+   "room": "130"
+  },
+  {
+   "day": "Sat",
+   "batch": "24th",
+   "semester": "8th",
+   "section": null,
+   "slots": [
+    4
+   ],
+   "course": "CSE481",
+   "teacher": "TR",
+   "room": "137"
+  },
+  {
+   "day": "Sat",
+   "batch": "24th",
+   "semester": "8th",
+   "section": null,
+   "slots": [
+    5
+   ],
+   "course": "CSE481",
+   "teacher": "TR",
+   "room": "101"
+  },
+  {
+   "day": "Sat",
+   "batch": "25th",
+   "semester": "7th",
+   "section": null,
+   "slots": [
+    2
+   ],
+   "course": "CSE415",
+   "teacher": "JAT",
+   "room": "249"
+  },
+  {
+   "day": "Sat",
+   "batch": "25th",
+   "semester": "7th",
+   "section": null,
+   "slots": [
+    3
+   ],
+   "course": "CSE413",
+   "teacher": "IAZ",
+   "room": "137"
+  },
+  {
+   "day": "Sat",
+   "batch": "25th",
+   "semester": "7th",
+   "section": null,
+   "slots": [
+    4,
+    5
+   ],
+   "course": "CSE414",
+   "teacher": "IAZ",
+   "room": "136"
+  },
+  {
+   "day": "Sat",
+   "batch": "26th",
+   "semester": "6th",
+   "section": "Both",
+   "slots": [
+    2
+   ],
+   "course": "CSE323",
+   "teacher": "MAH",
+   "room": "228"
+  },
+  {
+   "day": "Sat",
+   "batch": "26th",
+   "semester": "6th",
+   "section": "Both",
+   "slots": [
+    4
+   ],
+   "course": "CSE321",
+   "teacher": "TRT",
+   "room": "102"
+  },
+  {
+   "day": "Sat",
+   "batch": "26th",
+   "semester": "6th",
+   "section": "Both",
+   "slots": [
+    5
+   ],
+   "course": "CSE321",
+   "teacher": "TRT",
+   "room": "228"
+  },
+  {
+   "day": "Sat",
+   "batch": "27th",
+   "semester": "5th",
+   "section": null,
+   "slots": [
+    1
+   ],
+   "course": "CSE313",
+   "teacher": "MSI",
+   "room": "131"
+  },
+  {
+   "day": "Sat",
+   "batch": "27th",
+   "semester": "5th",
+   "section": null,
+   "slots": [
+    2,
+    3
+   ],
+   "course": "CSE314",
+   "teacher": "MSI",
+   "room": "131"
+  },
+  {
+   "day": "Sat",
+   "batch": "28th",
+   "semester": "4th",
+   "section": "Sec 2",
+   "slots": [
+    1,
+    2
+   ],
+   "course": "CSE224",
+   "teacher": "TFS",
+   "room": "130"
+  },
+  {
+   "day": "Sat",
+   "batch": "28th",
+   "semester": "4th",
+   "section": "Both",
+   "slots": [
+    3
+   ],
+   "course": "CSE223",
+   "teacher": "TFS",
+   "room": "136"
+  },
+  {
+   "day": "Sat",
+   "batch": "28th",
+   "semester": "4th",
+   "section": "Both",
+   "slots": [
+    4
+   ],
+   "course": "CSE225",
+   "teacher": "TAS",
+   "room": "101"
+  },
+  {
+   "day": "Sat",
+   "batch": "29th",
+   "semester": "3rd",
+   "section": "Sec 2",
+   "slots": [
+    1,
+    2
+   ],
+   "course": "CSE214",
+   "teacher": "NS",
+   "room": "136"
+  },
+  {
+   "day": "Sat",
+   "batch": "29th",
+   "semester": "3rd",
+   "section": "Both",
+   "slots": [
+    3
+   ],
+   "course": "CSE213",
+   "teacher": "NS",
+   "room": "249"
+  },
+  {
+   "day": "Sat",
+   "batch": "29th",
+   "semester": "3rd",
+   "section": "Both",
+   "slots": [
+    4
+   ],
+   "course": "BAN211",
+   "teacher": "AUM",
+   "room": "228"
+  },
+  {
+   "day": "Sat",
+   "batch": "30th",
+   "semester": "2nd",
+   "section": "Both",
+   "slots": [
+    1
+   ],
+   "course": "ENG127",
+   "teacher": "SAS",
+   "room": "102"
+  },
+  {
+   "day": "Sat",
+   "batch": "30th",
+   "semester": "2nd",
+   "section": "Both",
+   "slots": [
+    3
+   ],
+   "course": "MAT125",
+   "teacher": "RH",
+   "room": "228"
+  },
+  {
+   "day": "Sat",
+   "batch": "31st",
+   "semester": "1st",
+   "section": "Sec 1",
+   "slots": [
+    1
+   ],
+   "course": "ENG111",
+   "teacher": "NA",
+   "room": "249"
+  },
+  {
+   "day": "Sat",
+   "batch": "31st",
+   "semester": "1st",
+   "section": "Sec 2",
+   "slots": [
+    1
+   ],
+   "course": "PHY111",
+   "teacher": "SNS",
+   "room": "101"
+  },
+  {
+   "day": "Sat",
+   "batch": "31st",
+   "semester": "1st",
+   "section": "Sec 1",
+   "slots": [
+    2
+   ],
+   "course": "CSE117",
+   "teacher": "TRT",
+   "room": "102"
+  },
+  {
+   "day": "Sat",
+   "batch": "31st",
+   "semester": "1st",
+   "section": "Sec 1",
+   "slots": [
+    3
+   ],
+   "course": "MAT115",
+   "teacher": "MAA",
+   "room": "102"
+  },
+  {
+   "day": "Sat",
+   "batch": "31st",
+   "semester": "1st",
+   "section": "Sec 2",
+   "slots": [
+    3
+   ],
+   "course": "ENG111",
+   "teacher": "NA",
+   "room": "101"
+  },
+  {
+   "day": "Sun",
+   "batch": "24th",
+   "semester": "8th",
+   "section": null,
+   "slots": [
+    2
+   ],
+   "course": "CSE469/471",
+   "teacher": "MMH",
+   "room": "228"
+  },
+  {
+   "day": "Sun",
+   "batch": "25th",
+   "semester": "7th",
+   "section": null,
+   "slots": [
+    2
+   ],
+   "course": "CSE411",
+   "teacher": "AAZ",
+   "room": "131"
+  },
+  {
+   "day": "Sun",
+   "batch": "25th",
+   "semester": "7th",
+   "section": null,
+   "slots": [
+    3
+   ],
+   "course": "CSE411",
+   "teacher": "AAZ",
+   "room": "131"
+  },
+  {
+   "day": "Sun",
+   "batch": "25th",
+   "semester": "7th",
+   "section": null,
+   "slots": [
+    4,
+    5
+   ],
+   "course": "CSE412",
+   "teacher": "AAZ",
+   "room": "131"
+  },
+  {
+   "day": "Sun",
+   "batch": "26th",
+   "semester": "6th",
+   "section": "Both",
+   "slots": [
+    1
+   ],
+   "course": "MAT323",
+   "teacher": "MMR",
+   "room": "131"
+  },
+  {
+   "day": "Sun",
+   "batch": "26th",
+   "semester": "6th",
+   "section": "Sec 1",
+   "slots": [
+    2,
+    3
+   ],
+   "course": "CSE322",
+   "teacher": "TRT",
+   "room": "137"
+  },
+  {
+   "day": "Sun",
+   "batch": "26th",
+   "semester": "6th",
+   "section": "Sec 2",
+   "slots": [
+    2,
+    3
+   ],
+   "course": "CSE326",
+   "teacher": "EA",
+   "room": "130"
+  },
+  {
+   "day": "Sun",
+   "batch": "26th",
+   "semester": "6th",
+   "section": "Both",
+   "slots": [
+    4
+   ],
+   "course": "CSE325",
+   "teacher": "EA",
+   "room": "102"
+  },
+  {
+   "day": "Sun",
+   "batch": "26th",
+   "semester": "6th",
+   "section": "Both",
+   "slots": [
+    5
+   ],
+   "course": "MGT329",
+   "teacher": "MAM",
+   "room": "102"
+  },
+  {
+   "day": "Sun",
+   "batch": "27th",
+   "semester": "5th",
+   "section": null,
+   "slots": [
+    1
+   ],
+   "course": "CSE311",
+   "teacher": "AR",
+   "room": "130"
+  },
+  {
+   "day": "Sun",
+   "batch": "27th",
+   "semester": "5th",
+   "section": null,
+   "slots": [
+    2
+   ],
+   "course": "MAT317",
+   "teacher": "MJI",
+   "room": "101"
+  },
+  {
+   "day": "Sun",
+   "batch": "27th",
+   "semester": "5th",
+   "section": null,
+   "slots": [
+    4,
+    5
+   ],
+   "course": "CSE316",
+   "teacher": "TR",
+   "room": "136"
+  },
+  {
+   "day": "Sun",
+   "batch": "28th",
+   "semester": "4th",
+   "section": "Both",
+   "slots": [
+    1
+   ],
+   "course": "CSE227",
+   "teacher": "MMH",
+   "room": "136"
+  },
+  {
+   "day": "Sun",
+   "batch": "28th",
+   "semester": "4th",
+   "section": "Both",
+   "slots": [
+    2
+   ],
+   "course": "CSE229",
+   "teacher": "AR",
+   "room": "136"
+  },
+  {
+   "day": "Sun",
+   "batch": "28th",
+   "semester": "4th",
+   "section": "Both",
+   "slots": [
+    3
+   ],
+   "course": "CSE221",
+   "teacher": "MAH",
+   "room": "136"
+  },
+  {
+   "day": "Sun",
+   "batch": "28th",
+   "semester": "4th",
+   "section": "Sec 1",
+   "slots": [
+    4,
+    5
+   ],
+   "course": "CSE222",
+   "teacher": "MAH",
+   "room": "137"
+  },
+  {
+   "day": "Sun",
+   "batch": "29th",
+   "semester": "3rd",
+   "section": "Both",
+   "slots": [
+    1
+   ],
+   "course": "ACT215",
+   "teacher": "MMI",
+   "room": "228"
+  },
+  {
+   "day": "Sun",
+   "batch": "29th",
+   "semester": "3rd",
+   "section": "Both",
+   "slots": [
+    2
+   ],
+   "course": "CSE213",
+   "teacher": "NS",
+   "room": "102"
+  },
+  {
+   "day": "Sun",
+   "batch": "29th",
+   "semester": "3rd",
+   "section": "Both",
+   "slots": [
+    3
+   ],
+   "course": "MAT217",
+   "teacher": "AB",
+   "room": "228"
+  },
+  {
+   "day": "Sun",
+   "batch": "29th",
+   "semester": "3rd",
+   "section": "Sec 1",
+   "slots": [
+    4,
+    5
+   ],
+   "course": "CSE214",
+   "teacher": "NS",
+   "room": "130"
+  },
+  {
+   "day": "Sun",
+   "batch": "30th",
+   "semester": "2nd",
+   "section": "Both",
+   "slots": [
+    1
+   ],
+   "course": "EEE127",
+   "teacher": "NS",
+   "room": "137"
+  },
+  {
+   "day": "Sun",
+   "batch": "30th",
+   "semester": "2nd",
+   "section": "Both",
+   "slots": [
+    3
+   ],
+   "course": "PHY121",
+   "teacher": "HI",
+   "room": "102"
+  },
+  {
+   "day": "Sun",
+   "batch": "30th",
+   "semester": "2nd",
+   "section": "Sec 1",
+   "slots": [
+    4,
+    5
+   ],
+   "course": "PHY122",
+   "teacher": "SNS",
+   "room": "116"
+  },
+  {
+   "day": "Sun",
+   "batch": "30th",
+   "semester": "2nd",
+   "section": "Sec 2",
+   "slots": [
+    4,
+    5
+   ],
+   "course": "EEE128",
+   "teacher": "NHF",
+   "room": "109"
+  },
+  {
+   "day": "Sun",
+   "batch": "31st",
+   "semester": "1st",
+   "section": "Sec 1",
+   "slots": [
+    1
+   ],
+   "course": "PHY111",
+   "teacher": "AFS",
+   "room": "102"
+  },
+  {
+   "day": "Sun",
+   "batch": "31st",
+   "semester": "1st",
+   "section": "Sec 2",
+   "slots": [
+    1
+   ],
+   "course": "MAT115",
+   "teacher": "MAA",
+   "room": "101"
+  },
+  {
+   "day": "Sun",
+   "batch": "31st",
+   "semester": "1st",
+   "section": "Sec 1",
+   "slots": [
+    2
+   ],
+   "course": "MAT115",
+   "teacher": "MAA",
+   "room": "249"
+  },
+  {
+   "day": "Sun",
+   "batch": "31st",
+   "semester": "1st",
+   "section": "Sec 1",
+   "slots": [
+    3
+   ],
+   "course": "CSE113",
+   "teacher": "MSI",
+   "room": "101"
+  },
+  {
+   "day": "Sun",
+   "batch": "31st",
+   "semester": "1st",
+   "section": "Sec 2",
+   "slots": [
+    3
+   ],
+   "course": "EEE117",
+   "teacher": "NHF",
+   "room": "127"
+  },
+  {
+   "day": "Sun",
+   "batch": "31st",
+   "semester": "1st",
+   "section": "Sec 1",
+   "slots": [
+    4
+   ],
+   "course": "EEE117",
+   "teacher": "SS",
+   "room": "101"
+  },
+  {
+   "day": "Sun",
+   "batch": "31st",
+   "semester": "1st",
+   "section": "Sec 2",
+   "slots": [
+    4
+   ],
+   "course": "CSE117",
+   "teacher": "TRT",
+   "room": "228"
+  },
+  {
+   "day": "Sun",
+   "batch": "31st",
+   "semester": "1st",
+   "section": "Sec 2",
+   "slots": [
+    5
+   ],
+   "course": "CSE113",
+   "teacher": "MSI",
+   "room": "249"
+  },
+  {
+   "day": "Mon",
+   "batch": "24th",
+   "semester": "8th",
+   "section": null,
+   "slots": [
+    1
+   ],
+   "course": "CSE423",
+   "teacher": "TAS",
+   "room": "130"
+  },
+  {
+   "day": "Mon",
+   "batch": "24th",
+   "semester": "8th",
+   "section": null,
+   "slots": [
+    2,
+    3
+   ],
+   "course": "CSE424",
+   "teacher": "TAS",
+   "room": "131"
+  },
+  {
+   "day": "Mon",
+   "batch": "24th",
+   "semester": "8th",
+   "section": null,
+   "slots": [
+    4
+   ],
+   "course": "CSE421",
+   "teacher": "MMH",
+   "room": "228"
+  },
+  {
+   "day": "Mon",
+   "batch": "25th",
+   "semester": "7th",
+   "section": null,
+   "slots": [
+    1
+   ],
+   "course": "CSE419",
+   "teacher": "MMH",
+   "room": "137"
+  },
+  {
+   "day": "Mon",
+   "batch": "25th",
+   "semester": "7th",
+   "section": null,
+   "slots": [
+    2
+   ],
+   "course": "CSE413",
+   "teacher": "IAZ",
+   "room": "132"
+  },
+  {
+   "day": "Mon",
+   "batch": "26th",
+   "semester": "6th",
+   "section": "Both",
+   "slots": [
+    2
+   ],
+   "course": "MGT329",
+   "teacher": "MAM",
+   "room": "102"
+  },
+  {
+   "day": "Mon",
+   "batch": "26th",
+   "semester": "6th",
+   "section": "Both",
+   "slots": [
+    3
+   ],
+   "course": "CSE325",
+   "teacher": "EA",
+   "room": "136"
+  },
+  {
+   "day": "Mon",
+   "batch": "26th",
+   "semester": "6th",
+   "section": "Sec 1",
+   "slots": [
+    4,
+    5
+   ],
+   "course": "CSE326",
+   "teacher": "EA",
+   "room": "130"
+  },
+  {
+   "day": "Mon",
+   "batch": "26th",
+   "semester": "6th",
+   "section": "Sec 2",
+   "slots": [
+    4,
+    5
+   ],
+   "course": "CSE322",
+   "teacher": "TRT",
+   "room": "131"
+  },
+  {
+   "day": "Mon",
+   "batch": "27th",
+   "semester": "5th",
+   "section": null,
+   "slots": [
+    1
+   ],
+   "course": "MAT317",
+   "teacher": "MJI",
+   "room": "102"
+  },
+  {
+   "day": "Mon",
+   "batch": "27th",
+   "semester": "5th",
+   "section": null,
+   "slots": [
+    2
+   ],
+   "course": "CSE315",
+   "teacher": "TR",
+   "room": "136"
+  },
+  {
+   "day": "Mon",
+   "batch": "27th",
+   "semester": "5th",
+   "section": null,
+   "slots": [
+    3
+   ],
+   "course": "CSE317",
+   "teacher": "PKS",
+   "room": "137"
+  },
+  {
+   "day": "Mon",
+   "batch": "27th",
+   "semester": "5th",
+   "section": null,
+   "slots": [
+    4,
+    5
+   ],
+   "course": "CSE318",
+   "teacher": "PKS",
+   "room": "136"
+  },
+  {
+   "day": "Mon",
+   "batch": "28th",
+   "semester": "4th",
+   "section": "Both",
+   "slots": [
+    1
+   ],
+   "course": "CSE229",
+   "teacher": "AR",
+   "room": "136"
+  },
+  {
+   "day": "Mon",
+   "batch": "28th",
+   "semester": "4th",
+   "section": "Both",
+   "slots": [
+    2
+   ],
+   "course": "CSE221",
+   "teacher": "MAH",
+   "room": "228"
+  },
+  {
+   "day": "Mon",
+   "batch": "28th",
+   "semester": "4th",
+   "section": "Both",
+   "slots": [
+    3
+   ],
+   "course": "ENS221",
+   "teacher": "JF",
+   "room": "228"
+  },
+  {
+   "day": "Mon",
+   "batch": "28th",
+   "semester": "4th",
+   "section": "Sec 2",
+   "slots": [
+    4,
+    5
+   ],
+   "course": "CSE222",
+   "teacher": "MAH",
+   "room": "137"
+  },
+  {
+   "day": "Mon",
+   "batch": "30th",
+   "semester": "2nd",
+   "section": "Both",
+   "slots": [
+    1
+   ],
+   "course": "ENG127",
+   "teacher": "SAS",
+   "room": "228"
+  },
+  {
+   "day": "Mon",
+   "batch": "30th",
+   "semester": "2nd",
+   "section": "Both",
+   "slots": [
+    3
+   ],
+   "course": "PHY121",
+   "teacher": "HI",
+   "room": "102"
+  },
+  {
+   "day": "Mon",
+   "batch": "30th",
+   "semester": "2nd",
+   "section": "Sec 1",
+   "slots": [
+    4,
+    5
+   ],
+   "course": "EEE128",
+   "teacher": "NF",
+   "room": "111"
+  },
+  {
+   "day": "Mon",
+   "batch": "30th",
+   "semester": "2nd",
+   "section": "Sec 2",
+   "slots": [
+    4,
+    5
+   ],
+   "course": "PHY122",
+   "teacher": "SNS",
+   "room": "116"
+  },
+  {
+   "day": "Mon",
+   "batch": "31st",
+   "semester": "1st",
+   "section": "Sec 1",
+   "slots": [
+    1
+   ],
+   "course": "ENG111",
+   "teacher": "NA",
+   "room": "249"
+  },
+  {
+   "day": "Mon",
+   "batch": "31st",
+   "semester": "1st",
+   "section": "Sec 2",
+   "slots": [
+    1
+   ],
+   "course": "PHY111",
+   "teacher": "SNS",
+   "room": "101"
+  },
+  {
+   "day": "Mon",
+   "batch": "31st",
+   "semester": "1st",
+   "section": "Sec 1",
+   "slots": [
+    2
+   ],
+   "course": "CSE113",
+   "teacher": "MSI",
+   "room": "130"
+  },
+  {
+   "day": "Mon",
+   "batch": "31st",
+   "semester": "1st",
+   "section": "Sec 2",
+   "slots": [
+    2
+   ],
+   "course": "MAT115",
+   "teacher": "MAA",
+   "room": "101"
+  },
+  {
+   "day": "Mon",
+   "batch": "31st",
+   "semester": "1st",
+   "section": "Sec 1",
+   "slots": [
+    3
+   ],
+   "course": "PHY111",
+   "teacher": "AFS",
+   "room": "249"
+  },
+  {
+   "day": "Mon",
+   "batch": "31st",
+   "semester": "1st",
+   "section": "Sec 2",
+   "slots": [
+    3
+   ],
+   "course": "ENG111",
+   "teacher": "NA",
+   "room": "101"
+  },
+  {
+   "day": "Mon",
+   "batch": "31st",
+   "semester": "1st",
+   "section": "Sec 1",
+   "slots": [
+    4
+   ],
+   "course": "EEE117",
+   "teacher": "SS",
+   "room": "102"
+  },
+  {
+   "day": "Mon",
+   "batch": "31st",
+   "semester": "1st",
+   "section": "Sec 2",
+   "slots": [
+    4
+   ],
+   "course": "CSE113",
+   "teacher": "MSI",
+   "room": "249"
+  },
+  {
+   "day": "Mon",
+   "batch": "31st",
+   "semester": "1st",
+   "section": "Sec 2",
+   "slots": [
+    5
+   ],
+   "course": "EEE117",
+   "teacher": "NHF",
+   "room": "101"
+  },
+  {
+   "day": "Tues",
+   "batch": "25th",
+   "semester": "7th",
+   "section": null,
+   "slots": [
+    1
+   ],
+   "course": "CSE415",
+   "teacher": "JAT",
+   "room": "136"
+  },
+  {
+   "day": "Tues",
+   "batch": "25th",
+   "semester": "7th",
+   "section": null,
+   "slots": [
+    2,
+    3
+   ],
+   "course": "CSE416",
+   "teacher": "JAT",
+   "room": "136"
+  },
+  {
+   "day": "Tues",
+   "batch": "25th",
+   "semester": "7th",
+   "section": null,
+   "slots": [
+    4
+   ],
+   "course": "CSE419",
+   "teacher": "MMH",
+   "room": "228"
+  },
+  {
+   "day": "Tues",
+   "batch": "25th",
+   "semester": "7th",
+   "section": null,
+   "slots": [
+    5
+   ],
+   "course": "CSE417",
+   "teacher": "EA",
+   "room": "228"
+  },
+  {
+   "day": "Tues",
+   "batch": "26th",
+   "semester": "6th",
+   "section": "Both",
+   "slots": [
+    1
+   ],
+   "course": "MAT323",
+   "teacher": "MMR",
+   "room": "102"
+  },
+  {
+   "day": "Tues",
+   "batch": "26th",
+   "semester": "6th",
+   "section": "Both",
+   "slots": [
+    3
+   ],
+   "course": "CSE323",
+   "teacher": "MAH",
+   "room": "131"
+  },
+  {
+   "day": "Tues",
+   "batch": "26th",
+   "semester": "6th",
+   "section": "Both",
+   "slots": [
+    4,
+    5
+   ],
+   "course": "CSE324",
+   "teacher": "MAH",
+   "room": "136"
+  },
+  {
+   "day": "Tues",
+   "batch": "27th",
+   "semester": "5th",
+   "section": null,
+   "slots": [
+    1
+   ],
+   "course": "CSE313",
+   "teacher": "MSI",
+   "room": "131"
+  },
+  {
+   "day": "Tues",
+   "batch": "27th",
+   "semester": "5th",
+   "section": null,
+   "slots": [
+    2
+   ],
+   "course": "CSE311",
+   "teacher": "AR",
+   "room": "101"
+  },
+  {
+   "day": "Tues",
+   "batch": "28th",
+   "semester": "4th",
+   "section": "Both",
+   "slots": [
+    1
+   ],
+   "course": "CSE223",
+   "teacher": "TFS",
+   "room": "228"
+  },
+  {
+   "day": "Tues",
+   "batch": "28th",
+   "semester": "4th",
+   "section": "Both",
+   "slots": [
+    2
+   ],
+   "course": "CSE227",
+   "teacher": "MMH",
+   "room": "131"
+  },
+  {
+   "day": "Tues",
+   "batch": "28th",
+   "semester": "4th",
+   "section": "Both",
+   "slots": [
+    3
+   ],
+   "course": "ENS221",
+   "teacher": "JF",
+   "room": "101"
+  },
+  {
+   "day": "Tues",
+   "batch": "28th",
+   "semester": "4th",
+   "section": "Sec 1",
+   "slots": [
+    4,
+    5
+   ],
+   "course": "CSE224",
+   "teacher": "TFS",
+   "room": "131"
+  },
+  {
+   "day": "Tues",
+   "batch": "29th",
+   "semester": "3rd",
+   "section": "Both",
+   "slots": [
+    1
+   ],
+   "course": "ACT215",
+   "teacher": "MMI",
+   "room": "101"
+  },
+  {
+   "day": "Tues",
+   "batch": "29th",
+   "semester": "3rd",
+   "section": "Both",
+   "slots": [
+    2
+   ],
+   "course": "CSE215",
+   "teacher": "MAH",
+   "room": "228"
+  },
+  {
+   "day": "Tues",
+   "batch": "29th",
+   "semester": "3rd",
+   "section": "Both",
+   "slots": [
+    3
+   ],
+   "course": "MAT213",
+   "teacher": "AB",
+   "room": "102"
+  },
+  {
+   "day": "Tues",
+   "batch": "29th",
+   "semester": "3rd",
+   "section": "Both",
+   "slots": [
+    4
+   ],
+   "course": "BAN211",
+   "teacher": "AUM",
+   "room": "102"
+  },
+  {
+   "day": "Tues",
+   "batch": "30th",
+   "semester": "2nd",
+   "section": "Both",
+   "slots": [
+    2
+   ],
+   "course": "CSE121",
+   "teacher": "TR",
+   "room": "102"
+  },
+  {
+   "day": "Tues",
+   "batch": "30th",
+   "semester": "2nd",
+   "section": "Both",
+   "slots": [
+    3
+   ],
+   "course": "MAT125",
+   "teacher": "RH",
+   "room": "228"
+  },
+  {
+   "day": "Tues",
+   "batch": "30th",
+   "semester": "2nd",
+   "section": "Sec 1",
+   "slots": [
+    4,
+    5
+   ],
+   "course": "CSE122",
+   "teacher": "TR",
+   "room": "137"
+  },
+  {
+   "day": "Tues",
+   "batch": "31st",
+   "semester": "1st",
+   "section": "Sec 2",
+   "slots": [
+    2,
+    3
+   ],
+   "course": "CSE112",
+   "teacher": "IAZ",
+   "room": "130"
+  },
+  {
+   "day": "Tues",
+   "batch": "31st",
+   "semester": "1st",
+   "section": "Sec 2",
+   "slots": [
+    4
+   ],
+   "course": "CSE117",
+   "teacher": "TRT",
+   "room": "101"
+  },
+  {
+   "day": "Wed",
+   "batch": "25th",
+   "semester": "7th",
+   "section": null,
+   "slots": [
+    1
+   ],
+   "course": "CSE417",
+   "teacher": "EA",
+   "room": "137"
+  },
+  {
+   "day": "Wed",
+   "batch": "25th",
+   "semester": "7th",
+   "section": null,
+   "slots": [
+    2,
+    3
+   ],
+   "course": "CSE418",
+   "teacher": "EA",
+   "room": "137"
+  },
+  {
+   "day": "Wed",
+   "batch": "27th",
+   "semester": "5th",
+   "section": null,
+   "slots": [
+    1
+   ],
+   "course": "CSE317",
+   "teacher": "PKS",
+   "room": "131"
+  },
+  {
+   "day": "Wed",
+   "batch": "27th",
+   "semester": "5th",
+   "section": null,
+   "slots": [
+    2
+   ],
+   "course": "CSE315",
+   "teacher": "TR",
+   "room": "228"
+  },
+  {
+   "day": "Wed",
+   "batch": "28th",
+   "semester": "4th",
+   "section": "Sec 1",
+   "slots": [
+    1,
+    2
+   ],
+   "course": "CSE226",
+   "teacher": "TAS",
+   "room": "109"
+  },
+  {
+   "day": "Wed",
+   "batch": "28th",
+   "semester": "4th",
+   "section": "Both",
+   "slots": [
+    3
+   ],
+   "course": "CSE225",
+   "teacher": "TAS",
+   "room": "228"
+  },
+  {
+   "day": "Wed",
+   "batch": "28th",
+   "semester": "4th",
+   "section": "Sec 2",
+   "slots": [
+    4,
+    5
+   ],
+   "course": "CSE226",
+   "teacher": "TAS",
+   "room": "109"
+  },
+  {
+   "day": "Wed",
+   "batch": "29th",
+   "semester": "3rd",
+   "section": "Both",
+   "slots": [
+    1
+   ],
+   "course": "MAT217",
+   "teacher": "AB",
+   "room": "102"
+  },
+  {
+   "day": "Wed",
+   "batch": "29th",
+   "semester": "3rd",
+   "section": "Both",
+   "slots": [
+    2
+   ],
+   "course": "CSE215",
+   "teacher": "MAH",
+   "room": "136"
+  },
+  {
+   "day": "Wed",
+   "batch": "29th",
+   "semester": "3rd",
+   "section": "Both",
+   "slots": [
+    3
+   ],
+   "course": "MAT213",
+   "teacher": "AB",
+   "room": "102"
+  },
+  {
+   "day": "Wed",
+   "batch": "29th",
+   "semester": "3rd",
+   "section": "Both",
+   "slots": [
+    4,
+    5
+   ],
+   "course": "CSE216",
+   "teacher": "MAH",
+   "room": "136"
+  },
+  {
+   "day": "Wed",
+   "batch": "30th",
+   "semester": "2nd",
+   "section": "Both",
+   "slots": [
+    2
+   ],
+   "course": "EEE127",
+   "teacher": "NS",
+   "room": "102"
+  },
+  {
+   "day": "Wed",
+   "batch": "30th",
+   "semester": "2nd",
+   "section": "Both",
+   "slots": [
+    3
+   ],
+   "course": "CSE121",
+   "teacher": "TR",
+   "room": "136"
+  },
+  {
+   "day": "Wed",
+   "batch": "30th",
+   "semester": "2nd",
+   "section": "Sec 2",
+   "slots": [
+    4,
+    5
+   ],
+   "course": "CSE122",
+   "teacher": "TR",
+   "room": "137"
+  },
+  {
+   "day": "Wed",
+   "batch": "31st",
+   "semester": "1st",
+   "section": "Sec 1",
+   "slots": [
+    1
+   ],
+   "course": "CSE117",
+   "teacher": "TRT",
+   "room": "228"
+  },
+  {
+   "day": "Wed",
+   "batch": "31st",
+   "semester": "1st",
+   "section": "Sec 1",
+   "slots": [
+    2,
+    3
+   ],
+   "course": "CSE112",
+   "teacher": "PKS",
+   "room": "131"
+  }
+ ]
+}

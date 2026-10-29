@@ -106,25 +106,79 @@ export async function getPeriodUsage(periodIds: number[]): Promise<Map<number, n
  * Two separate things can be wrong: the period may belong to a different
  * version's set entirely (easy to hit by hand-posting an id, or by leaving
  * a stale dialog open after switching version), or it may be a period a
- * two-period lab cannot start at.
+ * two-period lab cannot occupy.
+ *
+ * The lab rule has to be stated as "is this row part of a valid pair?",
+ * not "does this row start one". A two-period lab is stored as TWO Session
+ * rows (Step 37/38) and the dialog creates them one after the other, so
+ * the second row always lands on `start + 1` — which is usually not itself
+ * a valid start. Checking each row in isolation therefore rejected the
+ * second half of every legitimate lab, which is what shipped in Step 52
+ * and made labs at period 3 or 5 of the standard set impossible to add.
+ *
+ * So a LAB row is allowed when either:
+ *   - its period is a valid lab start, or
+ *   - the period before it is a valid start AND the lab's own first row is
+ *     already there (`labPartner` describes what "its own first row"
+ *     means: same class, same day, same version, one period earlier).
+ * A lab on a period that can be neither is still refused.
  */
+export type LabPartner = {
+  day: string;
+  batchId: number;
+  section: string | null;
+  courseId: number;
+  teacherId: number;
+  roomId: number;
+  /** The row being edited, so it never counts as its own partner. */
+  excludeSessionId?: number;
+};
+
 export async function checkPeriodForVersion(
   versionId: number,
   timeSlotId: number,
-  courseType: "THEORY" | "LAB"
+  courseType: "THEORY" | "LAB",
+  labPartner?: LabPartner
 ): Promise<string | null> {
   const periods = await getPeriodsForVersion(versionId);
   const period = periods.find((p) => p.id === timeSlotId);
   if (!period) {
     return "That time slot is not one of this routine version's periods.";
   }
-  if (courseType === "LAB" && !isValidLabStart(period.sortOrder, periods)) {
-    const starts = validLabStarts(periods);
-    return starts.length === 0
-      ? "This version has no period a two-period lab can start at."
-      : `A lab cannot start at period ${period.sortOrder}. It must start at period ${starts.join(", ")}.`;
+
+  if (courseType !== "LAB") return null;
+  if (isValidLabStart(period.sortOrder, periods)) return null;
+
+  const starts = validLabStarts(periods);
+  const previous = periods.find((p) => p.sortOrder === period.sortOrder - 1);
+  const isSecondHalf = previous !== undefined && starts.includes(previous.sortOrder);
+
+  if (isSecondHalf && labPartner) {
+    const db = getDb();
+    const partner = await db.session.findFirst({
+      where: {
+        versionId,
+        timeSlotId: previous.id,
+        day: labPartner.day,
+        batchId: labPartner.batchId,
+        section: labPartner.section,
+        courseId: labPartner.courseId,
+        teacherId: labPartner.teacherId,
+        roomId: labPartner.roomId,
+        ...(labPartner.excludeSessionId ? { id: { not: labPartner.excludeSessionId } } : {}),
+      },
+      select: { id: true },
+    });
+    if (partner) return null;
   }
-  return null;
+
+  if (starts.length === 0) {
+    return "This version has no period a two-period lab can start at.";
+  }
+  return isSecondHalf
+    ? `A lab at period ${period.sortOrder} must be the second half of one starting at period ${previous!.sortOrder}, ` +
+        `but that period has no matching first row. Labs start at period ${starts.join(", ")}.`
+    : `A lab cannot start at period ${period.sortOrder}. It must start at period ${starts.join(", ")}.`;
 }
 
 /**
@@ -146,7 +200,7 @@ export async function validateSpecialBlock(
   const orders = new Set(periods.map((p) => p.sortOrder));
   if (!orders.has(input.fromSlot) || !orders.has(input.toSlot)) {
     const available = [...orders].sort((a, b) => a - b).join(", ");
-    return `Periods ${input.fromSlot}\u2013${input.toSlot} are not both in this version's periods (${available}).`;
+    return `Periods ${input.fromSlot}–${input.toSlot} are not both in this version's periods (${available}).`;
   }
 
   if (!input.allBatches) {
