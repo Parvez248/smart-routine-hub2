@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, LayoutGrid, RefreshCw, Bell, AlarmClock, LayoutDashboard } from "lucide-react";
+import { CalendarDays, LayoutGrid, RefreshCw, Bell, AlarmClock, LayoutDashboard, ClipboardList } from "lucide-react";
 import { MobileBottomNav } from "@/app/components/MobileBottomNav";
 
 // Primary tabs stay at four so the bar doesn't crowd; "Full Routine"
@@ -16,6 +16,7 @@ const ITEMS = [
 const MORE = [
   { href: "/student/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/student/full-routine", label: "Full Routine", icon: LayoutGrid },
+  { href: "/student/exams", label: "Exams", icon: ClipboardList },
 ];
 
 export default function StudentMobileNav() {

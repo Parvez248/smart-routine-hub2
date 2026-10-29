@@ -30,6 +30,8 @@ import type { ExamSittingValue, ExamTypeValue } from "@/lib/ui/examType";
 import { roomLabel } from "@/lib/ui/rooms";
 import { ExamDialog } from "../_components/ExamDialog";
 import type { ExamFormValues } from "../_components/ExamDialog";
+import { ExamPrintControls } from "@/components/exams/ExamPrintControls";
+import type { ViewExam } from "@/lib/ui/examFormat";
 
 type Term = {
   id: number;
@@ -48,7 +50,7 @@ type Exam = {
   date: string;
   startTime: string;
   endTime: string;
-  course: { id: number; code: string; title: string };
+  course: { id: number; code: string; title: string; type: string };
   batch: { id: number; name: string; semester: string };
   rooms: { seats: number | null; room: { id: number; name: string; capacity: number } }[];
 };
@@ -72,6 +74,26 @@ const TABS = [
 // The tab key in the URL ("midterm") vs the stored enum ("MIDTERM").
 function typeForTab(tab: string): ExamTypeValue {
   return tab === "final" ? "FINAL" : "MIDTERM";
+}
+
+// The builder's rows carry Prisma relations; the print documents take the
+// flatter shape the teacher/student API returns (Step 51), so they are
+// mapped here rather than giving the print components two shapes to handle.
+function toViewExam(exam: Exam): ViewExam {
+  return {
+    id: exam.id,
+    type: exam.type,
+    // The `@db.Date` column arrives as an ISO timestamp at UTC midnight;
+    // taking the date part verbatim keeps it from slipping a day.
+    date: exam.date.slice(0, 10),
+    sitting: exam.sitting,
+    startTime: exam.startTime,
+    endTime: exam.endTime,
+    course: { code: exam.course.code, title: exam.course.title, type: exam.course.type },
+    batch: exam.batch,
+    section: exam.section,
+    rooms: exam.rooms.map((r) => ({ name: r.room.name, capacity: r.room.capacity, seats: r.seats })),
+  };
 }
 
 function newExamDefaults(term: Term, type: ExamTypeValue, sitting: ExamSittingValue): ExamFormValues {
@@ -99,6 +121,9 @@ function ExamBuilderInner() {
 
   const [term, setTerm] = useState<Term | null>(null);
   const [exams, setExams] = useState<Exam[]>([]);
+  // The table shows one kind at a time and honours the batch filter; the
+  // print options cover the whole term, so it is fetched unfiltered too.
+  const [allExams, setAllExams] = useState<Exam[]>([]);
   const [batches, setBatches] = useState<RefBatch[]>([]);
   const [batchFilter, setBatchFilter] = useState("");
   const [dateFilter, setDateFilter] = useState("");
@@ -124,8 +149,13 @@ function ExamBuilderInner() {
     }
     const query = new URLSearchParams({ type });
     if (batchFilter) query.set("batchId", batchFilter);
-    const res = await fetch(`/api/admin/exam-terms/${termId}/exams?${query.toString()}`);
+    const [res, allRes] = await Promise.all([
+      fetch(`/api/admin/exam-terms/${termId}/exams?${query.toString()}`),
+      fetch(`/api/admin/exam-terms/${termId}/exams`),
+    ]);
     const json = await res.json();
+    const allJson = await allRes.json();
+    if (allJson.ok) setAllExams(allJson.data.exams);
     if (json.ok) {
       setTerm(json.data.term);
       setSettings((s) => s ?? {
@@ -296,7 +326,21 @@ function ExamBuilderInner() {
             </>
           }
           description={term?.note ?? undefined}
-          action={<Button onClick={openAdd} disabled={!term}>Add Exam</Button>}
+          action={
+            <>
+              {/* An admin may print a draft term for checking — the document
+                  carries a DRAFT watermark so it can't pass for the real one. */}
+              <ExamPrintControls
+                termName={term?.name ?? "Exam Routine"}
+                termNote={term?.note ?? null}
+                isDraft={Boolean(term && !term.isPublished)}
+                exams={allExams.map(toViewExam)}
+                allowSittingSheet
+                disabled={allExams.length === 0}
+              />
+              <Button onClick={openAdd} disabled={!term}>Add Exam</Button>
+            </>
+          }
         />
       </div>
 

@@ -9,6 +9,8 @@ const LINKS = [
   { href: "/teacher/dashboard", label: "Dashboard" },
   { href: "/teacher/classes", label: "My Classes" },
   { href: "/teacher/routine", label: "Full Routine" },
+  // Step 51 — the published exam routine.
+  { href: "/teacher/exams", label: "Exams" },
   { href: "/teacher/rescheduled", label: "Rescheduled Classes" },
   { href: "/teacher/free-rooms", label: "Free Rooms" },
   { href: "/teacher/requests", label: "My Requests" },

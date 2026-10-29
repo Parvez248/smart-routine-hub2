@@ -11,6 +11,8 @@ const LINKS = [
   { href: "/student/routine", label: "My Routine" },
   // Step 48 — the all-batches view, alongside the student's own routine.
   { href: "/student/full-routine", label: "Full Routine" },
+  // Step 51 — the published exam routine.
+  { href: "/student/exams", label: "Exams" },
   { href: "/student/rescheduled", label: "Rescheduled Classes" },
   { href: "/student/notices", label: "Notices" },
   { href: "/student/alarms", label: "Reminders" },
